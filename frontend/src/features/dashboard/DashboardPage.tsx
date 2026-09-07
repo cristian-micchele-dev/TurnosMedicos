@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { dashboardApi, type DashboardStats } from '../../api/dashboard';
+import { appointmentsApi, type Appointment } from '../../api/appointments';
 import { Spinner } from '../../components/ui/Spinner';
+import { Badge } from '../../components/ui/Badge';
 import styles from './DashboardPage.module.css';
 
 interface StatCard {
   label: string;
   value: string | number;
+  accent: 'blue' | 'green' | 'amber' | 'slate';
+}
+
+interface QuickAction {
+  label: string;
+  to: string;
   accent: 'blue' | 'green' | 'amber' | 'slate';
 }
 
@@ -25,6 +34,38 @@ function buildDefaultCards(stats: DashboardStats): StatCard[] {
   ];
 }
 
+const QUICK_ACTIONS: Record<string, QuickAction[]> = {
+  ADMIN: [
+    { label: 'Crear Doctor', to: '/doctores', accent: 'blue' },
+    { label: 'Crear Paciente', to: '/pacientes', accent: 'green' },
+    { label: 'Ver Turnos', to: '/turnos', accent: 'amber' },
+    { label: 'Gestionar Usuarios', to: '/usuarios', accent: 'slate' },
+  ],
+  DOCTOR: [
+    { label: 'Mis Turnos', to: '/mis-turnos', accent: 'blue' },
+    { label: 'Mi Disponibilidad', to: '/disponibilidad', accent: 'green' },
+  ],
+  PATIENT: [
+    { label: 'Sacar Turno', to: '/nuevo-turno', accent: 'blue' },
+    { label: 'Mis Turnos', to: '/mis-turnos', accent: 'green' },
+    { label: 'Mi Perfil', to: '/mi-perfil', accent: 'slate' },
+  ],
+};
+
+const STATUS_VARIANT: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'neutral'> = {
+  PENDING: 'warning',
+  CONFIRMED: 'primary',
+  COMPLETED: 'success',
+  CANCELLED: 'danger',
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  PENDING: 'Pendiente',
+  CONFIRMED: 'Confirmado',
+  COMPLETED: 'Completado',
+  CANCELLED: 'Cancelado',
+};
+
 const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrador',
   DOCTOR: 'Doctor',
@@ -39,25 +80,40 @@ const ROLE_ACCENT: Record<string, string> = {
 
 export function DashboardPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    dashboardApi
-      .getStats()
-      .then((data) => setStats(data))
+    Promise.all([
+      dashboardApi.getStats(),
+      appointmentsApi.findAll({ status: 'PENDING' }).catch(() => [] as Appointment[]),
+    ])
+      .then(([statsData, appts]) => {
+        setStats(statsData);
+        setAppointments(appts.slice(0, 5));
+      })
       .finally(() => setLoading(false));
   }, []);
 
   if (!user) return null;
 
   const displayName = user.name || user.email.split('@')[0];
-
   const cards: StatCard[] = stats
-    ? user.role === 'ADMIN'
-      ? buildAdminCards(stats)
-      : buildDefaultCards(stats)
+    ? user.role === 'ADMIN' ? buildAdminCards(stats) : buildDefaultCards(stats)
     : [];
+  const actions = QUICK_ACTIONS[user.role] ?? [];
+
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.spinnerWrapper}>
+          <Spinner size="lg" label="Cargando..." />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -71,22 +127,74 @@ export function DashboardPage() {
         </span>
       </header>
 
-      {loading ? (
-        <div className={styles.spinnerWrapper}>
-          <Spinner size="lg" label="Cargando estadísticas..." />
-        </div>
-      ) : (
-        <div className={styles.grid}>
-          {cards.map((card) => (
-            <div key={card.label} className={`${styles.card} ${styles[card.accent]}`}>
-              <div className={styles.cardBody}>
-                <span className={styles.cardValue}>{card.value}</span>
-                <span className={styles.cardLabel}>{card.label}</span>
-              </div>
+      <div className={styles.grid}>
+        {cards.map((card) => (
+          <div key={card.label} className={`${styles.card} ${styles[card.accent]}`}>
+            <div className={styles.cardBody}>
+              <span className={styles.cardValue}>{card.value}</span>
+              <span className={styles.cardLabel}>{card.label}</span>
             </div>
+          </div>
+        ))}
+      </div>
+
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Acciones rápidas</h2>
+        <div className={styles.actionsGrid}>
+          {actions.map((action) => (
+            <button
+              key={action.to}
+              className={`${styles.actionCard} ${styles[action.accent]}`}
+              onClick={() => navigate(action.to)}
+            >
+              <span className={styles.actionLabel}>{action.label}</span>
+              <span className={styles.actionArrow}>→</span>
+            </button>
           ))}
         </div>
-      )}
+      </section>
+
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Próximos turnos</h2>
+        {appointments.length === 0 ? (
+          <div className={styles.emptyState}>
+            <p className={styles.emptyText}>No hay turnos pendientes</p>
+          </div>
+        ) : (
+          <div className={styles.appointmentsList}>
+            {appointments.map((appt) => (
+              <div key={appt.id} className={styles.appointmentRow}>
+                <div className={styles.appointmentInfo}>
+                  <span className={styles.appointmentDate}>
+                    {new Date(appt.dateTime).toLocaleDateString('es-AR', {
+                      weekday: 'short',
+                      day: 'numeric',
+                      month: 'short',
+                    })}
+                  </span>
+                  <span className={styles.appointmentTime}>
+                    {new Date(appt.dateTime).toLocaleTimeString('es-AR', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </div>
+                <div className={styles.appointmentDetails}>
+                  <span className={styles.appointmentDoctor}>
+                    {appt.doctor?.user?.name || appt.doctor?.specialty?.name || 'Doctor'}
+                  </span>
+                  <span className={styles.appointmentPatient}>
+                    {appt.patient?.user?.name || 'Paciente'}
+                  </span>
+                </div>
+                <Badge variant={STATUS_VARIANT[appt.status] ?? 'neutral'} size="sm">
+                  {STATUS_LABEL[appt.status] ?? appt.status}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
