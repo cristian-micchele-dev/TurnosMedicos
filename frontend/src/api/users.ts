@@ -3,6 +3,7 @@ import { api } from './client';
 export interface UserListItem {
   id: string;
   email: string;
+  name: string;
   role: 'ADMIN' | 'DOCTOR' | 'PATIENT';
   active: boolean;
   createdAt: string;
@@ -11,6 +12,7 @@ export interface UserListItem {
 export interface CreateUserRequest {
   email: string;
   password: string;
+  name?: string;
   role?: 'ADMIN' | 'DOCTOR' | 'PATIENT';
 }
 

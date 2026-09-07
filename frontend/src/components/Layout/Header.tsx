@@ -19,7 +19,7 @@ export function Header() {
       {user && (
         <div className={styles.userInfo}>
           <div className={styles.userDetails}>
-            <span className={styles.userName}>{user.email}</span>
+            <span className={styles.userName}>{user.name || user.email}</span>
           </div>
           <span className={`${styles.roleBadge} ${styles[`role${user.role}`]}`}>
             {roleLabels[user.role] ?? user.role}

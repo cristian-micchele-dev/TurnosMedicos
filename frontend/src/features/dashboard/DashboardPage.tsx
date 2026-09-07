@@ -1,33 +1,29 @@
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
+import { dashboardApi, type DashboardStats } from '../../api/dashboard';
+import { Spinner } from '../../components/ui/Spinner';
 import styles from './DashboardPage.module.css';
 
 interface StatCard {
   label: string;
   value: string | number;
-  icon: string;
   accent: 'blue' | 'green' | 'amber' | 'slate';
 }
 
-const CARDS_BY_ROLE: Record<string, StatCard[]> = {
-  ADMIN: [
-    { label: 'Total Doctores', value: 24, icon: '👨‍⚕️', accent: 'blue' },
-    { label: 'Total Pacientes', value: 381, icon: '🧑‍🦱', accent: 'green' },
-    { label: 'Turnos Hoy', value: 47, icon: '📅', accent: 'amber' },
-    { label: 'Especialidades', value: 8, icon: '🏥', accent: 'slate' },
-  ],
-  DOCTOR: [
-    { label: 'Turnos Hoy', value: 12, icon: '📅', accent: 'blue' },
-    { label: 'Turnos Pendientes', value: 5, icon: '⏳', accent: 'amber' },
-    { label: 'Turnos Completados', value: 7, icon: '✅', accent: 'green' },
-    { label: 'Próximo Turno', value: '10:30', icon: '🕥', accent: 'slate' },
-  ],
-  PATIENT: [
-    { label: 'Mis Turnos', value: 3, icon: '📋', accent: 'blue' },
-    { label: 'Próximo Turno', value: 'Lun 14', icon: '📅', accent: 'amber' },
-    { label: 'Turnos Completados', value: 8, icon: '✅', accent: 'green' },
-    { label: 'Médico Asignado', value: 'Dr. García', icon: '👨‍⚕️', accent: 'slate' },
-  ],
-};
+function buildAdminCards(stats: DashboardStats): StatCard[] {
+  return [
+    { label: 'Total Doctores', value: stats.totalDoctors ?? '—', accent: 'blue' },
+    { label: 'Total Pacientes', value: stats.totalPatients ?? '—', accent: 'green' },
+    { label: 'Total Usuarios', value: stats.totalUsers ?? '—', accent: 'amber' },
+    { label: 'Usuarios Activos', value: stats.activeUsers ?? '—', accent: 'slate' },
+  ];
+}
+
+function buildDefaultCards(stats: DashboardStats): StatCard[] {
+  return [
+    { label: 'Total Usuarios', value: stats.totalUsers ?? '—', accent: 'blue' },
+  ];
+}
 
 const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrador',
@@ -43,11 +39,25 @@ const ROLE_ACCENT: Record<string, string> = {
 
 export function DashboardPage() {
   const { user } = useAuth();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    dashboardApi
+      .getStats()
+      .then((data) => setStats(data))
+      .finally(() => setLoading(false));
+  }, []);
 
   if (!user) return null;
 
-  const cards = CARDS_BY_ROLE[user.role] ?? [];
-  const displayName = user.email.split('@')[0];
+  const displayName = user.name || user.email.split('@')[0];
+
+  const cards: StatCard[] = stats
+    ? user.role === 'ADMIN'
+      ? buildAdminCards(stats)
+      : buildDefaultCards(stats)
+    : [];
 
   return (
     <div className={styles.page}>
@@ -61,19 +71,22 @@ export function DashboardPage() {
         </span>
       </header>
 
-      <div className={styles.grid}>
-        {cards.map((card) => (
-          <div key={card.label} className={`${styles.card} ${styles[card.accent]}`}>
-            <div className={styles.cardIcon} aria-hidden="true">
-              {card.icon}
+      {loading ? (
+        <div className={styles.spinnerWrapper}>
+          <Spinner size="lg" label="Cargando estadísticas..." />
+        </div>
+      ) : (
+        <div className={styles.grid}>
+          {cards.map((card) => (
+            <div key={card.label} className={`${styles.card} ${styles[card.accent]}`}>
+              <div className={styles.cardBody}>
+                <span className={styles.cardValue}>{card.value}</span>
+                <span className={styles.cardLabel}>{card.label}</span>
+              </div>
             </div>
-            <div className={styles.cardBody}>
-              <span className={styles.cardValue}>{card.value}</span>
-              <span className={styles.cardLabel}>{card.label}</span>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

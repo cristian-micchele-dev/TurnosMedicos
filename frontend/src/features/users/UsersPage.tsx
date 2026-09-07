@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { usersApi, type UserListItem } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
+import { useConfirm } from '../../hooks/useConfirm';
 import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -23,11 +24,13 @@ const ROLE_OPTIONS: { value: UserListItem['role']; label: string }[] = [
 
 export function UsersPage() {
   const { toast } = useToast();
+  const { confirm, dialogProps, ConfirmDialog } = useConfirm();
 
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [search, setSearch] = useState('');
 
   const fetchData = async () => {
     try {
@@ -47,6 +50,16 @@ export function UsersPage() {
 
   const handleRoleChange = async (user: UserListItem, newRole: string) => {
     if (newRole === user.role) return;
+
+    const newRoleLabel = ROLE_LABELS[newRole as UserListItem['role']] ?? newRole;
+    const ok = await confirm({
+      title: 'Cambiar rol',
+      message: `¿Cambiar el rol de ${user.email} a ${newRoleLabel}?`,
+      confirmLabel: 'Cambiar',
+      variant: 'primary',
+    });
+    if (!ok) return;
+
     setUpdatingId(user.id);
     try {
       const updated = await usersApi.updateRole(user.id, newRole);
@@ -60,6 +73,17 @@ export function UsersPage() {
   };
 
   const handleToggleActive = async (user: UserListItem) => {
+    const isDeactivating = user.active;
+    const ok = await confirm({
+      title: isDeactivating ? 'Desactivar usuario' : 'Activar usuario',
+      message: isDeactivating
+        ? `¿Estás seguro de que querés desactivar a ${user.email}?`
+        : `¿Querés activar nuevamente a ${user.email}?`,
+      confirmLabel: isDeactivating ? 'Desactivar' : 'Activar',
+      variant: isDeactivating ? 'danger' : 'primary',
+    });
+    if (!ok) return;
+
     setUpdatingId(user.id);
     try {
       const updated = await usersApi.toggleActive(user.id);
@@ -79,12 +103,23 @@ export function UsersPage() {
     toast.success('Usuario creado correctamente');
   };
 
+  const filteredUsers = users.filter((u) =>
+    u.email.toLowerCase().includes(search.toLowerCase()),
+  );
+
   const columns = [
     {
       key: 'email',
       header: 'Email',
       render: (u: UserListItem) => (
         <span className={styles.emailCell}>{u.email}</span>
+      ),
+    },
+    {
+      key: 'name',
+      header: 'Nombre',
+      render: (u: UserListItem) => (
+        <span className={styles.emailCell}>{u.name || '—'}</span>
       ),
     },
     {
@@ -170,15 +205,24 @@ export function UsersPage() {
           <h1 className={styles.title}>Usuarios</h1>
           <p className={styles.subtitle}>Gestioná roles y acceso de los usuarios del sistema</p>
         </div>
-        <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-          + Nuevo Usuario
-        </Button>
+        <div className={styles.headerActions}>
+          <input
+            type="search"
+            className={styles.searchBar}
+            placeholder="Buscar por email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+            + Nuevo Usuario
+          </Button>
+        </div>
       </header>
 
       <div className={styles.tableContainer}>
         <Table
           columns={columns}
-          data={users}
+          data={filteredUsers}
           keyExtractor={(u) => u.id}
           loading={loading}
           emptyMessage="No hay usuarios registrados"
@@ -196,6 +240,8 @@ export function UsersPage() {
           onCancel={() => setShowCreateModal(false)}
         />
       </Modal>
+
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }
@@ -208,6 +254,7 @@ interface CreateUserFormProps {
 function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
   const { toast } = useToast();
 
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'ADMIN' | 'DOCTOR' | 'PATIENT'>('PATIENT');
@@ -228,7 +275,12 @@ function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
 
     setSubmitting(true);
     try {
-      const created = await usersApi.create({ email, password, role });
+      const created = await usersApi.create({
+        name: name.trim() || undefined,
+        email,
+        password,
+        role,
+      });
       onSuccess(created);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error al crear el usuario';
@@ -240,6 +292,16 @@ function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
 
   return (
     <form onSubmit={handleSubmit} noValidate className={styles.createForm}>
+      <Input
+        label="Nombre (opcional)"
+        id="new-user-name"
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Nombre completo"
+        autoComplete="off"
+      />
+
       <Input
         label="Email"
         id="new-user-email"

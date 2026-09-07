@@ -5,30 +5,29 @@ import styles from './Sidebar.module.css';
 interface NavItem {
   to: string;
   label: string;
-  icon: string;
 }
 
 const sharedItems: NavItem[] = [
-  { to: '/dashboard', label: 'Dashboard', icon: '📊' },
+  { to: '/dashboard', label: 'Dashboard' },
 ];
 
 const adminItems: NavItem[] = [
-  { to: '/usuarios', label: 'Usuarios', icon: '👥' },
-  { to: '/especialidades', label: 'Especialidades', icon: '🏥' },
-  { to: '/doctores', label: 'Doctores', icon: '👨‍⚕️' },
-  { to: '/pacientes', label: 'Pacientes', icon: '👤' },
-  { to: '/turnos', label: 'Turnos', icon: '📅' },
+  { to: '/usuarios', label: 'Usuarios' },
+  { to: '/especialidades', label: 'Especialidades' },
+  { to: '/doctores', label: 'Doctores' },
+  { to: '/pacientes', label: 'Pacientes' },
+  { to: '/turnos', label: 'Turnos' },
 ];
 
 const doctorItems: NavItem[] = [
-  { to: '/mis-turnos', label: 'Mis Turnos', icon: '📅' },
-  { to: '/disponibilidad', label: 'Mi Disponibilidad', icon: '🕐' },
+  { to: '/mis-turnos', label: 'Mis Turnos' },
+  { to: '/disponibilidad', label: 'Mi Disponibilidad' },
 ];
 
 const patientItems: NavItem[] = [
-  { to: '/mis-turnos', label: 'Mis Turnos', icon: '📅' },
-  { to: '/nuevo-turno', label: 'Nuevo Turno', icon: '➕' },
-  { to: '/mi-perfil', label: 'Mi Perfil', icon: '👤' },
+  { to: '/mis-turnos', label: 'Mis Turnos' },
+  { to: '/nuevo-turno', label: 'Nuevo Turno' },
+  { to: '/mi-perfil', label: 'Mi Perfil' },
 ];
 
 function getNavItems(role: string | undefined): NavItem[] {
@@ -59,9 +58,6 @@ export function Sidebar() {
                   `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
                 }
               >
-                <span className={styles.navIcon} aria-hidden="true">
-                  {item.icon}
-                </span>
                 <span className={styles.navLabel}>{item.label}</span>
               </NavLink>
             </li>
@@ -71,7 +67,6 @@ export function Sidebar() {
 
       <div className={styles.footer}>
         <button className={styles.logoutBtn} onClick={logout}>
-          <span className={styles.navIcon} aria-hidden="true">🚪</span>
           <span>Cerrar sesión</span>
         </button>
       </div>

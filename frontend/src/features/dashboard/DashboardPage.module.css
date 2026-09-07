@@ -66,6 +66,14 @@
   color: var(--warning);
 }
 
+/* ---------- Spinner wrapper ---------- */
+.spinnerWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem 0;
+}
+
 /* ---------- Stats grid ---------- */
 .grid {
   display: grid;

@@ -19,7 +19,7 @@ export class UserService {
       throw new ConflictException('Ya existe un usuario con ese email');
     }
     const user = await this.users.save(
-      new User(randomUUID(), email, await this.hasher.hash(dto.password), dto.role ?? Role.PATIENT),
+      new User(randomUUID(), email, dto.name ?? '', await this.hasher.hash(dto.password), dto.role ?? Role.PATIENT),
     );
     return user.publicia();
   }
