@@ -27,6 +27,7 @@ const doctorItems: NavItem[] = [
 const patientItems: NavItem[] = [
   { to: '/mis-turnos', label: 'Mis Turnos', icon: '📅' },
   { to: '/nuevo-turno', label: 'Nuevo Turno', icon: '➕' },
+  { to: '/mi-perfil', label: 'Mi Perfil', icon: '👤' },
 ];
 
 function getNavItems(role: string | undefined): NavItem[] {
