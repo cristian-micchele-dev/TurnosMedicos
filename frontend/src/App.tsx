@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 import { Layout } from './components/Layout/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute/ProtectedRoute';
 import { LoginPage } from './features/auth/LoginPage';
@@ -14,6 +15,7 @@ import { NewAppointmentPage } from './features/appointments/NewAppointmentPage';
 
 export function App() {
   return (
+    <ErrorBoundary>
     <Routes>
       {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
@@ -53,5 +55,6 @@ export function App() {
       {/* Redirect root to dashboard */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
+    </ErrorBoundary>
   );
 }
