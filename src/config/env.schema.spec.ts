@@ -1,0 +1,1 @@
+import {validateEnv} from './env.schema'; describe('configuración',()=>{it('rechaza secretos ausentes',()=>expect(()=>validateEnv({NODE_ENV:'production',PORT:3000})).toThrow());it('rechaza defaults inseguros en producción',()=>expect(()=>validateEnv({NODE_ENV:'production',PORT:3000,DATABASE_URL:'x',JWT_ACCESS_SECRET:'replace',JWT_REFRESH_SECRET:'safe'})).toThrow());});

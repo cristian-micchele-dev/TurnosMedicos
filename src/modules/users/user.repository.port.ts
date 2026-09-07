@@ -1,0 +1,1 @@
+import {User} from './domain/user'; export interface UserRepository { findByEmail(email:string):Promise<User|undefined>; findById(id:string):Promise<User|undefined>; save(user:User):Promise<User>; update(user:User):Promise<void>; }

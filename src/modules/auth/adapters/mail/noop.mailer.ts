@@ -1,0 +1,1 @@
+import {Injectable} from '@nestjs/common'; import {MailerPort} from '../../ports/repositories'; @Injectable() export class NoopMailer implements MailerPort {async sendPasswordReset(_email:string,_token:string){return;}}

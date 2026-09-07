@@ -1,0 +1,1 @@
+import {Module} from '@nestjs/common'; import {TypeOrmModule} from '@nestjs/typeorm'; import {UserOrmEntity,AuthSessionOrmEntity,ResetTokenOrmEntity} from '../modules/users/adapters/persistence/entities'; @Module({imports:[TypeOrmModule.forFeature([UserOrmEntity,AuthSessionOrmEntity,ResetTokenOrmEntity])]}) export class DatabaseModule{}

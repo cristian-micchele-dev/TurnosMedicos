@@ -1,0 +1,23 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    services:
+      postgres: {image: postgres:16, env: {POSTGRES_USER: turno, POSTGRES_PASSWORD: turno, POSTGRES_DB: turno_medicos}, ports: ['5432:5432'], options: >-
+        --health-cmd="pg_isready -U turno" --health-interval=10s --health-timeout=5s --health-retries=5}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22, cache: npm}
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test -- --coverage
+      - run: npm run test:integration
+        env: {DATABASE_URL: postgres://turno:turno@localhost:5432/turno_medicos}
+      - run: npm run test:e2e
+        env: {DATABASE_URL: postgres://turno:turno@localhost:5432/turno_medicos, NODE_ENV: test, JWT_ACCESS_SECRET: ci-access-secret-012345678901234567890123, JWT_REFRESH_SECRET: ci-refresh-secret-012345678901234567890123}
+      - run: npm run migration:run
+        env: {DATABASE_URL: postgres://turno:turno@localhost:5432/turno_medicos}
+      - run: npm run migration:revert
+        env: {DATABASE_URL: postgres://turno:turno@localhost:5432/turno_medicos}
