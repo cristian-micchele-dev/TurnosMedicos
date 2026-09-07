@@ -8,7 +8,7 @@ export interface LoginRequest {
 export interface RegisterRequest {
   email: string;
   password: string;
-  name: string;
+  role?: 'ADMIN' | 'DOCTOR' | 'PATIENT';
 }
 
 export interface AuthResponse {
@@ -18,7 +18,6 @@ export interface AuthResponse {
 export interface UserProfile {
   id: string;
   email: string;
-  name: string;
   role: 'ADMIN' | 'DOCTOR' | 'PATIENT';
 }
 

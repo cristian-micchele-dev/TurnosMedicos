@@ -47,13 +47,13 @@ export function DashboardPage() {
   if (!user) return null;
 
   const cards = CARDS_BY_ROLE[user.role] ?? [];
-  const firstName = user.name.split(' ')[0];
+  const displayName = user.email.split('@')[0];
 
   return (
     <div className={styles.page}>
       <header className={styles.pageHeader}>
         <div>
-          <h1 className={styles.greeting}>Bienvenido, {firstName}</h1>
+          <h1 className={styles.greeting}>Bienvenido, {displayName}</h1>
           <p className={styles.subtext}>Aquí está el resumen de tu actividad</p>
         </div>
         <span className={`${styles.badge} ${ROLE_ACCENT[user.role] ?? ''}`}>

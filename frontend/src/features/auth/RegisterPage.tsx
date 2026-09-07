@@ -9,7 +9,6 @@ export function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -20,14 +19,11 @@ export function RegisterPage() {
   function validate(): boolean {
     const next: Record<string, string> = {};
 
-    if (!name.trim()) {
-      next.name = 'El nombre es requerido.';
-    }
     if (!email.trim()) {
       next.email = 'El email es requerido.';
     }
-    if (password.length < 6) {
-      next.password = 'La contraseña debe tener al menos 6 caracteres.';
+    if (password.length < 8) {
+      next.password = 'La contraseña debe tener al menos 8 caracteres.';
     }
     if (password !== confirmPassword) {
       next.confirmPassword = 'Las contraseñas no coinciden.';
@@ -45,7 +41,7 @@ export function RegisterPage() {
 
     setIsLoading(true);
     try {
-      await register(email, password, name);
+      await register(email, password);
       navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
       const message =
@@ -77,19 +73,6 @@ export function RegisterPage() {
 
         <form className={styles.form} onSubmit={handleSubmit} noValidate>
           <Input
-            label="Nombre completo"
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Juan Pérez"
-            autoComplete="name"
-            autoFocus
-            required
-            error={errors.name}
-          />
-
-          <Input
             label="Email"
             id="email"
             type="email"
@@ -107,11 +90,11 @@ export function RegisterPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Mínimo 6 caracteres"
+            placeholder="Mínimo 8 caracteres"
             autoComplete="new-password"
             required
             error={errors.password}
-            helperText={!errors.password ? 'Mínimo 6 caracteres' : undefined}
+            helperText={!errors.password ? 'Mínimo 8 caracteres' : undefined}
           />
 
           <Input
