@@ -29,6 +29,12 @@ describe('SpecialtyService', () => {
       expect(repo.save).toHaveBeenCalled();
     });
 
+    it('crea sin descripción (null por defecto)', async () => {
+      repo.save.mockImplementation(async (s: Specialty) => s);
+      const result = await service().create({ name: 'Neurología' });
+      expect(result.description).toBeNull();
+    });
+
     it('rechaza nombre duplicado', async () => {
       repo.findByName.mockResolvedValue(new Specialty('x', 'Cardiología'));
       await expect(service().create({ name: 'Cardiología' })).rejects.toMatchObject({ status: 409 });

@@ -99,9 +99,38 @@ describe('AppointmentService', () => {
       await service().findAll({}, 'admin-id', Role.ADMIN);
       expect(appointments.findAll).toHaveBeenCalledWith(expect.not.objectContaining({ patientId: expect.anything() }));
     });
+
+    it('pasa filtros from/to como Date', async () => {
+      await service().findAll({ from: '2026-09-01', to: '2026-09-30' }, 'admin-id', Role.ADMIN);
+      expect(appointments.findAll).toHaveBeenCalledWith(expect.objectContaining({ from: expect.any(Date), to: expect.any(Date) }));
+    });
+
+    it('lanza 404 si paciente no tiene perfil', async () => {
+      await expect(service().findAll({}, 'u-no-profile', Role.PATIENT)).rejects.toMatchObject({ status: 404 });
+    });
+
+    it('lanza 404 si doctor no tiene perfil', async () => {
+      await expect(service().findAll({}, 'u-no-profile', Role.DOCTOR)).rejects.toMatchObject({ status: 404 });
+    });
+  });
+
+  describe('findOne', () => {
+    it('lanza 404 si no existe', async () => {
+      await expect(service().findOne('missing')).rejects.toMatchObject({ status: 404 });
+    });
+
+    it('retorna turno existente', async () => {
+      const a = new Appointment('a1', 'd1', 'p1', 's1', new Date(), 30, AppointmentStatus.PENDING);
+      appointments.findById.mockResolvedValue(a);
+      await expect(service().findOne('a1')).resolves.toMatchObject({ id: 'a1' });
+    });
   });
 
   describe('confirm', () => {
+    it('lanza 404 si turno no existe', async () => {
+      await expect(service().confirm('missing')).rejects.toMatchObject({ status: 404 });
+    });
+
     it('confirma turno pendiente', async () => {
       const a = new Appointment('a1', 'd1', 'p1', 's1', new Date(), 30, AppointmentStatus.PENDING);
       appointments.findById.mockResolvedValue(a);
@@ -117,6 +146,10 @@ describe('AppointmentService', () => {
   });
 
   describe('cancel', () => {
+    it('lanza 404 si turno no existe', async () => {
+      await expect(service().cancel('missing', {})).rejects.toMatchObject({ status: 404 });
+    });
+
     it('cancela turno con más de 24h de anticipación', async () => {
       const futureDate = new Date(now.getTime() + 25 * 3600000);
       const a = new Appointment('a1', 'd1', 'p1', 's1', futureDate, 30, AppointmentStatus.PENDING);
@@ -147,6 +180,10 @@ describe('AppointmentService', () => {
   });
 
   describe('complete', () => {
+    it('lanza 404 si turno no existe', async () => {
+      await expect(service().complete('missing')).rejects.toMatchObject({ status: 404 });
+    });
+
     it('completa turno confirmado', async () => {
       const a = new Appointment('a1', 'd1', 'p1', 's1', new Date(), 30, AppointmentStatus.CONFIRMED);
       appointments.findById.mockResolvedValue(a);

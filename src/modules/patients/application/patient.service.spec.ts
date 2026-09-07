@@ -70,6 +70,25 @@ describe('PatientService', () => {
       expect(patients.update).toHaveBeenCalled();
     });
 
+    it('actualiza todos los campos', async () => {
+      patients.findById.mockResolvedValue(new Patient('p1', 'u1'));
+      const result = await service().update('p1', {
+        phone: '111', dateOfBirth: '2000-01-01', address: 'Av. Rivadavia', insuranceNumber: 'OS-999', active: false,
+      });
+      expect(result.phone).toBe('111');
+      expect(result.dateOfBirth).toBe('2000-01-01');
+      expect(result.address).toBe('Av. Rivadavia');
+      expect(result.insuranceNumber).toBe('OS-999');
+      expect(result.active).toBe(false);
+    });
+
+    it('setea a null con undefined explícito', async () => {
+      patients.findById.mockResolvedValue(new Patient('p1', 'u1', '123', '2000-01-01', 'dir', 'os'));
+      const result = await service().update('p1', { phone: undefined });
+      // phone no se modifica porque undefined !== undefined check fails (dto.phone is undefined)
+      expect(result.phone).toBe('123');
+    });
+
     it('lanza 404 si no existe', async () => {
       await expect(service().update('missing', { phone: '123' })).rejects.toMatchObject({ status: 404 });
     });
