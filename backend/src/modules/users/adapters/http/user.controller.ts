@@ -5,7 +5,7 @@ import { UserService } from '../../application/user.service';
 import { CreateUserDto } from '../../application/dto/create-user.dto';
 import { UpdateRoleDto } from '../../application/dto/update-role.dto';
 
-@Controller('api/v1/users')
+@Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 export class UserController {
