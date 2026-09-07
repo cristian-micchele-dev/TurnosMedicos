@@ -1,8 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { usersApi, type UserListItem } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
 import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
+import { Modal } from '../../components/ui/Modal';
 import styles from './UsersPage.module.css';
 
 const ROLE_LABELS: Record<UserListItem['role'], string> = {
@@ -23,6 +27,7 @@ export function UsersPage() {
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -66,6 +71,12 @@ export function UsersPage() {
     } finally {
       setUpdatingId(null);
     }
+  };
+
+  const handleUserCreated = (newUser: UserListItem) => {
+    setUsers((prev) => [newUser, ...prev]);
+    setShowCreateModal(false);
+    toast.success('Usuario creado correctamente');
   };
 
   const columns = [
@@ -159,6 +170,9 @@ export function UsersPage() {
           <h1 className={styles.title}>Usuarios</h1>
           <p className={styles.subtitle}>Gestioná roles y acceso de los usuarios del sistema</p>
         </div>
+        <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+          + Nuevo Usuario
+        </Button>
       </header>
 
       <div className={styles.tableContainer}>
@@ -170,6 +184,106 @@ export function UsersPage() {
           emptyMessage="No hay usuarios registrados"
         />
       </div>
+
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title="Crear usuario"
+        size="sm"
+      >
+        <CreateUserForm
+          onSuccess={handleUserCreated}
+          onCancel={() => setShowCreateModal(false)}
+        />
+      </Modal>
     </div>
+  );
+}
+
+interface CreateUserFormProps {
+  onSuccess: (user: UserListItem) => void;
+  onCancel: () => void;
+}
+
+function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
+  const { toast } = useToast();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'ADMIN' | 'DOCTOR' | 'PATIENT'>('PATIENT');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+
+  function validate(): boolean {
+    const next: Record<string, string> = {};
+    if (!email.trim()) next.email = 'El email es requerido.';
+    if (password.length < 8) next.password = 'Mínimo 8 caracteres.';
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!validate()) return;
+
+    setSubmitting(true);
+    try {
+      const created = await usersApi.create({ email, password, role });
+      onSuccess(created);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error al crear el usuario';
+      toast.error(message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} noValidate className={styles.createForm}>
+      <Input
+        label="Email"
+        id="new-user-email"
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="usuario@email.com"
+        autoComplete="off"
+        required
+        error={errors.email}
+      />
+
+      <Input
+        label="Contraseña"
+        id="new-user-password"
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Mínimo 8 caracteres"
+        autoComplete="new-password"
+        required
+        error={errors.password}
+      />
+
+      <Select
+        label="Rol"
+        id="new-user-role"
+        value={role}
+        onChange={(value) => setRole(value as 'ADMIN' | 'DOCTOR' | 'PATIENT')}
+        options={[
+          { value: 'PATIENT', label: 'Paciente' },
+          { value: 'DOCTOR', label: 'Doctor' },
+          { value: 'ADMIN', label: 'Admin' },
+        ]}
+      />
+
+      <div className={styles.formActions}>
+        <Button type="button" variant="ghost" onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button type="submit" variant="primary" isLoading={submitting}>
+          Crear Usuario
+        </Button>
+      </div>
+    </form>
   );
 }

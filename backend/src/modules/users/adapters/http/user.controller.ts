@@ -1,15 +1,20 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard, Roles, RolesGuard } from '../../../auth/adapters/http/auth.guards';
 import { Role } from '../../domain/user';
 import { UserService } from '../../application/user.service';
+import { CreateUserDto } from '../../application/dto/create-user.dto';
 import { UpdateRoleDto } from '../../application/dto/update-role.dto';
-
 
 @Controller('api/v1/users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 export class UserController {
   constructor(private readonly service: UserService) {}
+
+  @Post()
+  create(@Body() dto: CreateUserDto) {
+    return this.service.create(dto);
+  }
 
   @Get()
   findAll() {
