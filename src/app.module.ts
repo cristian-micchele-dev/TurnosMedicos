@@ -26,11 +26,16 @@ import { DoctorService } from './modules/doctors/application/doctor.service';
 import { TypeOrmDoctorRepository, TypeOrmAvailabilityRepository } from './modules/doctors/adapters/persistence/typeorm-doctor.repository';
 import { DOCTOR_REPOSITORY, AVAILABILITY_REPOSITORY } from './modules/doctors/doctor.repository.port';
 import { DoctorOrmEntity, AvailabilityOrmEntity } from './modules/doctors/adapters/persistence/doctor.entity';
+import { PatientController } from './modules/patients/adapters/http/patient.controller';
+import { PatientService } from './modules/patients/application/patient.service';
+import { TypeOrmPatientRepository } from './modules/patients/adapters/persistence/typeorm-patient.repository';
+import { PATIENT_REPOSITORY } from './modules/patients/patient.repository.port';
+import { PatientOrmEntity } from './modules/patients/adapters/persistence/patient.entity';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true, load: [configuration], validate: validateEnv }), TypeOrmModule.forRootAsync({ inject: [ConfigService], useFactory: (config: ConfigService) => ({ type: 'postgres', url: config.getOrThrow('databaseUrl'), entities: [UserOrmEntity, AuthSessionOrmEntity, ResetTokenOrmEntity, SpecialtyOrmEntity, DoctorOrmEntity, AvailabilityOrmEntity], synchronize: false }) }), DatabaseModule],
-  controllers: [HealthController, AuthController, SpecialtyController, DoctorController],
+  imports: [ConfigModule.forRoot({ isGlobal: true, load: [configuration], validate: validateEnv }), TypeOrmModule.forRootAsync({ inject: [ConfigService], useFactory: (config: ConfigService) => ({ type: 'postgres', url: config.getOrThrow('databaseUrl'), entities: [UserOrmEntity, AuthSessionOrmEntity, ResetTokenOrmEntity, SpecialtyOrmEntity, DoctorOrmEntity, AvailabilityOrmEntity, PatientOrmEntity], synchronize: false }) }), DatabaseModule],
+  controllers: [HealthController, AuthController, SpecialtyController, DoctorController, PatientController],
   providers: [AuthService, JwtAuthGuard, RolesGuard, Argon2Hasher, JwtTokenService, SystemClock, TypeOrmUserRepository, TypeOrmSessionRepository, TypeOrmResetRepository, NoopMailer,
-    { provide: 'USER_REPOSITORY', useExisting: TypeOrmUserRepository }, { provide: HASHER, useExisting: Argon2Hasher }, { provide: TOKEN_SERVICE, useExisting: JwtTokenService }, { provide: CLOCK, useExisting: SystemClock }, { provide: SESSION_REPOSITORY, useExisting: TypeOrmSessionRepository }, { provide: RESET_REPOSITORY, useExisting: TypeOrmResetRepository }, { provide: MAILER, useExisting: NoopMailer }, SpecialtyService, TypeOrmSpecialtyRepository, { provide: SPECIALTY_REPOSITORY, useExisting: TypeOrmSpecialtyRepository }, DoctorService, TypeOrmDoctorRepository, TypeOrmAvailabilityRepository, { provide: DOCTOR_REPOSITORY, useExisting: TypeOrmDoctorRepository }, { provide: AVAILABILITY_REPOSITORY, useExisting: TypeOrmAvailabilityRepository }],
+    { provide: 'USER_REPOSITORY', useExisting: TypeOrmUserRepository }, { provide: HASHER, useExisting: Argon2Hasher }, { provide: TOKEN_SERVICE, useExisting: JwtTokenService }, { provide: CLOCK, useExisting: SystemClock }, { provide: SESSION_REPOSITORY, useExisting: TypeOrmSessionRepository }, { provide: RESET_REPOSITORY, useExisting: TypeOrmResetRepository }, { provide: MAILER, useExisting: NoopMailer }, SpecialtyService, TypeOrmSpecialtyRepository, { provide: SPECIALTY_REPOSITORY, useExisting: TypeOrmSpecialtyRepository }, DoctorService, TypeOrmDoctorRepository, TypeOrmAvailabilityRepository, { provide: DOCTOR_REPOSITORY, useExisting: TypeOrmDoctorRepository }, { provide: AVAILABILITY_REPOSITORY, useExisting: TypeOrmAvailabilityRepository }, PatientService, TypeOrmPatientRepository, { provide: PATIENT_REPOSITORY, useExisting: TypeOrmPatientRepository }],
 })
 export class AppModule {}
