@@ -10,21 +10,25 @@ export class TypeOrmPatientRepository implements PatientRepository {
   constructor(@InjectRepository(PatientOrmEntity) private readonly repo: Repository<PatientOrmEntity>) {}
 
   private map(e: PatientOrmEntity): Patient {
-    return new Patient(e.id, e.userId, e.phone, e.dateOfBirth, e.address, e.insuranceNumber, e.active, e.createdAt);
+    const p = new Patient(e.id, e.userId, e.phone, e.dateOfBirth, e.address, e.insuranceNumber, e.active, e.createdAt);
+    if (e.user) p.user = { id: e.user.id, email: e.user.email, name: e.user.name };
+    return p;
   }
 
+  private readonly relations = ['user'];
+
   async findById(id: string) {
-    const e = await this.repo.findOne({ where: { id } });
+    const e = await this.repo.findOne({ where: { id }, relations: this.relations });
     return e ? this.map(e) : undefined;
   }
 
   async findByUserId(userId: string) {
-    const e = await this.repo.findOne({ where: { userId } });
+    const e = await this.repo.findOne({ where: { userId }, relations: this.relations });
     return e ? this.map(e) : undefined;
   }
 
   async findAll() {
-    const entities = await this.repo.find({ where: { active: true }, order: { createdAt: 'DESC' } });
+    const entities = await this.repo.find({ where: { active: true }, order: { createdAt: 'DESC' }, relations: this.relations });
     return entities.map(e => this.map(e));
   }
 

@@ -11,16 +11,21 @@ export class TypeOrmDoctorRepository implements DoctorRepository {
   constructor(@InjectRepository(DoctorOrmEntity) private readonly repo: Repository<DoctorOrmEntity>) {}
 
   private map(e: DoctorOrmEntity): Doctor {
-    return new Doctor(e.id, e.userId, e.specialtyId, e.licenseNumber, e.phone, e.active, e.createdAt);
+    const d = new Doctor(e.id, e.userId, e.specialtyId, e.licenseNumber, e.phone, e.active, e.createdAt);
+    if (e.user) d.user = { id: e.user.id, email: e.user.email, name: e.user.name };
+    if (e.specialty) d.specialty = { id: e.specialty.id, name: e.specialty.name };
+    return d;
   }
 
+  private readonly relations = ['user', 'specialty'];
+
   async findById(id: string) {
-    const e = await this.repo.findOne({ where: { id } });
+    const e = await this.repo.findOne({ where: { id }, relations: this.relations });
     return e ? this.map(e) : undefined;
   }
 
   async findByUserId(userId: string) {
-    const e = await this.repo.findOne({ where: { userId } });
+    const e = await this.repo.findOne({ where: { userId }, relations: this.relations });
     return e ? this.map(e) : undefined;
   }
 
@@ -34,7 +39,7 @@ export class TypeOrmDoctorRepository implements DoctorRepository {
     if (filters?.specialtyId) where.specialtyId = filters.specialtyId;
     if (filters?.active !== undefined) where.active = filters.active;
     else where.active = true;
-    const entities = await this.repo.find({ where, order: { createdAt: 'DESC' } });
+    const entities = await this.repo.find({ where, order: { createdAt: 'DESC' }, relations: this.relations });
     return entities.map(e => this.map(e));
   }
 

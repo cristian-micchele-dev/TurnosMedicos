@@ -1,4 +1,6 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn, Index, Unique } from 'typeorm';
+import { Entity, PrimaryColumn, Column, CreateDateColumn, Index, Unique, ManyToOne, JoinColumn } from 'typeorm';
+import { UserOrmEntity } from '../../../users/adapters/persistence/entities';
+import { SpecialtyOrmEntity } from '../../../specialties/adapters/persistence/specialty.entity';
 
 @Entity('doctors')
 export class DoctorOrmEntity {
@@ -9,6 +11,14 @@ export class DoctorOrmEntity {
   @Column('varchar', { length: 30, nullable: true }) phone!: string | null;
   @Column('boolean', { default: true }) active!: boolean;
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' }) createdAt!: Date;
+
+  @ManyToOne(() => UserOrmEntity, { eager: false })
+  @JoinColumn({ name: 'user_id' })
+  user?: UserOrmEntity;
+
+  @ManyToOne(() => SpecialtyOrmEntity, { eager: false })
+  @JoinColumn({ name: 'specialty_id' })
+  specialty?: SpecialtyOrmEntity;
 }
 
 @Entity('availabilities')
