@@ -1,59 +1,112 @@
+/* ── Button ── Clinical Precision Design System */
+
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 7px;
+  font-family: var(--font);
   font-weight: 500;
-  border-radius: var(--radius-sm);
+  letter-spacing: 0.01em;
   border: 1px solid transparent;
-  transition: background var(--transition), color var(--transition),
-    border-color var(--transition), box-shadow var(--transition),
-    opacity var(--transition);
+  border-radius: var(--radius-md);
   white-space: nowrap;
   position: relative;
+  cursor: pointer;
+  transition:
+    background var(--transition),
+    color var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition),
+    transform var(--transition),
+    opacity var(--transition);
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--primary-ring);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .btn:disabled {
-  opacity: 0.5;
+  opacity: 0.48;
   cursor: not-allowed;
+  pointer-events: none;
 }
 
-/* Variants */
+/* ── Sizes ── */
 
+.sm {
+  font-size: 13px;
+  padding: 0 12px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  gap: 6px;
+}
+
+.md {
+  font-size: 14px;
+  padding: 0 16px;
+  height: 42px;
+}
+
+.lg {
+  font-size: 15px;
+  padding: 0 22px;
+  height: 48px;
+  gap: 8px;
+}
+
+/* ── Variants ── */
+
+/* Primary */
 .primary {
   background: var(--primary);
   color: #ffffff;
   border-color: var(--primary);
+  box-shadow: 0 1px 2px rgba(79, 141, 245, 0.20), 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
 .primary:hover:not(:disabled) {
   background: var(--primary-hover);
   border-color: var(--primary-hover);
+  box-shadow: 0 4px 10px rgba(79, 141, 245, 0.30), 0 1px 3px rgba(15, 23, 42, 0.08);
 }
 
+/* Secondary */
 .secondary {
   background: var(--surface);
   color: var(--text-primary);
   border-color: var(--border);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-xs);
 }
 
 .secondary:hover:not(:disabled) {
-  background: var(--bg);
-  border-color: #cbd5e1;
+  background: var(--snow);
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-sm);
 }
 
+/* Danger */
 .danger {
   background: var(--danger);
   color: #ffffff;
   border-color: var(--danger);
+  box-shadow: 0 1px 2px rgba(220, 38, 38, 0.18), 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
 .danger:hover:not(:disabled) {
   background: #b91c1c;
   border-color: #b91c1c;
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.28), 0 1px 3px rgba(15, 23, 42, 0.08);
 }
 
+/* Ghost */
 .ghost {
   background: transparent;
   color: var(--text-secondary);
@@ -61,53 +114,48 @@
 }
 
 .ghost:hover:not(:disabled) {
-  background: var(--bg);
+  background: var(--snow);
   color: var(--text-primary);
+  border-color: transparent;
 }
 
-/* Sizes */
-
-.sm {
-  font-size: 13px;
-  padding: 6px 12px;
-  height: 32px;
-}
-
-.md {
-  font-size: 14px;
-  padding: 8px 16px;
-  height: 40px;
-}
-
-.lg {
-  font-size: 15px;
-  padding: 10px 20px;
-  height: 48px;
-}
-
-/* Loading state */
+/* ── Loading ── */
 
 .loading {
   cursor: wait;
+  pointer-events: none;
+}
+
+.loading:active {
+  transform: none;
 }
 
 .spinner {
   display: inline-block;
-  width: 14px;
-  height: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.35);
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.30);
   border-top-color: currentColor;
   border-radius: 50%;
-  animation: btn-spin 0.6s linear infinite;
+  animation: btn-spin 0.65s linear infinite;
   position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
 }
 
-.hiddenLabel {
+.secondary .spinner,
+.ghost .spinner {
+  border-color: rgba(100, 116, 139, 0.25);
+  border-top-color: var(--text-secondary);
+}
+
+.hiddenContent {
   opacity: 0;
+  pointer-events: none;
 }
 
 @keyframes btn-spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
 }

@@ -7,80 +7,107 @@
   justify-content: space-between;
   height: var(--header-height);
   padding: 0 32px;
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
   flex-shrink: 0;
 }
 
+/* ── Left: breadcrumb / page title ── */
 .title {
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
 .pageTitle {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 700;
   color: var(--text-primary);
+  letter-spacing: -0.025em;
 }
 
+/* ── Right: user block ── */
 .userInfo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .userDetails {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  gap: 1px;
 }
 
 .userName {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--text-primary);
-  line-height: 1.2;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
 }
 
 .userEmail {
   font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.2;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  line-height: 1.25;
 }
 
+/* ── Role badge — pill with tinted background ── */
 .roleBadge {
   display: inline-flex;
   align-items: center;
-  padding: 3px 10px;
+  padding: 4px 11px;
   border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  line-height: 1;
+  /* Subtle inner ring */
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
 }
 
+/* ADMIN — accent blue */
 .roleADMIN {
   background: var(--primary-light);
   color: var(--primary);
 }
 
+/* DOCTOR — mint green */
 .roleDOCTOR {
-  background: #ecfdf5;
-  color: var(--success);
+  background: var(--success-light);
+  color: var(--success-dark);
 }
 
+/* PATIENT — warm amber */
 .rolePATIENT {
-  background: #fffbeb;
-  color: var(--warning);
+  background: var(--warning-light);
+  color: var(--warning-dark);
+}
+
+/* ── Avatar ring (for future avatar img) ── */
+.avatarRing {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  flex-shrink: 0;
 }
 
 @media (max-width: 768px) {
-  .header {
-    padding: 0 16px;
-  }
-
-  .userDetails {
-    display: none;
-  }
+  .header      { padding: 0 16px; }
+  .userDetails { display: none; }
 }

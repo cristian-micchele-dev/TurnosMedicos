@@ -1,41 +1,45 @@
+/* ── Toast ── Clinical Precision Design System */
+
 .container {
   position: fixed;
-  top: 16px;
-  right: 16px;
+  top: 18px;
+  right: 18px;
   z-index: 2000;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   pointer-events: none;
 }
 
 .toast {
   pointer-events: all;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 280px;
-  max-width: 400px;
-  padding: 12px 14px;
+  align-items: flex-start;
+  gap: 11px;
+  min-width: 300px;
+  max-width: 420px;
+  padding: 13px 14px 13px 16px;
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-  border-left: 4px solid transparent;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+  border-left: 3px solid transparent;
   background: var(--surface);
-  animation: slideIn 220ms ease forwards;
+  animation: toastIn 240ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .toast.exiting {
-  animation: fadeOut 300ms ease forwards;
+  animation: toastOut 260ms ease forwards;
 }
 
-/* Variants */
+/* ── Variants ── */
+
 .success {
-  border-left-color: #059669;
+  border-left-color: var(--success);
 }
 
 .success .icon {
   color: #059669;
-  background: #ecfdf5;
+  background: var(--success-light);
 }
 
 .error {
@@ -43,8 +47,8 @@
 }
 
 .error .icon {
-  color: var(--danger);
-  background: #fef2f2;
+  color: #dc2626;
+  background: var(--danger-light);
 }
 
 .info {
@@ -56,6 +60,17 @@
   background: var(--primary-light);
 }
 
+.warning {
+  border-left-color: var(--warning);
+}
+
+.warning .icon {
+  color: #b45309;
+  background: var(--warning-light);
+}
+
+/* ── Icon ── */
+
 .icon {
   display: flex;
   align-items: center;
@@ -63,59 +78,81 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── Content ── */
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .message {
-  flex: 1;
   font-size: 14px;
+  font-weight: 500;
   color: var(--text-primary);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.description {
+  font-size: 13px;
+  color: var(--text-secondary);
   line-height: 1.4;
   margin: 0;
 }
+
+/* ── Close ── */
 
 .close {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  color: var(--text-secondary);
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-xs);
+  font-size: 11px;
+  color: var(--text-tertiary);
   flex-shrink: 0;
+  margin-top: 1px;
   transition: background-color var(--transition), color var(--transition);
 }
 
 .close:hover {
-  background: var(--bg);
+  background: var(--snow);
   color: var(--text-primary);
 }
 
-@keyframes slideIn {
+/* ── Animations ── */
+
+@keyframes toastIn {
   from {
     opacity: 0;
-    transform: translateX(100%);
+    transform: translateX(110%) scale(0.96);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
   }
 }
 
-@keyframes fadeOut {
+@keyframes toastOut {
   from {
     opacity: 1;
-    transform: translateX(0);
-    max-height: 80px;
+    transform: translateX(0) scale(1);
+    max-height: 120px;
     margin-bottom: 0;
   }
   to {
     opacity: 0;
-    transform: translateX(30px);
+    transform: translateX(40px) scale(0.97);
     max-height: 0;
-    margin-bottom: -8px;
+    margin-bottom: -10px;
   }
 }

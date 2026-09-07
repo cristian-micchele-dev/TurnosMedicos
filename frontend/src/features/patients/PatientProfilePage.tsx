@@ -241,7 +241,7 @@ export function PatientProfilePage() {
             <div className={styles.profileGrid}>
               <div className={styles.profileItem}>
                 <span className={styles.profileLabel}>Nombre</span>
-                <span className={styles.profileValue}>{user?.name ?? '—'}</span>
+                <span className={styles.profileValue}>{user?.email?.split('@')[0] ?? '—'}</span>
               </div>
               <div className={styles.profileItem}>
                 <span className={styles.profileLabel}>Email</span>

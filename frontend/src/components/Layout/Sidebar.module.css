@@ -1,3 +1,4 @@
+/* ── Sidebar shell ── */
 .sidebar {
   position: fixed;
   top: 0;
@@ -5,19 +6,24 @@
   width: var(--sidebar-width);
   height: 100vh;
   background: var(--sidebar-bg);
+  /* Subtle radial glow at the top — hints at depth without being gaudy */
+  background-image:
+    radial-gradient(ellipse 220px 160px at 50% -20px, rgba(79, 141, 245, 0.07) 0%, transparent 70%);
   display: flex;
   flex-direction: column;
   z-index: 100;
   overflow-y: auto;
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
 }
 
+/* ── Logo area ── */
 .logo {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 20px;
+  padding: 0 18px;
   height: var(--header-height);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   flex-shrink: 0;
 }
 
@@ -25,27 +31,56 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: var(--primary);
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
   color: #fff;
   border-radius: var(--radius-sm);
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 800;
   line-height: 1;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(79, 141, 245, 0.30);
+  letter-spacing: -0.5px;
 }
 
 .logoText {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 800;
   color: #ffffff;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.4px;
+  line-height: 1.2;
 }
 
+.logoSub {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--sidebar-text);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* ── Navigation ── */
 .nav {
   flex: 1;
-  padding: 16px 0;
+  padding: 20px 0 8px;
   overflow-y: auto;
+}
+
+/* Section label */
+.navSection {
+  padding: 0 18px 6px;
+  margin-bottom: 2px;
+}
+
+.navSectionLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.45);
+  display: block;
 }
 
 .navList {
@@ -53,50 +88,73 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 0 8px;
+  padding: 0 12px;
 }
 
+/* ── Nav link base ── */
 .navLink {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
   color: var(--sidebar-text);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
   transition: background var(--transition), color var(--transition);
+  position: relative;
+  /* Reserve space for the left accent bar without layout shift */
+  border-left: 3px solid transparent;
 }
 
 .navLink:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: #ffffff;
+  background: var(--sidebar-hover-bg);
+  color: rgba(255, 255, 255, 0.75);
 }
 
+/* ── Active state ── */
 .navLinkActive {
   background: var(--sidebar-active-bg);
   color: var(--sidebar-active-text);
+  border-left-color: var(--primary);
+  font-weight: 600;
 }
 
 .navLinkActive:hover {
-  background: var(--primary-hover);
+  background: rgba(79, 141, 245, 0.16);
   color: var(--sidebar-active-text);
 }
 
+/* ── Icon & label ── */
 .navIcon {
-  font-size: 16px;
+  font-size: 15px;
   width: 20px;
   text-align: center;
   flex-shrink: 0;
+  opacity: 0.85;
+  transition: opacity var(--transition);
+}
+
+.navLinkActive .navIcon {
+  opacity: 1;
 }
 
 .navLabel {
   flex: 1;
+  letter-spacing: -0.01em;
 }
 
+/* ── Separator between sections ── */
+.navDivider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  margin: 10px 18px 14px;
+}
+
+/* ── Footer / logout ── */
 .footer {
-  padding: 12px 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 12px 12px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
   flex-shrink: 0;
 }
 
@@ -105,15 +163,18 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
   color: var(--sidebar-text);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
+  font-family: var(--font);
   transition: background var(--transition), color var(--transition);
+  border-left: 3px solid transparent;
 }
 
 .logoutBtn:hover {
-  background: rgba(220, 38, 38, 0.15);
+  background: rgba(248, 113, 113, 0.10);
   color: #fca5a5;
+  border-left-color: var(--danger);
 }

@@ -1,8 +1,10 @@
+/* ── Table ── Clinical Precision Design System */
+
 .wrapper {
   width: 100%;
   overflow-x: auto;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   background: var(--surface);
 }
@@ -13,31 +15,43 @@
   font-size: 14px;
 }
 
+/* ── Head ── */
+
 .thead {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: var(--surface);
 }
 
 .th {
-  padding: 12px 16px;
+  padding: 11px 18px;
   text-align: left;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-secondary);
-  border-bottom: 2px solid var(--border);
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  background: var(--snow);
+  border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
+
+.th:first-child {
+  border-radius: var(--radius-lg) 0 0 0;
+}
+
+.th:last-child {
+  border-radius: 0 var(--radius-lg) 0 0;
+}
+
+/* ── Body ── */
 
 .tr {
   transition: background-color var(--transition);
 }
 
-.trAlt {
-  background-color: #f8fafc;
+.tr:last-child .td {
+  border-bottom: none;
 }
 
 .trClickable {
@@ -49,19 +63,17 @@
 }
 
 .td {
-  padding: 12px 16px;
+  padding: 13px 18px;
   color: var(--text-primary);
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
+  line-height: 1.45;
 }
 
-.tr:last-child .td {
-  border-bottom: none;
-}
+/* ── Empty state ── */
 
-/* Empty state */
 .emptyCell {
-  padding: 48px 16px;
+  padding: 56px 16px;
   border-bottom: none;
 }
 
@@ -73,39 +85,45 @@
 }
 
 .emptyIcon {
-  font-size: 32px;
-  opacity: 0.4;
+  font-size: 34px;
+  opacity: 0.25;
+  line-height: 1;
+  color: var(--text-tertiary);
 }
 
 .emptyMessage {
   font-size: 14px;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
   margin: 0;
 }
 
-/* Skeleton loading */
+/* ── Skeleton loading ── */
+
 .skeletonRow .td {
-  padding: 14px 16px;
+  padding: 15px 18px;
 }
 
 .skeletonBar {
   display: block;
-  height: 14px;
-  border-radius: var(--radius-sm);
+  height: 13px;
+  border-radius: var(--radius-xs);
   background: linear-gradient(
     90deg,
-    #e2e8f0 25%,
-    #f1f5f9 50%,
-    #e2e8f0 75%
+    var(--snow)    0%,
+    var(--border)  40%,
+    var(--ice)     55%,
+    var(--border)  70%,
+    var(--snow)    100%
   );
-  background-size: 200% 100%;
-  animation: shimmer 1.4s ease infinite;
-  width: 70%;
+  background-size: 300% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  width: 68%;
 }
 
-.skeletonRow:nth-child(2) .skeletonBar { width: 55%; }
-.skeletonRow:nth-child(3) .skeletonBar { width: 80%; }
-.skeletonRow:nth-child(4) .skeletonBar { width: 60%; }
+.skeletonRow:nth-child(2) .skeletonBar { width: 52%; }
+.skeletonRow:nth-child(3) .skeletonBar { width: 78%; }
+.skeletonRow:nth-child(4) .skeletonBar { width: 58%; }
+.skeletonRow:nth-child(5) .skeletonBar { width: 72%; }
 
 @keyframes shimmer {
   0%   { background-position: 200% 0; }

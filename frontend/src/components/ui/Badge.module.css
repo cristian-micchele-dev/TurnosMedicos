@@ -1,13 +1,18 @@
+/* ── Badge ── Clinical Precision Design System */
+
 .badge {
   display: inline-flex;
   align-items: center;
-  font-weight: 500;
+  font-family: var(--font);
+  font-weight: 600;
   border-radius: 999px;
   white-space: nowrap;
   line-height: 1;
+  letter-spacing: 0.01em;
 }
 
-/* Sizes */
+/* ── Sizes ── */
+
 .sm {
   font-size: 11px;
   padding: 2px 8px;
@@ -18,28 +23,29 @@
   padding: 3px 10px;
 }
 
-/* Variants */
+/* ── Variants ── */
+
 .primary {
-  background-color: #eff6ff;
-  color: #1d4ed8;
+  background: var(--primary-light);
+  color: var(--primary);
 }
 
 .success {
-  background-color: #ecfdf5;
-  color: #047857;
+  background: var(--success-light);
+  color: #059669;
 }
 
 .warning {
-  background-color: #fffbeb;
+  background: var(--warning-light);
   color: #b45309;
 }
 
 .danger {
-  background-color: #fef2f2;
-  color: #b91c1c;
+  background: var(--danger-light);
+  color: #dc2626;
 }
 
 .neutral {
-  background-color: #f1f5f9;
-  color: #475569;
+  background: var(--snow);
+  color: var(--slate);
 }

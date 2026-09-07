@@ -1,3 +1,5 @@
+/* ── Input ── Clinical Precision Design System */
+
 .wrapper {
   display: flex;
   flex-direction: column;
@@ -6,10 +8,12 @@
 }
 
 .label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
   line-height: 1;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .inputWrapper {
@@ -21,62 +25,79 @@
 .leftElement {
   position: absolute;
   left: 12px;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
   display: flex;
   align-items: center;
   pointer-events: none;
   font-size: 16px;
+  transition: color var(--transition);
+}
+
+.inputWrapper:focus-within .leftElement {
+  color: var(--primary);
 }
 
 .input {
   width: 100%;
-  height: 40px;
-  padding: 0 12px;
+  height: 42px;
+  padding: 0 13px;
   font-size: 14px;
+  font-family: var(--font);
+  font-weight: 400;
   color: var(--text-primary);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   outline: none;
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 
 .input::placeholder {
-  color: #94a3b8;
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.input:hover:not(:disabled):not(.inputError) {
+  border-color: var(--border-hover);
 }
 
 .input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 3px var(--primary-ring);
 }
 
 .input:disabled {
-  background: var(--bg);
-  color: var(--text-secondary);
+  background: var(--snow);
+  color: var(--text-tertiary);
   cursor: not-allowed;
+  opacity: 0.7;
 }
 
+/* Error */
 .inputError {
   border-color: var(--danger);
 }
 
 .inputError:focus {
   border-color: var(--danger);
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+  box-shadow: 0 0 0 3px var(--danger-ring);
 }
 
+/* Left icon padding */
 .inputWithLeft {
   padding-left: 40px;
 }
 
+/* Helper & error text */
 .errorText {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--danger);
-  line-height: 1.3;
+  line-height: 1.4;
+  font-weight: 500;
 }
 
 .helperText {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.3;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.4;
 }

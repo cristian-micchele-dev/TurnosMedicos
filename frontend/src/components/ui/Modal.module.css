@@ -1,3 +1,5 @@
+/* ── Modal ── Clinical Precision Design System */
+
 .backdrop {
   position: fixed;
   inset: 0;
@@ -5,43 +7,50 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
-  background: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(2px);
-  animation: fadeIn 150ms ease;
+  padding: 20px;
+  background: rgba(12, 18, 34, 0.60);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: backdropIn var(--transition-slow) ease forwards;
 }
 
 .panel {
   background: var(--surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 32px);
+  max-height: calc(100vh - 40px);
   width: 100%;
-  animation: slideUp 200ms ease;
+  animation: panelIn 240ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-/* Sizes */
-.sm { max-width: 400px; }
-.md { max-width: 560px; }
-.lg { max-width: 720px; }
+/* ── Sizes ── */
+.sm { max-width: 420px; }
+.md { max-width: 580px; }
+.lg { max-width: 740px; }
+
+/* ── Header ── */
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px 16px;
+  padding: 22px 26px 18px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
 .title {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
   margin: 0;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
 }
+
+/* ── Close button ── */
 
 .closeButton {
   display: flex;
@@ -49,41 +58,48 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: var(--radius-sm);
+  border-radius: 50%;
   font-size: 14px;
-  color: var(--text-secondary);
-  transition: background-color var(--transition), color var(--transition);
+  color: var(--text-tertiary);
   flex-shrink: 0;
+  transition:
+    background-color var(--transition),
+    color var(--transition);
 }
 
 .closeButton:hover {
-  background: var(--bg);
+  background: var(--snow);
   color: var(--text-primary);
 }
 
 .closeButton:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--primary-ring);
 }
 
+/* ── Body ── */
+
 .body {
-  padding: 20px 24px 24px;
+  padding: 22px 26px 26px;
   overflow-y: auto;
   flex: 1;
 }
 
-@keyframes fadeIn {
+/* ── Animations ── */
+
+@keyframes backdropIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 
-@keyframes slideUp {
+@keyframes panelIn {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: scale(0.96) translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1) translateY(0);
   }
 }
