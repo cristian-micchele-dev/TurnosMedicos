@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import type { Doctor } from '../../api/doctors';
 import type { Specialty } from '../../api/specialties';
+import type { UserListItem } from '../../api/users';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
@@ -9,6 +10,7 @@ import styles from './DoctorForm.module.css';
 interface DoctorFormProps {
   doctor?: Doctor;
   specialties: Specialty[];
+  users: UserListItem[];
   onSubmit: (data: {
     userId: string;
     specialtyId: string;
@@ -24,7 +26,7 @@ interface FormErrors {
   licenseNumber?: string;
 }
 
-export function DoctorForm({ doctor, specialties, onSubmit, onCancel }: DoctorFormProps) {
+export function DoctorForm({ doctor, specialties, users, onSubmit, onCancel }: DoctorFormProps) {
   const isEditing = Boolean(doctor);
 
   const [userId, setUserId] = useState(doctor?.userId ?? '');
@@ -34,6 +36,10 @@ export function DoctorForm({ doctor, specialties, onSubmit, onCancel }: DoctorFo
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
 
+  const userOptions = users
+    .filter((u) => u.active)
+    .map((u) => ({ value: u.id, label: u.name ? `${u.name} (${u.email})` : u.email }));
+
   const specialtyOptions = specialties
     .filter((s) => s.active)
     .map((s) => ({ value: s.id, label: s.name }));
@@ -41,8 +47,8 @@ export function DoctorForm({ doctor, specialties, onSubmit, onCancel }: DoctorFo
   const validate = (): boolean => {
     const next: FormErrors = {};
 
-    if (!isEditing && !userId.trim()) {
-      next.userId = 'El ID de usuario es obligatorio';
+    if (!isEditing && !userId) {
+      next.userId = 'Seleccioná un usuario';
     }
     if (!specialtyId) {
       next.specialtyId = 'Seleccioná una especialidad';
@@ -77,18 +83,16 @@ export function DoctorForm({ doctor, specialties, onSubmit, onCancel }: DoctorFo
       <div className={styles.fields}>
         {!isEditing && (
           <>
-            <Input
-              label="ID de Usuario"
+            <Select
+              label="Usuario"
+              options={userOptions}
               value={userId}
-              onChange={(e) => {
-                setUserId(e.target.value);
+              onChange={(val) => {
+                setUserId(val);
                 if (errors.userId) setErrors((prev) => ({ ...prev, userId: undefined }));
               }}
+              placeholder="Seleccionar usuario"
               error={errors.userId}
-              placeholder="UUID del usuario a asignar"
-              helperText="El usuario debe estar registrado previamente en el sistema"
-              required
-              autoFocus
             />
 
             <Input

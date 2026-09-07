@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { patientsApi, type Patient } from '../../api/patients';
+import { usersApi, type UserListItem } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
 import { useAuth } from '../../auth/AuthContext';
 import { Table } from '../../components/ui/Table';
@@ -13,6 +14,7 @@ export function PatientsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | undefined>(undefined);
@@ -20,8 +22,12 @@ export function PatientsPage() {
   const fetchPatients = async () => {
     try {
       setLoading(true);
-      const data = await patientsApi.findAll();
+      const [data, usersData] = await Promise.all([
+        patientsApi.findAll(),
+        usersApi.findAll(),
+      ]);
       setPatients(data);
+      setUsers(usersData);
     } catch {
       toast.error('Error al cargar los pacientes');
     } finally {
@@ -182,6 +188,7 @@ export function PatientsPage() {
         >
           <PatientForm
             patient={selectedPatient}
+            users={users}
             onSubmit={handleSubmit}
             onCancel={handleCloseModal}
           />

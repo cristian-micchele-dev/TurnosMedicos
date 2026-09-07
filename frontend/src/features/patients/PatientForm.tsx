@@ -1,11 +1,14 @@
 import { useState, type FormEvent } from 'react';
 import type { Patient } from '../../api/patients';
+import type { UserListItem } from '../../api/users';
 import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
 import styles from './PatientForm.module.css';
 
 interface PatientFormProps {
   patient?: Patient;
+  users: UserListItem[];
   onSubmit: (data: {
     userId?: string;
     phone?: string;
@@ -16,7 +19,7 @@ interface PatientFormProps {
   onCancel: () => void;
 }
 
-export function PatientForm({ patient, onSubmit, onCancel }: PatientFormProps) {
+export function PatientForm({ patient, users, onSubmit, onCancel }: PatientFormProps) {
   const isEditing = Boolean(patient);
 
   const [userId, setUserId] = useState('');
@@ -27,9 +30,13 @@ export function PatientForm({ patient, onSubmit, onCancel }: PatientFormProps) {
   const [userIdError, setUserIdError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const userOptions = users
+    .filter((u) => u.active)
+    .map((u) => ({ value: u.id, label: u.name ? `${u.name} (${u.email})` : u.email }));
+
   const validate = () => {
-    if (!isEditing && !userId.trim()) {
-      setUserIdError('El ID de usuario es obligatorio para crear un paciente');
+    if (!isEditing && !userId) {
+      setUserIdError('Seleccioná un usuario');
       return false;
     }
     setUserIdError('');
@@ -58,17 +65,16 @@ export function PatientForm({ patient, onSubmit, onCancel }: PatientFormProps) {
     <form onSubmit={handleSubmit} className={styles.form} noValidate>
       <div className={styles.fields}>
         {!isEditing && (
-          <Input
-            label="ID de Usuario"
+          <Select
+            label="Usuario"
+            options={userOptions}
             value={userId}
-            onChange={(e) => {
-              setUserId(e.target.value);
+            onChange={(val) => {
+              setUserId(val);
               if (userIdError) setUserIdError('');
             }}
+            placeholder="Seleccionar usuario"
             error={userIdError}
-            placeholder="UUID del usuario a vincular"
-            required
-            autoFocus
           />
         )}
 

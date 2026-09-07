@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doctorsApi, type Doctor } from '../../api/doctors';
 import { specialtiesApi, type Specialty } from '../../api/specialties';
+import { usersApi, type UserListItem } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
 import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
@@ -16,6 +17,7 @@ export function DoctorsPage() {
 
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
+  const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | undefined>(undefined);
@@ -23,12 +25,14 @@ export function DoctorsPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [doctorsData, specialtiesData] = await Promise.all([
+      const [doctorsData, specialtiesData, usersData] = await Promise.all([
         doctorsApi.findAll(),
         specialtiesApi.findAll(),
+        usersApi.findAll(),
       ]);
       setDoctors(doctorsData);
       setSpecialties(specialtiesData);
+      setUsers(usersData);
     } catch {
       toast.error('Error al cargar los datos');
     } finally {
@@ -205,6 +209,7 @@ export function DoctorsPage() {
         <DoctorForm
           doctor={selectedDoctor}
           specialties={specialties}
+          users={users}
           onSubmit={handleSubmit}
           onCancel={handleCloseModal}
         />
