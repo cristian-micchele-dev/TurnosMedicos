@@ -1,0 +1,214 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { doctorsApi, type Doctor } from '../../api/doctors';
+import { specialtiesApi, type Specialty } from '../../api/specialties';
+import { useToast } from '../../hooks/useToast';
+import { Table } from '../../components/ui/Table';
+import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
+import { Modal } from '../../components/ui/Modal';
+import { DoctorForm } from './DoctorForm';
+import styles from './DoctorsPage.module.css';
+
+export function DoctorsPage() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [specialties, setSpecialties] = useState<Specialty[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | undefined>(undefined);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [doctorsData, specialtiesData] = await Promise.all([
+        doctorsApi.findAll(),
+        specialtiesApi.findAll(),
+      ]);
+      setDoctors(doctorsData);
+      setSpecialties(specialtiesData);
+    } catch {
+      toast.error('Error al cargar los datos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleOpenCreate = () => {
+    setSelectedDoctor(undefined);
+    setModalOpen(true);
+  };
+
+  const handleOpenEdit = (doctor: Doctor) => {
+    setSelectedDoctor(doctor);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedDoctor(undefined);
+  };
+
+  const handleSubmit = async (data: {
+    userId: string;
+    specialtyId: string;
+    licenseNumber: string;
+    phone?: string;
+  }) => {
+    if (selectedDoctor) {
+      await doctorsApi.update(selectedDoctor.id, {
+        phone: data.phone,
+        specialtyId: data.specialtyId,
+      });
+      toast.success('Doctor actualizado correctamente');
+    } else {
+      await doctorsApi.create(data);
+      toast.success('Doctor creado correctamente');
+    }
+    handleCloseModal();
+    await fetchData();
+  };
+
+  const handleDelete = async (doctor: Doctor) => {
+    const name = doctor.user?.name ?? `Doctor ${doctor.licenseNumber}`;
+    const confirmed = window.confirm(
+      `¿Confirmar eliminación de "${name}"? Esta acción no se puede deshacer.`,
+    );
+    if (!confirmed) return;
+
+    try {
+      await doctorsApi.update(doctor.id, { active: false });
+      toast.success('Doctor desactivado correctamente');
+      await fetchData();
+    } catch {
+      toast.error('Error al desactivar el doctor');
+    }
+  };
+
+  const columns = [
+    {
+      key: 'name',
+      header: 'Nombre',
+      render: (d: Doctor) => (
+        <span className={styles.nameCell}>{d.user?.name ?? '—'}</span>
+      ),
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      render: (d: Doctor) => (
+        <span className={styles.emailCell}>{d.user?.email ?? '—'}</span>
+      ),
+    },
+    {
+      key: 'specialty',
+      header: 'Especialidad',
+      render: (d: Doctor) => (
+        <span className={styles.specialtyCell}>{d.specialty?.name ?? '—'}</span>
+      ),
+    },
+    {
+      key: 'licenseNumber',
+      header: 'Matrícula',
+      width: '120px',
+      render: (d: Doctor) => (
+        <span className={styles.licenseCell}>{d.licenseNumber}</span>
+      ),
+    },
+    {
+      key: 'active',
+      header: 'Estado',
+      width: '110px',
+      render: (d: Doctor) =>
+        d.active ? (
+          <Badge variant="success">Activo</Badge>
+        ) : (
+          <Badge variant="neutral">Inactivo</Badge>
+        ),
+    },
+    {
+      key: 'actions',
+      header: 'Acciones',
+      width: '200px',
+      render: (d: Doctor) => (
+        <div className={styles.actions}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/doctors/${d.id}/availability`);
+            }}
+          >
+            Horarios
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenEdit(d);
+            }}
+          >
+            Editar
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={styles.deleteBtn}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(d);
+            }}
+          >
+            Eliminar
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className={styles.page}>
+      <header className={styles.pageHeader}>
+        <div>
+          <h1 className={styles.title}>Doctores</h1>
+          <p className={styles.subtitle}>Gestioná el plantel médico del sistema</p>
+        </div>
+        <Button variant="primary" onClick={handleOpenCreate}>
+          + Nuevo Doctor
+        </Button>
+      </header>
+
+      <div className={styles.tableContainer}>
+        <Table
+          columns={columns}
+          data={doctors}
+          keyExtractor={(d) => d.id}
+          loading={loading}
+          emptyMessage="No hay doctores registrados"
+        />
+      </div>
+
+      <Modal
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+        title={selectedDoctor ? 'Editar Doctor' : 'Nuevo Doctor'}
+        size="md"
+      >
+        <DoctorForm
+          doctor={selectedDoctor}
+          specialties={specialties}
+          onSubmit={handleSubmit}
+          onCancel={handleCloseModal}
+        />
+      </Modal>
+    </div>
+  );
+}
