@@ -13,6 +13,7 @@ const sharedItems: NavItem[] = [
 ];
 
 const adminItems: NavItem[] = [
+  { to: '/usuarios', label: 'Usuarios', icon: '👥' },
   { to: '/especialidades', label: 'Especialidades', icon: '🏥' },
   { to: '/doctores', label: 'Doctores', icon: '👨‍⚕️' },
   { to: '/pacientes', label: 'Pacientes', icon: '👤' },

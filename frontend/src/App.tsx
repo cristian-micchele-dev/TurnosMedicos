@@ -12,6 +12,7 @@ import { PatientsPage } from './features/patients/PatientsPage';
 import { PatientProfilePage } from './features/patients/PatientProfilePage';
 import { AppointmentsPage } from './features/appointments/AppointmentsPage';
 import { NewAppointmentPage } from './features/appointments/NewAppointmentPage';
+import { UsersPage } from './features/users/UsersPage';
 
 export function App() {
   return (
@@ -28,6 +29,7 @@ export function App() {
 
           {/* Admin */}
           <Route element={<ProtectedRoute roles={['ADMIN']} />}>
+            <Route path="/usuarios" element={<UsersPage />} />
             <Route path="/especialidades" element={<SpecialtiesPage />} />
             <Route path="/doctores" element={<DoctorsPage />} />
             <Route path="/doctores/:id/availability" element={<AvailabilityPage />} />
