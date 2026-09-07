@@ -10,6 +10,39 @@
   gap: 1rem;
 }
 
+.modeToggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.modeBtn {
+  all: unset;
+  flex: 1;
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  cursor: pointer;
+  color: var(--text-secondary);
+  background: var(--surface);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.modeBtn:hover {
+  background: var(--surface-raised, var(--bg));
+}
+
+.modeBtnActive {
+  background: var(--primary);
+  color: #fff;
+}
+
+.modeBtnActive:hover {
+  background: var(--primary-dark, var(--primary));
+}
+
 .footer {
   display: flex;
   justify-content: flex-end;
