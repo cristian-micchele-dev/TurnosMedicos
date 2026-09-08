@@ -1,6 +1,8 @@
 import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { DataSource } from 'typeorm';
 
+@SkipThrottle()
 @Controller('health')
 export class HealthController {
   constructor(private readonly db: DataSource) {}

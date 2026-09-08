@@ -12,4 +12,9 @@ describe('Doctor', () => {
     const pub = d.toPublic();
     expect(pub).toMatchObject({ id: 'd1', userId: 'u1', specialtyId: 's1', licenseNumber: 'MP-1234', phone: '1155667788' });
   });
+
+  it('lanza error si licenseNumber está vacío', () => {
+    expect(() => new Doctor('d1', 'u1', 's1', '')).toThrow();
+    expect(() => new Doctor('d1', 'u1', 's1', '   ')).toThrow();
+  });
 });

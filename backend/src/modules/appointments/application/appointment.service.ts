@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { Clock, CLOCK } from '../../../shared/application/ports';
 import { Appointment } from '../domain/appointment';
 import { AppointmentStatus } from '../domain/appointment-status.enum';
-import { AppointmentNotFoundError, InvalidStatusTransitionError } from '../domain/exceptions';
+import { AppointmentNotFoundError } from '../domain/exceptions';
 import { NoDoubleBookingRule } from '../domain/rules/no-double-booking.rule';
 import { WithinAvailabilityRule } from '../domain/rules/within-availability.rule';
 import { NoSameDaySpecialtyRule } from '../domain/rules/no-same-day-specialty.rule';
@@ -77,8 +77,7 @@ export class AppointmentService {
   async confirm(id: string) {
     const a = await this.appointments.findById(id);
     if (!a) throw new AppointmentNotFoundError(id);
-    if (a.status !== AppointmentStatus.PENDING) throw new InvalidStatusTransitionError(a.status, AppointmentStatus.CONFIRMED);
-    a.status = AppointmentStatus.CONFIRMED;
+    a.confirm();
     await this.appointments.update(a);
     return a.toPublic();
   }
@@ -86,12 +85,8 @@ export class AppointmentService {
   async cancel(id: string, dto: CancelAppointmentDto) {
     const a = await this.appointments.findById(id);
     if (!a) throw new AppointmentNotFoundError(id);
-    if (a.status === AppointmentStatus.CANCELLED || a.status === AppointmentStatus.COMPLETED) {
-      throw new InvalidStatusTransitionError(a.status, AppointmentStatus.CANCELLED);
-    }
     this.cancellationWindow.validate(a.dateTime, this.clock.now());
-    a.status = AppointmentStatus.CANCELLED;
-    a.cancellationReason = dto.reason ?? null;
+    a.cancel(dto.reason);
     await this.appointments.update(a);
     return a.toPublic();
   }
@@ -99,8 +94,7 @@ export class AppointmentService {
   async complete(id: string) {
     const a = await this.appointments.findById(id);
     if (!a) throw new AppointmentNotFoundError(id);
-    if (a.status !== AppointmentStatus.CONFIRMED) throw new InvalidStatusTransitionError(a.status, AppointmentStatus.COMPLETED);
-    a.status = AppointmentStatus.COMPLETED;
+    a.complete();
     await this.appointments.update(a);
     return a.toPublic();
   }

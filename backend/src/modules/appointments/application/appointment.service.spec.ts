@@ -1,10 +1,59 @@
 import { AppointmentService } from './appointment.service';
 import { Appointment } from '../domain/appointment';
 import { AppointmentStatus } from '../domain/appointment-status.enum';
+import { InvalidStatusTransitionError } from '../domain/exceptions';
 import { Doctor } from '../../doctors/domain/doctor';
 import { Patient } from '../../patients/domain/patient';
 import { Availability } from '../../doctors/domain/availability';
 import { Role } from '../../users/domain/user';
+
+describe('Appointment (domain)', () => {
+  const make = (status: AppointmentStatus) =>
+    new Appointment('a1', 'd1', 'p1', 's1', new Date(), 30, status);
+
+  describe('confirm()', () => {
+    it('transiciona de PENDING a CONFIRMED', () => {
+      const a = make(AppointmentStatus.PENDING);
+      a.confirm();
+      expect(a.status).toBe(AppointmentStatus.CONFIRMED);
+    });
+    it('lanza InvalidStatusTransitionError si no está PENDING', () => {
+      expect(() => make(AppointmentStatus.CONFIRMED).confirm()).toThrow(InvalidStatusTransitionError);
+      expect(() => make(AppointmentStatus.CANCELLED).confirm()).toThrow(InvalidStatusTransitionError);
+    });
+  });
+
+  describe('cancel()', () => {
+    it('transiciona de PENDING a CANCELLED y guarda motivo', () => {
+      const a = make(AppointmentStatus.PENDING);
+      a.cancel('Personal');
+      expect(a.status).toBe(AppointmentStatus.CANCELLED);
+      expect(a.cancellationReason).toBe('Personal');
+    });
+    it('transiciona de CONFIRMED a CANCELLED', () => {
+      const a = make(AppointmentStatus.CONFIRMED);
+      a.cancel();
+      expect(a.status).toBe(AppointmentStatus.CANCELLED);
+      expect(a.cancellationReason).toBeNull();
+    });
+    it('lanza InvalidStatusTransitionError si ya está CANCELLED o COMPLETED', () => {
+      expect(() => make(AppointmentStatus.CANCELLED).cancel()).toThrow(InvalidStatusTransitionError);
+      expect(() => make(AppointmentStatus.COMPLETED).cancel()).toThrow(InvalidStatusTransitionError);
+    });
+  });
+
+  describe('complete()', () => {
+    it('transiciona de CONFIRMED a COMPLETED', () => {
+      const a = make(AppointmentStatus.CONFIRMED);
+      a.complete();
+      expect(a.status).toBe(AppointmentStatus.COMPLETED);
+    });
+    it('lanza InvalidStatusTransitionError si no está CONFIRMED', () => {
+      expect(() => make(AppointmentStatus.PENDING).complete()).toThrow(InvalidStatusTransitionError);
+      expect(() => make(AppointmentStatus.CANCELLED).complete()).toThrow(InvalidStatusTransitionError);
+    });
+  });
+});
 
 describe('AppointmentService', () => {
   const now = new Date('2026-09-06T12:00:00Z');

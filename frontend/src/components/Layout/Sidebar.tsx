@@ -1,10 +1,16 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import styles from './Sidebar.module.css';
+import layoutStyles from './Layout.module.css';
 
 interface NavItem {
   to: string;
   label: string;
+}
+
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 const sharedItems: NavItem[] = [
@@ -37,39 +43,45 @@ function getNavItems(role: string | undefined): NavItem[] {
   return sharedItems;
 }
 
-export function Sidebar() {
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user, logout } = useAuth();
   const navItems = getNavItems(user?.role);
 
   return (
-    <aside className={styles.sidebar}>
-      <div className={styles.logo}>
-        <span className={styles.logoIcon}>+</span>
-        <span className={styles.logoText}>TurnoMed</span>
-      </div>
+    <>
+      {isOpen && (
+        <div className={layoutStyles.overlay} onClick={onClose} aria-hidden="true" />
+      )}
+      <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}>
+        <div className={styles.logo}>
+          <span className={styles.logoIcon}>+</span>
+          <span className={styles.logoText}>TurnoMed</span>
+        </div>
 
-      <nav className={styles.nav}>
-        <ul className={styles.navList}>
-          {navItems.map((item) => (
-            <li key={item.to}>
-              <NavLink
-                to={item.to}
-                className={({ isActive }) =>
-                  `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
-                }
-              >
-                <span className={styles.navLabel}>{item.label}</span>
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-      </nav>
+        <nav className={styles.nav}>
+          <ul className={styles.navList}>
+            {navItems.map((item) => (
+              <li key={item.to}>
+                <NavLink
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
+                  }
+                  onClick={onClose}
+                >
+                  <span className={styles.navLabel}>{item.label}</span>
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-      <div className={styles.footer}>
-        <button className={styles.logoutBtn} onClick={logout}>
-          <span>Cerrar sesión</span>
-        </button>
-      </div>
-    </aside>
+        <div className={styles.footer}>
+          <button className={styles.logoutBtn} onClick={logout}>
+            <span>Cerrar sesión</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

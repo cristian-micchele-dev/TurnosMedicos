@@ -22,15 +22,15 @@ export class UserService {
     const user = await this.users.save(
       new User(randomUUID(), email, dto.name ?? '', await this.hasher.hash(dto.password), dto.role ?? Role.PATIENT),
     );
-    return user.publicia();
+    return user.toPublic();
   }
 
-  async findAll(pagination: PaginationDto = {}): Promise<PaginatedResult<ReturnType<User['publicia']>>> {
+  async findAll(pagination: PaginationDto = {}): Promise<PaginatedResult<ReturnType<User['toPublic']>>> {
     const page = pagination.page ?? 1;
     const limit = pagination.limit ?? 20;
     const skip = (page - 1) * limit;
     const [list, total] = await this.users.findAll({ skip, take: limit });
-    return { data: list.map(u => u.publicia()), total, page, limit, totalPages: Math.ceil(total / limit) };
+    return { data: list.map(u => u.toPublic()), total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async updateRole(id: string, dto: UpdateRoleDto) {
@@ -38,7 +38,7 @@ export class UserService {
     if (!user) throw new NotFoundException(`Usuario ${id} no encontrado`);
     user.role = dto.role;
     await this.users.update(user);
-    return user.publicia();
+    return user.toPublic();
   }
 
   async toggleActive(id: string) {
@@ -46,6 +46,6 @@ export class UserService {
     if (!user) throw new NotFoundException(`Usuario ${id} no encontrado`);
     user.active = !user.active;
     await this.users.update(user);
-    return user.publicia();
+    return user.toPublic();
   }
 }

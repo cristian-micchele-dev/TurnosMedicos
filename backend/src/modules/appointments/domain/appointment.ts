@@ -1,4 +1,5 @@
 import { AppointmentStatus } from './appointment-status.enum';
+import { InvalidStatusTransitionError } from './exceptions';
 
 export class Appointment {
   constructor(
@@ -13,6 +14,22 @@ export class Appointment {
     public cancellationReason: string | null = null,
     public readonly createdAt: Date = new Date(),
   ) {}
+
+  confirm() {
+    if (this.status !== AppointmentStatus.PENDING) throw new InvalidStatusTransitionError(this.status, AppointmentStatus.CONFIRMED);
+    this.status = AppointmentStatus.CONFIRMED;
+  }
+
+  cancel(reason?: string) {
+    if (this.status !== AppointmentStatus.PENDING && this.status !== AppointmentStatus.CONFIRMED) throw new InvalidStatusTransitionError(this.status, AppointmentStatus.CANCELLED);
+    this.status = AppointmentStatus.CANCELLED;
+    this.cancellationReason = reason ?? null;
+  }
+
+  complete() {
+    if (this.status !== AppointmentStatus.CONFIRMED) throw new InvalidStatusTransitionError(this.status, AppointmentStatus.COMPLETED);
+    this.status = AppointmentStatus.COMPLETED;
+  }
 
   toPublic() {
     return {

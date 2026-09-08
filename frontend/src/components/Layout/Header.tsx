@@ -1,3 +1,4 @@
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import styles from './Header.module.css';
 
@@ -7,13 +8,41 @@ const roleLabels: Record<string, string> = {
   PATIENT: 'Paciente',
 };
 
-export function Header() {
+const pageTitles: Record<string, string> = {
+  '/dashboard':      'Dashboard',
+  '/doctores':       'Doctores',
+  '/pacientes':      'Pacientes',
+  '/especialidades': 'Especialidades',
+  '/turnos':         'Turnos',
+  '/mis-turnos':     'Turnos',
+  '/usuarios':       'Usuarios',
+  '/disponibilidad': 'Disponibilidad',
+  '/nuevo-turno':    'Nuevo Turno',
+  '/mi-perfil':      'Mi Perfil',
+};
+
+interface HeaderProps {
+  onMenuToggle: () => void;
+}
+
+export function Header({ onMenuToggle }: HeaderProps) {
   const { user } = useAuth();
+  const { pathname } = useLocation();
+  const pageTitle = pageTitles[pathname] ?? 'Dashboard';
 
   return (
     <header className={styles.header}>
       <div className={styles.title}>
-        <h1 className={styles.pageTitle}>Dashboard</h1>
+        <button
+          className={styles.hamburger}
+          onClick={onMenuToggle}
+          aria-label="Abrir menú"
+        >
+          <span className={styles.hamburgerBar} />
+          <span className={styles.hamburgerBar} />
+          <span className={styles.hamburgerBar} />
+        </button>
+        <h1 className={styles.pageTitle}>{pageTitle}</h1>
       </div>
 
       {user && (

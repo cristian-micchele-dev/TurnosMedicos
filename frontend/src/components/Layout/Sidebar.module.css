@@ -178,3 +178,15 @@
   color: #fca5a5;
   border-left-color: var(--danger);
 }
+
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform var(--transition-slow);
+    z-index: 50;
+  }
+
+  .sidebarOpen {
+    transform: translateX(0);
+  }
+}

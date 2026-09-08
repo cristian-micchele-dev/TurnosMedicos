@@ -10,7 +10,7 @@ export class Doctor {
     public phone: string | null = null,
     public active: boolean = true,
     public readonly createdAt: Date = new Date(),
-  ) {}
+  ) { if (!licenseNumber?.trim()) throw new Error('licenseNumber no puede estar vacío'); }
 
   toPublic() {
     return {

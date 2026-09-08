@@ -38,7 +38,7 @@ describe('AuthService', () => {
   });
   it('rechaza login uniforme',async()=>await expect(service().login({email:'x@y.com',password:'bad'})).rejects.toMatchObject({status:401}));
   it('detecta reuse y revoca la familia', async () => {
-    const user={id:'u1',email:'x@y.com',passwordHash:'hash',role:'PATIENT',active:true,publicia:()=>({id:'u1'})};
+    const user={id:'u1',email:'x@y.com',passwordHash:'hash',role:'PATIENT',active:true,toPublic:()=>({id:'u1'})};
     const sessions:any={findByJti:async()=>({id:'s1',userId:'u1',familyId:'f1',tokenHash:'other',expiresAt:new Date(Date.now()+10000)}),revokeFamily:jest.fn()};
     const tokens:any={verifyRefresh:()=>({jti:'j1',familyId:'f1'})};
     const instance=new AuthService(users,{} as any,tokens,sessions,{} as any,{} as any,{now:()=>new Date()});

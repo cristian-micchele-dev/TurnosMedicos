@@ -12,9 +12,8 @@ export class SpecialtyService {
   constructor(@Inject(SPECIALTY_REPOSITORY) private readonly specialties: SpecialtyRepository) {}
 
   async create(dto: CreateSpecialtyDto) {
-    const name = dto.name.trim();
-    if (await this.specialties.findByName(name)) throw new ConflictError('Ya existe una especialidad con ese nombre');
-    const specialty = new Specialty(randomUUID(), name, dto.description?.trim() ?? null);
+    if (await this.specialties.findByName(dto.name.trim())) throw new ConflictError('Ya existe una especialidad con ese nombre');
+    const specialty = new Specialty(randomUUID(), dto.name, dto.description?.trim() ?? null);
     return (await this.specialties.save(specialty)).toPublic();
   }
 

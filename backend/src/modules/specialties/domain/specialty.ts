@@ -5,7 +5,7 @@ export class Specialty {
     public description: string | null = null,
     public active: boolean = true,
     public readonly createdAt: Date = new Date(),
-  ) {}
+  ) { this.name = name.trim(); }
 
   public toPublic() {
     return { id: this.id, name: this.name, description: this.description, active: this.active, createdAt: this.createdAt };

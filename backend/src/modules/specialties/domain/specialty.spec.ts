@@ -10,6 +10,11 @@ describe('Specialty', () => {
     expect(s.createdAt).toBeInstanceOf(Date);
   });
 
+  it('trimea el nombre en el constructor', () => {
+    const s = new Specialty('id-2', '  Neurología  ');
+    expect(s.name).toBe('Neurología');
+  });
+
   it('toPublic retorna la proyección pública', () => {
     const s = new Specialty('id-1', 'Dermatología', 'Piel y mucosas', true);
     const pub = s.toPublic();
