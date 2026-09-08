@@ -23,10 +23,10 @@ export class TypeOrmSpecialtyRepository implements SpecialtyRepository {
     return e ? this.map(e) : undefined;
   }
 
-  async findAll(onlyActive = true) {
+  async findAll(onlyActive = true, options?: { skip?: number; take?: number }) {
     const where = onlyActive ? { active: true } : {};
-    const entities = await this.repo.find({ where, order: { name: 'ASC' } });
-    return entities.map(e => this.map(e));
+    const [entities, total] = await this.repo.findAndCount({ where, order: { name: 'ASC' }, skip: options?.skip, take: options?.take });
+    return [entities.map(e => this.map(e)), total] as [Specialty[], number];
   }
 
   async save(s: Specialty) {

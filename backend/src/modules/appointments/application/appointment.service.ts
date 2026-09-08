@@ -15,6 +15,7 @@ import { DoctorNotFoundError } from '../../doctors/domain/doctor-not-found.excep
 import { PatientNotFoundError } from '../../patients/domain/patient-not-found.exception';
 import { CreateAppointmentDto, CancelAppointmentDto, QueryAppointmentsDto } from './dto/appointment.dto';
 import { Role } from '../../users/domain/user';
+import { PaginatedResult } from '../../../shared/application/pagination';
 
 @Injectable()
 export class AppointmentService {
@@ -49,8 +50,11 @@ export class AppointmentService {
     return (await this.appointments.save(appointment)).toPublic();
   }
 
-  async findAll(query: QueryAppointmentsDto, userId: string, role: Role) {
-    const filters = { ...query, from: query.from ? new Date(query.from) : undefined, to: query.to ? new Date(query.to) : undefined };
+  async findAll(query: QueryAppointmentsDto, userId: string, role: Role): Promise<PaginatedResult<ReturnType<Appointment['toPublic']>>> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const skip = (page - 1) * limit;
+    const filters = { ...query, from: query.from ? new Date(query.from) : undefined, to: query.to ? new Date(query.to) : undefined, skip, take: limit };
     if (role === Role.PATIENT) {
       const patient = await this.patients.findByUserId(userId);
       if (!patient) throw new PatientNotFoundError(userId);
@@ -60,8 +64,8 @@ export class AppointmentService {
       if (!doctor) throw new DoctorNotFoundError(userId);
       filters.doctorId = doctor.id;
     }
-    const list = await this.appointments.findAll(filters);
-    return list.map(a => a.toPublic());
+    const [list, total] = await this.appointments.findAll(filters);
+    return { data: list.map(a => a.toPublic()), total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findOne(id: string) {

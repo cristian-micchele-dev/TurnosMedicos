@@ -18,7 +18,7 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
     return e ? this.map(e) : undefined;
   }
 
-  async findAll(filters: AppointmentFilters) {
+  async findAll(filters: AppointmentFilters): Promise<[Appointment[], number]> {
     const qb = this.repo.createQueryBuilder('a');
     if (filters.doctorId) qb.andWhere('a.doctor_id = :doctorId', { doctorId: filters.doctorId });
     if (filters.patientId) qb.andWhere('a.patient_id = :patientId', { patientId: filters.patientId });
@@ -27,8 +27,10 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
     if (filters.from) qb.andWhere('a.date_time >= :from', { from: filters.from });
     if (filters.to) qb.andWhere('a.date_time <= :to', { to: filters.to });
     qb.orderBy('a.date_time', 'ASC');
-    const entities = await qb.getMany();
-    return entities.map(e => this.map(e));
+    if (filters.skip !== undefined) qb.skip(filters.skip);
+    if (filters.take !== undefined) qb.take(filters.take);
+    const [entities, total] = await qb.getManyAndCount();
+    return [entities.map(e => this.map(e)), total];
   }
 
   async findByDoctorAndDateTime(doctorId: string, dateTime: Date) {

@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard, Roles, RolesGuard } from '../../../auth/adapters/http/auth.guards';
 import { Role } from '../../domain/user';
 import { UserService } from '../../application/user.service';
 import { CreateUserDto } from '../../application/dto/create-user.dto';
 import { UpdateRoleDto } from '../../application/dto/update-role.dto';
+import { PaginationDto } from '../../../../shared/application/pagination';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -17,8 +18,8 @@ export class UserController {
   }
 
   @Get()
-  findAll() {
-    return this.service.findAll();
+  findAll(@Query() pagination: PaginationDto) {
+    return this.service.findAll(pagination);
   }
 
   @Patch(':id/role')

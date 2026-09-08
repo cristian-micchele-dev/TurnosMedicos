@@ -16,7 +16,7 @@ describe('SpecialtyService', () => {
     jest.clearAllMocks();
     repo.findById.mockResolvedValue(undefined);
     repo.findByName.mockResolvedValue(undefined);
-    repo.findAll.mockResolvedValue([]);
+    repo.findAll.mockResolvedValue([[], 0]);
   });
 
   describe('create', () => {
@@ -43,16 +43,17 @@ describe('SpecialtyService', () => {
 
   describe('findAll', () => {
     it('retorna lista de especialidades activas', async () => {
-      repo.findAll.mockResolvedValue([new Specialty('1', 'A'), new Specialty('2', 'B')]);
+      repo.findAll.mockResolvedValue([[new Specialty('1', 'A'), new Specialty('2', 'B')], 2]);
       const result = await service().findAll();
-      expect(result).toHaveLength(2);
-      expect(repo.findAll).toHaveBeenCalledWith(true);
+      expect(result.data).toHaveLength(2);
+      expect(result.total).toBe(2);
+      expect(repo.findAll).toHaveBeenCalledWith(true, expect.objectContaining({ skip: 0, take: 20 }));
     });
 
     it('incluye inactivas cuando se pide', async () => {
-      repo.findAll.mockResolvedValue([]);
+      repo.findAll.mockResolvedValue([[], 0]);
       await service().findAll(false);
-      expect(repo.findAll).toHaveBeenCalledWith(false);
+      expect(repo.findAll).toHaveBeenCalledWith(false, expect.objectContaining({ skip: 0, take: 20 }));
     });
   });
 

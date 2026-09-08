@@ -7,7 +7,7 @@ export class StatsService {
   constructor(@Inject('USER_REPOSITORY') private readonly users: UserRepository) {}
 
   async getStats(role: Role, userId: string) {
-    const allUsers = await this.users.findAll();
+    const [allUsers] = await this.users.findAll();
 
     if (role === Role.ADMIN) {
       return {

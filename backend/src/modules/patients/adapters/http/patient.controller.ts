@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard, Roles, RolesGuard } from '../../../auth/adapters/http/auth.guards';
 import { Role } from '../../../users/domain/user';
 import { PatientService } from '../../application/patient.service';
 import { CreatePatientDto, UpdatePatientDto } from '../../application/dto/patient.dto';
 import { ForbiddenError } from '../../../../shared/domain/errors';
+import { PaginationDto } from '../../../../shared/application/pagination';
 
 @Controller('patients')
 @UseGuards(JwtAuthGuard)
@@ -17,8 +18,8 @@ export class PatientController {
   }
 
   @Get() @UseGuards(RolesGuard) @Roles(Role.ADMIN, Role.DOCTOR)
-  findAll() {
-    return this.service.findAll();
+  findAll(@Query() pagination: PaginationDto) {
+    return this.service.findAll(pagination);
   }
 
   @Get('me') @UseGuards(RolesGuard) @Roles(Role.PATIENT)

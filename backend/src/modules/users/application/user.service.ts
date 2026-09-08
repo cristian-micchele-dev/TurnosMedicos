@@ -5,6 +5,7 @@ import { HASHER, Hasher } from '../../../shared/application/ports';
 import { UserRepository } from '../user.repository.port';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
+import { PaginationDto, PaginatedResult } from '../../../shared/application/pagination';
 
 @Injectable()
 export class UserService {
@@ -24,9 +25,12 @@ export class UserService {
     return user.publicia();
   }
 
-  async findAll() {
-    const list = await this.users.findAll();
-    return list.map(u => u.publicia());
+  async findAll(pagination: PaginationDto = {}): Promise<PaginatedResult<ReturnType<User['publicia']>>> {
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? 20;
+    const skip = (page - 1) * limit;
+    const [list, total] = await this.users.findAll({ skip, take: limit });
+    return { data: list.map(u => u.publicia()), total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async updateRole(id: string, dto: UpdateRoleDto) {

@@ -12,7 +12,7 @@ describe('PatientService', () => {
     jest.clearAllMocks();
     patients.findById.mockResolvedValue(undefined);
     patients.findByUserId.mockResolvedValue(undefined);
-    patients.findAll.mockResolvedValue([]);
+    patients.findAll.mockResolvedValue([[], 0]);
     users.findById.mockResolvedValue(undefined);
   });
 
@@ -39,9 +39,10 @@ describe('PatientService', () => {
 
   describe('findAll', () => {
     it('retorna lista de pacientes', async () => {
-      patients.findAll.mockResolvedValue([new Patient('p1', 'u1')]);
+      patients.findAll.mockResolvedValue([[new Patient('p1', 'u1')], 1]);
       const result = await service().findAll();
-      expect(result).toHaveLength(1);
+      expect(result.data).toHaveLength(1);
+      expect(result.total).toBe(1);
     });
   });
 

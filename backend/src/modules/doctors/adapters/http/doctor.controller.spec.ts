@@ -19,12 +19,12 @@ describe('DoctorController', () => {
 
   it('findAll pasa filtro de especialidad', async () => {
     await controller.findAll('s1');
-    expect(service.findAll).toHaveBeenCalledWith({ specialtyId: 's1' });
+    expect(service.findAll).toHaveBeenCalledWith({ specialtyId: 's1' }, undefined);
   });
 
   it('findAll sin filtro', async () => {
     await controller.findAll();
-    expect(service.findAll).toHaveBeenCalledWith(undefined);
+    expect(service.findAll).toHaveBeenCalledWith(undefined, undefined);
   });
 
   it('findMe extrae userId del request', async () => {

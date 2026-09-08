@@ -6,6 +6,7 @@ import {
   type AppointmentFilters,
   type AppointmentStatus,
 } from '../../api/appointments';
+import type { PaginatedResponse } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
 import { useFetch } from '../../hooks/useFetch';
 import { useAuth } from '../../auth/AuthContext';
@@ -14,6 +15,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
 import { Input } from '../../components/ui/Input';
+import { Pagination } from '../../components/ui/Pagination';
 import { AppointmentDetailModal } from './AppointmentDetailModal';
 import styles from './AppointmentsPage.module.css';
 
@@ -56,17 +58,20 @@ export function AppointmentsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [page, setPage] = useState(1);
 
-  const { data: appointments, loading, refetch: refetchAppointments } = useFetch<Appointment[]>(
+  const { data: result, loading, refetch: refetchAppointments } = useFetch<PaginatedResponse<Appointment>>(
     () => {
       const filters: AppointmentFilters = {};
       if (statusFilter) filters.status = statusFilter as AppointmentStatus;
       if (fromDate) filters.from = fromDate;
       if (toDate) filters.to = toDate;
-      return appointmentsApi.findAll(filters);
+      return appointmentsApi.findAll(filters, page);
     },
-    [statusFilter, fromDate, toDate],
+    [statusFilter, fromDate, toDate, page],
   );
+  const appointments = result?.data ?? [];
+  const totalPages = result?.totalPages ?? 1;
 
   const handleAction = async (
     action: 'confirm' | 'cancel' | 'complete',
@@ -273,20 +278,20 @@ export function AppointmentsPage() {
           label="Estado"
           options={STATUS_OPTIONS}
           value={statusFilter}
-          onChange={setStatusFilter}
+          onChange={(v) => { setStatusFilter(v); setPage(1); }}
           placeholder="Todos los estados"
         />
         <Input
           label="Desde"
           type="date"
           value={fromDate}
-          onChange={(e) => setFromDate(e.target.value)}
+          onChange={(e) => { setFromDate(e.target.value); setPage(1); }}
         />
         <Input
           label="Hasta"
           type="date"
           value={toDate}
-          onChange={(e) => setToDate(e.target.value)}
+          onChange={(e) => { setToDate(e.target.value); setPage(1); }}
         />
         {(statusFilter || fromDate || toDate) && (
           <div className={styles.clearFilter}>
@@ -297,6 +302,7 @@ export function AppointmentsPage() {
                 setStatusFilter('');
                 setFromDate('');
                 setToDate('');
+                setPage(1);
               }}
             >
               Limpiar filtros
@@ -308,12 +314,13 @@ export function AppointmentsPage() {
       <div className={styles.tableContainer}>
         <Table
           columns={columns}
-          data={appointments ?? []}
+          data={appointments}
           keyExtractor={(a) => a.id}
           loading={loading}
           emptyMessage="No hay turnos que coincidan con los filtros"
           onRowClick={(a) => setSelectedAppointment(a)}
         />
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
 
       {selectedAppointment && (

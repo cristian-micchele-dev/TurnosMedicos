@@ -19,7 +19,7 @@ describe('AppointmentService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     appointments.findById.mockResolvedValue(undefined);
-    appointments.findAll.mockResolvedValue([]);
+    appointments.findAll.mockResolvedValue([[], 0]);
     appointments.findByDoctorAndDateTime.mockResolvedValue([]);
     appointments.findByPatientSpecialtyAndDateRange.mockResolvedValue([]);
     doctors.findById.mockResolvedValue(undefined);

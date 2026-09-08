@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { usersApi, type UserListItem } from '../../api/users';
+import { usersApi, type UserListItem, type PaginatedResponse } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
 import { useFetch } from '../../hooks/useFetch';
 import { useConfirm } from '../../hooks/useConfirm';
@@ -9,6 +9,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Modal } from '../../components/ui/Modal';
+import { Pagination } from '../../components/ui/Pagination';
 import styles from './UsersPage.module.css';
 
 const ROLE_LABELS: Record<UserListItem['role'], string> = {
@@ -27,16 +28,22 @@ export function UsersPage() {
   const { toast } = useToast();
   const { confirm, dialogProps, ConfirmDialog } = useConfirm();
 
-  const { data: fetchedUsers, loading } = useFetch<UserListItem[]>(() => usersApi.findAll());
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+
+  const { data: fetchedResult, loading } = useFetch<PaginatedResponse<UserListItem>>(
+    () => usersApi.findAll(page),
+    [page],
+  );
   const [users, setUsers] = useState<UserListItem[]>([]);
+  const totalPages = fetchedResult?.totalPages ?? 1;
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [search, setSearch] = useState('');
 
   // Sync fetched data into local state (needed for optimistic updates on role/toggle)
   useEffect(() => {
-    if (fetchedUsers) setUsers(fetchedUsers);
-  }, [fetchedUsers]);
+    if (fetchedResult) setUsers(fetchedResult.data);
+  }, [fetchedResult]);
 
   const handleRoleChange = async (user: UserListItem, newRole: string) => {
     if (newRole === user.role) return;
@@ -201,7 +208,7 @@ export function UsersPage() {
             className={styles.searchBar}
             placeholder="Buscar por email..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           />
           <Button variant="primary" onClick={() => setShowCreateModal(true)}>
             + Nuevo Usuario
@@ -217,6 +224,7 @@ export function UsersPage() {
           loading={loading}
           emptyMessage="No hay usuarios registrados"
         />
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
 
       <Modal

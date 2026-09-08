@@ -4,6 +4,7 @@ import { JwtAuthGuard, Roles, RolesGuard } from '../../../auth/adapters/http/aut
 import { Role } from '../../../users/domain/user';
 import { DoctorService } from '../../application/doctor.service';
 import { CreateDoctorDto, UpdateDoctorDto, SetAvailabilityDto } from '../../application/dto/doctor.dto';
+import { PaginationDto } from '../../../../shared/application/pagination';
 
 @Controller('doctors')
 @UseGuards(JwtAuthGuard)
@@ -16,8 +17,8 @@ export class DoctorController {
   }
 
   @Get()
-  findAll(@Query('specialtyId') specialtyId?: string) {
-    return this.service.findAll(specialtyId ? { specialtyId } : undefined);
+  findAll(@Query('specialtyId') specialtyId?: string, @Query() pagination?: PaginationDto) {
+    return this.service.findAll(specialtyId ? { specialtyId } : undefined, pagination);
   }
 
   @Get('me')

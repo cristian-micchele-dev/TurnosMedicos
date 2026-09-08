@@ -27,9 +27,9 @@ export class TypeOrmPatientRepository implements PatientRepository {
     return e ? this.map(e) : undefined;
   }
 
-  async findAll() {
-    const entities = await this.repo.find({ where: { active: true }, order: { createdAt: 'DESC' }, relations: this.relations });
-    return entities.map(e => this.map(e));
+  async findAll(options?: { skip?: number; take?: number }) {
+    const [entities, total] = await this.repo.findAndCount({ where: { active: true }, order: { createdAt: 'DESC' }, relations: this.relations, skip: options?.skip, take: options?.take });
+    return [entities.map(e => this.map(e)), total] as [Patient[], number];
   }
 
   async save(p: Patient) {

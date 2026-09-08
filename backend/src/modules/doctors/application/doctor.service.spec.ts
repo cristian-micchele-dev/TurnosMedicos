@@ -17,7 +17,7 @@ describe('DoctorService', () => {
     doctors.findById.mockResolvedValue(undefined);
     doctors.findByUserId.mockResolvedValue(undefined);
     doctors.findByLicense.mockResolvedValue(undefined);
-    doctors.findAll.mockResolvedValue([]);
+    doctors.findAll.mockResolvedValue([[], 0]);
     availabilities.findByDoctor.mockResolvedValue([]);
     availabilities.findByDoctorAndDay.mockResolvedValue([]);
     specialties.findById.mockResolvedValue(undefined);
@@ -59,15 +59,16 @@ describe('DoctorService', () => {
 
   describe('findAll', () => {
     it('retorna médicos activos', async () => {
-      doctors.findAll.mockResolvedValue([new Doctor('d1', 'u1', 's1', 'MP-1')]);
+      doctors.findAll.mockResolvedValue([[new Doctor('d1', 'u1', 's1', 'MP-1')], 1]);
       const result = await service().findAll();
-      expect(result).toHaveLength(1);
-      expect(doctors.findAll).toHaveBeenCalledWith({ active: true });
+      expect(result.data).toHaveLength(1);
+      expect(result.total).toBe(1);
+      expect(doctors.findAll).toHaveBeenCalledWith(expect.objectContaining({ active: true }));
     });
 
     it('filtra por especialidad', async () => {
       await service().findAll({ specialtyId: 's1' });
-      expect(doctors.findAll).toHaveBeenCalledWith({ specialtyId: 's1', active: true });
+      expect(doctors.findAll).toHaveBeenCalledWith(expect.objectContaining({ specialtyId: 's1', active: true }));
     });
   });
 

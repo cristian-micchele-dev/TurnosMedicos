@@ -1,17 +1,25 @@
 import { useState } from 'react';
 import { specialtiesApi, type Specialty } from '../../api/specialties';
+import type { PaginatedResponse } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
 import { useFetch } from '../../hooks/useFetch';
 import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { Pagination } from '../../components/ui/Pagination';
 import { SpecialtyForm } from './SpecialtyForm';
 import styles from './SpecialtiesPage.module.css';
 
 export function SpecialtiesPage() {
   const { toast } = useToast();
-  const { data: specialties, loading, refetch } = useFetch<Specialty[]>(() => specialtiesApi.findAll());
+  const [page, setPage] = useState(1);
+  const { data: result, loading, refetch } = useFetch<PaginatedResponse<Specialty>>(
+    () => specialtiesApi.findAll(page),
+    [page],
+  );
+  const specialties = result?.data ?? [];
+  const totalPages = result?.totalPages ?? 1;
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSpecialty, setSelectedSpecialty] = useState<Specialty | undefined>(undefined);
 
@@ -128,11 +136,12 @@ export function SpecialtiesPage() {
       <div className={styles.tableContainer}>
         <Table
           columns={columns}
-          data={specialties ?? []}
+          data={specialties}
           keyExtractor={(s) => s.id}
           loading={loading}
           emptyMessage="No hay especialidades registradas"
         />
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
 
       <Modal

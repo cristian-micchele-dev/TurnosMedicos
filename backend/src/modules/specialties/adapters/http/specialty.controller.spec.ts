@@ -12,12 +12,12 @@ describe('SpecialtyController', () => {
 
   it('findAll delega al service con filtro activo por defecto', async () => {
     await controller.findAll();
-    expect(service.findAll).toHaveBeenCalledWith(true);
+    expect(service.findAll).toHaveBeenCalledWith(true, undefined);
   });
 
   it('findAll incluye inactivas con query all=true', async () => {
     await controller.findAll('true');
-    expect(service.findAll).toHaveBeenCalledWith(false);
+    expect(service.findAll).toHaveBeenCalledWith(false, undefined);
   });
 
   it('findOne delega al service', async () => {

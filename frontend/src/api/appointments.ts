@@ -1,4 +1,5 @@
 import { api } from './client';
+import type { PaginatedResponse } from './users';
 
 export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
 
@@ -24,15 +25,16 @@ export interface AppointmentFilters {
 }
 
 export const appointmentsApi = {
-  findAll: (filters?: AppointmentFilters) => {
+  findAll: (filters?: AppointmentFilters, page = 1, limit = 20) => {
     const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
         if (value) params.append(key, value);
       });
     }
-    const query = params.toString() ? `?${params.toString()}` : '';
-    return api.get<Appointment[]>(`/appointments${query}`);
+    return api.get<PaginatedResponse<Appointment>>(`/appointments?${params.toString()}`);
   },
   findOne: (id: string) => api.get<Appointment>(`/appointments/${id}`),
   create: (data: { doctorId: string; patientId: string; dateTime: string }) => api.post<Appointment>('/appointments', data),

@@ -5,6 +5,7 @@ import { Specialty } from '../domain/specialty';
 import { SpecialtyNotFoundError } from '../domain/specialty-not-found.exception';
 import { SpecialtyRepository, SPECIALTY_REPOSITORY } from '../specialty.repository.port';
 import { CreateSpecialtyDto, UpdateSpecialtyDto } from './dto/specialty.dto';
+import { PaginationDto, PaginatedResult } from '../../../shared/application/pagination';
 
 @Injectable()
 export class SpecialtyService {
@@ -17,9 +18,12 @@ export class SpecialtyService {
     return (await this.specialties.save(specialty)).toPublic();
   }
 
-  async findAll(onlyActive = true) {
-    const list = await this.specialties.findAll(onlyActive);
-    return list.map(s => s.toPublic());
+  async findAll(onlyActive = true, pagination: PaginationDto = {}): Promise<PaginatedResult<ReturnType<Specialty['toPublic']>>> {
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? 20;
+    const skip = (page - 1) * limit;
+    const [list, total] = await this.specialties.findAll(onlyActive, { skip, take: limit });
+    return { data: list.map(s => s.toPublic()), total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findOne(id: string) {

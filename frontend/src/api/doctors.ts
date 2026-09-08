@@ -1,4 +1,5 @@
 import { api } from './client';
+import type { PaginatedResponse } from './users';
 
 export interface Doctor {
   id: string;
@@ -28,7 +29,7 @@ export interface AvailabilitySlot {
 }
 
 export const doctorsApi = {
-  findAll: () => api.get<Doctor[]>('/doctors'),
+  findAll: (page = 1, limit = 20) => api.get<PaginatedResponse<Doctor>>(`/doctors?page=${page}&limit=${limit}`),
   findOne: (id: string) => api.get<Doctor>(`/doctors/${id}`),
   me: () => api.get<Doctor>('/doctors/me'),
   create: (data: { userId: string; specialtyId: string; licenseNumber: string; phone?: string }) => api.post<Doctor>('/doctors', data),

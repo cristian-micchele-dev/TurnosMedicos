@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doctorsApi, type Doctor } from '../../api/doctors';
 import { specialtiesApi, type Specialty } from '../../api/specialties';
-import { usersApi, type UserListItem } from '../../api/users';
+import { usersApi, type UserListItem, type PaginatedResponse } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
 import { useFetch } from '../../hooks/useFetch';
 import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { Pagination } from '../../components/ui/Pagination';
 import { DoctorForm } from './DoctorForm';
 import styles from './DoctorsPage.module.css';
 
@@ -16,15 +17,30 @@ export function DoctorsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const { data: doctors, loading: loadingDoctors, refetch: refetchDoctors } = useFetch<Doctor[]>(() => doctorsApi.findAll());
-  const { data: specialties, loading: loadingSpecialties } = useFetch<Specialty[]>(() => specialtiesApi.findAll());
-  const { data: users, loading: loadingUsers } = useFetch<UserListItem[]>(() => usersApi.findAll());
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+
+  const { data: result, loading: loadingDoctors, refetch: refetchDoctors } = useFetch<PaginatedResponse<Doctor>>(
+    () => doctorsApi.findAll(page),
+    [page],
+  );
+  const doctors = result?.data ?? [];
+  const totalPages = result?.totalPages ?? 1;
+
+  const { data: specialtiesResult, loading: loadingSpecialties } = useFetch<PaginatedResponse<Specialty>>(
+    () => specialtiesApi.findAll(1, 100),
+  );
+  const specialties = specialtiesResult?.data ?? [];
+
+  const { data: usersResult, loading: loadingUsers } = useFetch<PaginatedResponse<UserListItem>>(
+    () => usersApi.findAll(1, 100),
+  );
+  const users = usersResult?.data ?? [];
 
   const loading = loadingDoctors || loadingSpecialties || loadingUsers;
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | undefined>(undefined);
-  const [search, setSearch] = useState('');
 
   const handleOpenCreate = () => {
     setSelectedDoctor(undefined);
@@ -77,7 +93,7 @@ export function DoctorsPage() {
     }
   };
 
-  const filteredDoctors = (doctors ?? []).filter((d) => {
+  const filteredDoctors = doctors.filter((d) => {
     const term = search.toLowerCase();
     const name = d.user?.name?.toLowerCase() ?? '';
     const email = d.user?.email?.toLowerCase() ?? '';
@@ -180,7 +196,7 @@ export function DoctorsPage() {
             type="search"
             placeholder="Buscar por nombre o email..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           />
           <Button variant="primary" onClick={handleOpenCreate}>
             + Nuevo Doctor
@@ -196,6 +212,7 @@ export function DoctorsPage() {
           loading={loading}
           emptyMessage="No hay doctores registrados"
         />
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
 
       <Modal

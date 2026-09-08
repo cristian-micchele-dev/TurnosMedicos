@@ -1,4 +1,5 @@
 import { IsDateString, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 import { AppointmentStatus } from '../../domain/appointment-status.enum';
 
 export class CreateAppointmentDto {
@@ -20,4 +21,6 @@ export class QueryAppointmentsDto {
   @IsOptional() @IsEnum(AppointmentStatus) status?: AppointmentStatus;
   @IsOptional() @IsDateString() from?: string;
   @IsOptional() @IsDateString() to?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number = 1;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit?: number = 20;
 }

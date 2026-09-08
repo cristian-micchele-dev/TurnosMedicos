@@ -16,8 +16,16 @@ export interface CreateUserRequest {
   role?: 'ADMIN' | 'DOCTOR' | 'PATIENT';
 }
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export const usersApi = {
-  findAll: () => api.get<UserListItem[]>('/users'),
+  findAll: (page = 1, limit = 20) => api.get<PaginatedResponse<UserListItem>>(`/users?page=${page}&limit=${limit}`),
   create: (data: CreateUserRequest) => api.post<UserListItem>('/users', data),
   updateRole: (id: string, role: string) => api.patch<UserListItem>(`/users/${id}/role`, { role }),
   toggleActive: (id: string) => api.patch<UserListItem>(`/users/${id}/toggle-active`),

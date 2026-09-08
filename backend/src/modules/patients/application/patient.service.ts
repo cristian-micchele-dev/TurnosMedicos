@@ -7,6 +7,7 @@ import { PatientRepository, PATIENT_REPOSITORY } from '../patient.repository.por
 import { UserRepository } from '../../users/user.repository.port';
 import { Role } from '../../users/domain/user';
 import { CreatePatientDto, UpdatePatientDto } from './dto/patient.dto';
+import { PaginationDto, PaginatedResult } from '../../../shared/application/pagination';
 
 @Injectable()
 export class PatientService {
@@ -23,9 +24,12 @@ export class PatientService {
     return (await this.patients.save(patient)).toPublic();
   }
 
-  async findAll() {
-    const list = await this.patients.findAll();
-    return list.map(p => p.toPublic());
+  async findAll(pagination: PaginationDto = {}): Promise<PaginatedResult<ReturnType<Patient['toPublic']>>> {
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? 20;
+    const skip = (page - 1) * limit;
+    const [list, total] = await this.patients.findAll({ skip, take: limit });
+    return { data: list.map(p => p.toPublic()), total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findOne(id: string) {

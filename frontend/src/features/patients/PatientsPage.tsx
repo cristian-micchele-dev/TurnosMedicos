@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { patientsApi, type Patient } from '../../api/patients';
-import { usersApi, type UserListItem } from '../../api/users';
+import { usersApi, type UserListItem, type PaginatedResponse } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
 import { useFetch } from '../../hooks/useFetch';
 import { useAuth } from '../../auth/AuthContext';
@@ -8,6 +8,7 @@ import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { Pagination } from '../../components/ui/Pagination';
 import { PatientForm } from './PatientForm';
 import styles from './PatientsPage.module.css';
 
@@ -15,14 +16,25 @@ export function PatientsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const { data: patients, loading: loadingPatients, refetch: refetchPatients } = useFetch<Patient[]>(() => patientsApi.findAll());
-  const { data: users, loading: loadingUsers } = useFetch<UserListItem[]>(() => usersApi.findAll());
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+
+  const { data: result, loading: loadingPatients, refetch: refetchPatients } = useFetch<PaginatedResponse<Patient>>(
+    () => patientsApi.findAll(page),
+    [page],
+  );
+  const patients = result?.data ?? [];
+  const totalPages = result?.totalPages ?? 1;
+
+  const { data: usersResult, loading: loadingUsers } = useFetch<PaginatedResponse<UserListItem>>(
+    () => usersApi.findAll(1, 100),
+  );
+  const users = usersResult?.data ?? [];
 
   const loading = loadingPatients || loadingUsers;
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | undefined>(undefined);
-  const [search, setSearch] = useState('');
 
   const handleOpenCreate = () => {
     setSelectedPatient(undefined);
@@ -73,7 +85,7 @@ export function PatientsPage() {
 
   const isAdmin = user?.role === 'ADMIN';
 
-  const filteredPatients = (patients ?? []).filter((p) => {
+  const filteredPatients = patients.filter((p) => {
     const term = search.toLowerCase();
     const name = p.user?.name?.toLowerCase() ?? '';
     const email = p.user?.email?.toLowerCase() ?? '';
@@ -169,7 +181,7 @@ export function PatientsPage() {
             type="search"
             placeholder="Buscar por nombre o email..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           />
           {isAdmin && (
             <Button variant="primary" onClick={handleOpenCreate}>
@@ -188,6 +200,7 @@ export function PatientsPage() {
           emptyMessage="No hay pacientes registrados"
           onRowClick={isAdmin ? handleOpenEdit : undefined}
         />
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
 
       {isAdmin && (

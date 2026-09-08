@@ -16,7 +16,7 @@ describe('PatientController', () => {
   });
 
   it('findAll delega al service', async () => {
-    await controller.findAll();
+    await controller.findAll({});
     expect(service.findAll).toHaveBeenCalled();
   });
 

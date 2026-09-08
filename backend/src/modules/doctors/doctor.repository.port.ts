@@ -5,7 +5,7 @@ export interface DoctorRepository {
   findById(id: string): Promise<Doctor | undefined>;
   findByUserId(userId: string): Promise<Doctor | undefined>;
   findByLicense(license: string): Promise<Doctor | undefined>;
-  findAll(filters?: { specialtyId?: string; active?: boolean }): Promise<Doctor[]>;
+  findAll(filters?: { specialtyId?: string; active?: boolean; skip?: number; take?: number }): Promise<[Doctor[], number]>;
   save(doctor: Doctor): Promise<Doctor>;
   update(doctor: Doctor): Promise<void>;
 }

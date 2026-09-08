@@ -8,11 +8,13 @@ export interface AppointmentFilters {
   status?: AppointmentStatus;
   from?: Date;
   to?: Date;
+  skip?: number;
+  take?: number;
 }
 
 export interface AppointmentRepository {
   findById(id: string): Promise<Appointment | undefined>;
-  findAll(filters: AppointmentFilters): Promise<Appointment[]>;
+  findAll(filters: AppointmentFilters): Promise<[Appointment[], number]>;
   findByDoctorAndDateTime(doctorId: string, dateTime: Date): Promise<Appointment[]>;
   findByPatientSpecialtyAndDateRange(patientId: string, specialtyId: string, from: Date, to: Date): Promise<Appointment[]>;
   save(appointment: Appointment): Promise<Appointment>;

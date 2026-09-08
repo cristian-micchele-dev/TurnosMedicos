@@ -10,6 +10,7 @@ import { SpecialtyNotFoundError } from '../../specialties/domain/specialty-not-f
 import { UserRepository } from '../../users/user.repository.port';
 import { Role } from '../../users/domain/user';
 import { CreateDoctorDto, UpdateDoctorDto, SetAvailabilityDto } from './dto/doctor.dto';
+import { PaginationDto, PaginatedResult } from '../../../shared/application/pagination';
 
 @Injectable()
 export class DoctorService {
@@ -30,9 +31,12 @@ export class DoctorService {
     return (await this.doctors.save(doctor)).toPublic();
   }
 
-  async findAll(filters?: { specialtyId?: string }) {
-    const list = await this.doctors.findAll({ ...filters, active: true });
-    return list.map(d => d.toPublic());
+  async findAll(filters?: { specialtyId?: string }, pagination: PaginationDto = {}): Promise<PaginatedResult<ReturnType<Doctor['toPublic']>>> {
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? 20;
+    const skip = (page - 1) * limit;
+    const [list, total] = await this.doctors.findAll({ ...filters, active: true, skip, take: limit });
+    return { data: list.map(d => d.toPublic()), total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findOne(id: string) {

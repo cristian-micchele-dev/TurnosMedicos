@@ -3,14 +3,15 @@ import { JwtAuthGuard, Roles, RolesGuard } from '../../../auth/adapters/http/aut
 import { Role } from '../../../users/domain/user';
 import { SpecialtyService } from '../../application/specialty.service';
 import { CreateSpecialtyDto, UpdateSpecialtyDto } from '../../application/dto/specialty.dto';
+import { PaginationDto } from '../../../../shared/application/pagination';
 
 @Controller('specialties')
 export class SpecialtyController {
   constructor(private readonly service: SpecialtyService) {}
 
   @Get()
-  findAll(@Query('all') all?: string) {
-    return this.service.findAll(all !== 'true');
+  findAll(@Query('all') all?: string, @Query() pagination?: PaginationDto) {
+    return this.service.findAll(all !== 'true', pagination);
   }
 
   @Get(':id')

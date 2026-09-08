@@ -34,13 +34,13 @@ export class TypeOrmDoctorRepository implements DoctorRepository {
     return e ? this.map(e) : undefined;
   }
 
-  async findAll(filters?: { specialtyId?: string; active?: boolean }) {
+  async findAll(filters?: { specialtyId?: string; active?: boolean; skip?: number; take?: number }) {
     const where: Record<string, unknown> = {};
     if (filters?.specialtyId) where.specialtyId = filters.specialtyId;
     if (filters?.active !== undefined) where.active = filters.active;
     else where.active = true;
-    const entities = await this.repo.find({ where, order: { createdAt: 'DESC' }, relations: this.relations });
-    return entities.map(e => this.map(e));
+    const [entities, total] = await this.repo.findAndCount({ where, order: { createdAt: 'DESC' }, relations: this.relations, skip: filters?.skip, take: filters?.take });
+    return [entities.map(e => this.map(e)), total] as [Doctor[], number];
   }
 
   async save(d: Doctor) {
