@@ -19,7 +19,7 @@ export class PatientService {
     const user = await this.users.findById(dto.userId);
     if (!user || user.role !== Role.PATIENT) throw new ConflictError('El usuario no existe o no tiene rol PACIENTE');
     if (await this.patients.findByUserId(dto.userId)) throw new ConflictError('El usuario ya tiene un perfil de paciente');
-    const patient = new Patient(randomUUID(), dto.userId, dto.phone ?? null, dto.dateOfBirth ?? null, dto.address ?? null, dto.insuranceNumber ?? null);
+    const patient = new Patient(randomUUID(), dto.userId, dto.phone ?? null, dto.dateOfBirth ?? null, dto.address ?? null, dto.insuranceNumber ?? null, dto.notes ?? null);
     return (await this.patients.save(patient)).toPublic();
   }
 
@@ -47,6 +47,7 @@ export class PatientService {
     if (dto.dateOfBirth !== undefined) p.dateOfBirth = dto.dateOfBirth ?? null;
     if (dto.address !== undefined) p.address = dto.address ?? null;
     if (dto.insuranceNumber !== undefined) p.insuranceNumber = dto.insuranceNumber ?? null;
+    if (dto.notes !== undefined) p.notes = dto.notes ?? null;
     if (dto.active !== undefined) p.active = dto.active;
     await this.patients.update(p);
     return p.toPublic();

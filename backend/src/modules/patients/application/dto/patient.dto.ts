@@ -6,6 +6,7 @@ export class CreatePatientDto {
   @IsOptional() @IsDateString() dateOfBirth?: string;
   @IsOptional() @IsString() @MaxLength(255) address?: string;
   @IsOptional() @IsString() @MaxLength(50) insuranceNumber?: string;
+  @IsOptional() @IsString() notes?: string;
 }
 
 export class UpdatePatientDto {
@@ -13,5 +14,6 @@ export class UpdatePatientDto {
   @IsOptional() @IsDateString() dateOfBirth?: string;
   @IsOptional() @IsString() @MaxLength(255) address?: string;
   @IsOptional() @IsString() @MaxLength(50) insuranceNumber?: string;
+  @IsOptional() @IsString() notes?: string;
   @IsOptional() @IsBoolean() active?: boolean;
 }

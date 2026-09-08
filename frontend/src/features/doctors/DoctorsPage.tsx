@@ -21,6 +21,7 @@ export function DoctorsPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | undefined>(undefined);
+  const [search, setSearch] = useState('');
 
   const fetchData = async () => {
     try {
@@ -94,6 +95,13 @@ export function DoctorsPage() {
       toast.error('Error al desactivar el doctor');
     }
   };
+
+  const filteredDoctors = doctors.filter((d) => {
+    const term = search.toLowerCase();
+    const name = d.user?.name?.toLowerCase() ?? '';
+    const email = d.user?.email?.toLowerCase() ?? '';
+    return name.includes(term) || email.includes(term);
+  });
 
   const columns = [
     {
@@ -185,15 +193,24 @@ export function DoctorsPage() {
           <h1 className={styles.title}>Doctores</h1>
           <p className={styles.subtitle}>Gestioná el plantel médico del sistema</p>
         </div>
-        <Button variant="primary" onClick={handleOpenCreate}>
-          + Nuevo Doctor
-        </Button>
+        <div className={styles.headerActions}>
+          <input
+            className={styles.searchBar}
+            type="search"
+            placeholder="Buscar por nombre o email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <Button variant="primary" onClick={handleOpenCreate}>
+            + Nuevo Doctor
+          </Button>
+        </div>
       </header>
 
       <div className={styles.tableContainer}>
         <Table
           columns={columns}
-          data={doctors}
+          data={filteredDoctors}
           keyExtractor={(d) => d.id}
           loading={loading}
           emptyMessage="No hay doctores registrados"

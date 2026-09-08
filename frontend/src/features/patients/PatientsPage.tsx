@@ -18,6 +18,7 @@ export function PatientsPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | undefined>(undefined);
+  const [search, setSearch] = useState('');
 
   const fetchPatients = async () => {
     try {
@@ -60,6 +61,7 @@ export function PatientsPage() {
     dateOfBirth?: string;
     address?: string;
     insuranceNumber?: string;
+    notes?: string;
   }) => {
     if (selectedPatient) {
       await patientsApi.update(selectedPatient.id, {
@@ -67,6 +69,7 @@ export function PatientsPage() {
         dateOfBirth: data.dateOfBirth,
         address: data.address,
         insuranceNumber: data.insuranceNumber,
+        notes: data.notes,
       });
       toast.success('Paciente actualizado correctamente');
     } else {
@@ -76,6 +79,7 @@ export function PatientsPage() {
         dateOfBirth: data.dateOfBirth,
         address: data.address,
         insuranceNumber: data.insuranceNumber,
+        notes: data.notes,
       });
       toast.success('Paciente creado correctamente');
     }
@@ -84,6 +88,13 @@ export function PatientsPage() {
   };
 
   const isAdmin = user?.role === 'ADMIN';
+
+  const filteredPatients = patients.filter((p) => {
+    const term = search.toLowerCase();
+    const name = p.user?.name?.toLowerCase() ?? '';
+    const email = p.user?.email?.toLowerCase() ?? '';
+    return name.includes(term) || email.includes(term);
+  });
 
   const columns = [
     {
@@ -112,6 +123,13 @@ export function PatientsPage() {
       header: 'Obra Social',
       render: (p: Patient) => (
         <span className={styles.secondaryCell}>{p.insuranceNumber ?? '—'}</span>
+      ),
+    },
+    {
+      key: 'notes',
+      header: 'Notas',
+      render: (p: Patient) => (
+        <span className={styles.notesCell}>{p.notes ?? '—'}</span>
       ),
     },
     {
@@ -161,17 +179,26 @@ export function PatientsPage() {
               : 'Listado de pacientes'}
           </p>
         </div>
-        {isAdmin && (
-          <Button variant="primary" onClick={handleOpenCreate}>
-            + Nuevo Paciente
-          </Button>
-        )}
+        <div className={styles.headerActions}>
+          <input
+            className={styles.searchBar}
+            type="search"
+            placeholder="Buscar por nombre o email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {isAdmin && (
+            <Button variant="primary" onClick={handleOpenCreate}>
+              + Nuevo Paciente
+            </Button>
+          )}
+        </div>
       </header>
 
       <div className={styles.tableContainer}>
         <Table
           columns={columns}
-          data={patients}
+          data={filteredPatients}
           keyExtractor={(p) => p.id}
           loading={loading}
           emptyMessage="No hay pacientes registrados"

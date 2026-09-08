@@ -28,6 +28,7 @@ export function PatientProfilePage() {
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [address, setAddress] = useState('');
   const [insuranceNumber, setInsuranceNumber] = useState('');
+  const [notes, setNotes] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -55,6 +56,7 @@ export function PatientProfilePage() {
     setDateOfBirth(p.dateOfBirth ? p.dateOfBirth.split('T')[0] : '');
     setAddress(p.address ?? '');
     setInsuranceNumber(p.insuranceNumber ?? '');
+    setNotes(p.notes ?? '');
   };
 
   const handleCreate = async (e: FormEvent) => {
@@ -69,6 +71,7 @@ export function PatientProfilePage() {
         dateOfBirth: dateOfBirth || undefined,
         address: address.trim() || undefined,
         insuranceNumber: insuranceNumber.trim() || undefined,
+        notes: notes.trim() || undefined,
       });
       setPatient(created);
       setNoProfile(false);
@@ -91,6 +94,7 @@ export function PatientProfilePage() {
         dateOfBirth: dateOfBirth || undefined,
         address: address.trim() || undefined,
         insuranceNumber: insuranceNumber.trim() || undefined,
+        notes: notes.trim() || undefined,
       });
       setPatient(updated);
       populateForm(updated);

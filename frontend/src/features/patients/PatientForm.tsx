@@ -16,6 +16,7 @@ interface PatientFormProps {
     dateOfBirth?: string;
     address?: string;
     insuranceNumber?: string;
+    notes?: string;
   }) => Promise<void>;
   onCancel: () => void;
 }
@@ -32,6 +33,7 @@ export function PatientForm({ patient, users, onSubmit, onCancel }: PatientFormP
   const [dateOfBirth, setDateOfBirth] = useState(patient?.dateOfBirth ?? '');
   const [address, setAddress] = useState(patient?.address ?? '');
   const [insuranceNumber, setInsuranceNumber] = useState(patient?.insuranceNumber ?? '');
+  const [notes, setNotes] = useState(patient?.notes ?? '');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -79,6 +81,7 @@ export function PatientForm({ patient, users, onSubmit, onCancel }: PatientFormP
         dateOfBirth: dateOfBirth || undefined,
         address: address.trim() || undefined,
         insuranceNumber: insuranceNumber.trim() || undefined,
+        notes: notes.trim() || undefined,
       });
     } finally {
       setSubmitting(false);
@@ -184,6 +187,19 @@ export function PatientForm({ patient, users, onSubmit, onCancel }: PatientFormP
           onChange={(e) => setInsuranceNumber(e.target.value)}
           placeholder="Ej: OSDE 12345678"
         />
+
+        <div>
+          <label className={styles.fieldLabel} htmlFor="notes">
+            Notas médicas
+          </label>
+          <textarea
+            id="notes"
+            className={styles.notesTextarea}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Alergias, condiciones preexistentes, observaciones..."
+          />
+        </div>
       </div>
 
       <div className={styles.footer}>

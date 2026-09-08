@@ -8,6 +8,7 @@ export class Patient {
     public dateOfBirth: string | null = null,
     public address: string | null = null,
     public insuranceNumber: string | null = null,
+    public notes: string | null = null,
     public active: boolean = true,
     public readonly createdAt: Date = new Date(),
   ) {}
@@ -15,7 +16,7 @@ export class Patient {
   toPublic() {
     return {
       id: this.id, userId: this.userId, phone: this.phone, dateOfBirth: this.dateOfBirth,
-      address: this.address, insuranceNumber: this.insuranceNumber, active: this.active,
+      address: this.address, insuranceNumber: this.insuranceNumber, notes: this.notes, active: this.active,
       createdAt: this.createdAt, user: this.user,
     };
   }
