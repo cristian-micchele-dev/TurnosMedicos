@@ -7,6 +7,22 @@ import { Spinner } from '../../components/ui/Spinner';
 import { Badge } from '../../components/ui/Badge';
 import styles from './DashboardPage.module.css';
 
+function useParallax() {
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    // The scroll container is <main class="content"> in Layout — not window.
+    const container = document.querySelector('main');
+    if (!container) return;
+
+    const handler = () => setScrollY(container.scrollTop);
+    container.addEventListener('scroll', handler, { passive: true });
+    return () => container.removeEventListener('scroll', handler);
+  }, []);
+
+  return scrollY;
+}
+
 interface StatCard {
   label: string;
   value: string | number;
@@ -84,6 +100,7 @@ export function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const scrollY = useParallax();
 
   useEffect(() => {
     Promise.all([
@@ -117,15 +134,58 @@ export function DashboardPage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.pageHeader}>
-        <div>
-          <h1 className={styles.greeting}>Bienvenido, {displayName}</h1>
-          <p className={styles.subtext}>Aquí está el resumen de tu actividad</p>
+      {/* ── Parallax Hero ── */}
+      <section className={styles.hero} aria-label="Hero">
+        {/* Layer 1 — farthest, slowest (0.2x) */}
+        <div
+          className={styles.heroLayer1}
+          style={{ transform: `translateY(${scrollY * 0.2}px)` }}
+          aria-hidden="true"
+        />
+        {/* Layer 2 — middle floating shapes (0.4x) */}
+        <div
+          className={styles.heroLayer2}
+          style={{ transform: `translateY(${scrollY * 0.4}px)` }}
+          aria-hidden="true"
+        >
+          <div className={styles.shapeCircleLg} />
+          <div className={styles.shapeRect} />
+          <div className={styles.shapeCircleSm} />
         </div>
-        <span className={`${styles.badge} ${ROLE_ACCENT[user.role] ?? ''}`}>
-          {ROLE_LABELS[user.role] ?? user.role}
-        </span>
-      </header>
+        {/* Layer 3 — dots grid, closest (0.6x) */}
+        <div
+          className={styles.heroLayer3}
+          style={{ transform: `translateY(${scrollY * 0.6}px)` }}
+          aria-hidden="true"
+        />
+
+        {/* Foreground — no parallax */}
+        <div className={styles.heroContent}>
+          <div className={styles.heroGlass}>
+            <div>
+              <h1 className={styles.heroGreeting}>Bienvenido, {displayName}</h1>
+              <p className={styles.heroSubtext}>Aquí está el resumen de tu actividad</p>
+            </div>
+            <span className={`${styles.badge} ${ROLE_ACCENT[user.role] ?? ''}`}>
+              {ROLE_LABELS[user.role] ?? user.role}
+            </span>
+          </div>
+        </div>
+
+        {/* Decorative medical cross SVG */}
+        <svg
+          className={styles.heroCross}
+          viewBox="0 0 64 64"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect x="24" y="4"  width="16" height="56" rx="4" />
+          <rect x="4"  y="24" width="56" height="16" rx="4" />
+        </svg>
+
+        {/* Bottom fade-to-page blend */}
+        <div className={styles.heroFade} aria-hidden="true" />
+      </section>
 
       <div className={styles.grid}>
         {cards.map((card) => (
