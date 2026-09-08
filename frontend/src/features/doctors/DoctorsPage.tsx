@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doctorsApi, type Doctor } from '../../api/doctors';
 import { specialtiesApi, type Specialty } from '../../api/specialties';
 import { usersApi, type UserListItem } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
+import { useFetch } from '../../hooks/useFetch';
 import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -15,35 +16,15 @@ export function DoctorsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [specialties, setSpecialties] = useState<Specialty[]>([]);
-  const [users, setUsers] = useState<UserListItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: doctors, loading: loadingDoctors, refetch: refetchDoctors } = useFetch<Doctor[]>(() => doctorsApi.findAll());
+  const { data: specialties, loading: loadingSpecialties } = useFetch<Specialty[]>(() => specialtiesApi.findAll());
+  const { data: users, loading: loadingUsers } = useFetch<UserListItem[]>(() => usersApi.findAll());
+
+  const loading = loadingDoctors || loadingSpecialties || loadingUsers;
+
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | undefined>(undefined);
   const [search, setSearch] = useState('');
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [doctorsData, specialtiesData, usersData] = await Promise.all([
-        doctorsApi.findAll(),
-        specialtiesApi.findAll(),
-        usersApi.findAll(),
-      ]);
-      setDoctors(doctorsData);
-      setSpecialties(specialtiesData);
-      setUsers(usersData);
-    } catch {
-      toast.error('Error al cargar los datos');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const handleOpenCreate = () => {
     setSelectedDoctor(undefined);
@@ -77,7 +58,7 @@ export function DoctorsPage() {
       toast.success('Doctor creado correctamente');
     }
     handleCloseModal();
-    await fetchData();
+    await refetchDoctors();
   };
 
   const handleDelete = async (doctor: Doctor) => {
@@ -90,13 +71,13 @@ export function DoctorsPage() {
     try {
       await doctorsApi.update(doctor.id, { active: false });
       toast.success('Doctor desactivado correctamente');
-      await fetchData();
+      await refetchDoctors();
     } catch {
       toast.error('Error al desactivar el doctor');
     }
   };
 
-  const filteredDoctors = doctors.filter((d) => {
+  const filteredDoctors = (doctors ?? []).filter((d) => {
     const term = search.toLowerCase();
     const name = d.user?.name?.toLowerCase() ?? '';
     const email = d.user?.email?.toLowerCase() ?? '';
@@ -225,8 +206,8 @@ export function DoctorsPage() {
       >
         <DoctorForm
           doctor={selectedDoctor}
-          specialties={specialties}
-          users={users}
+          specialties={specialties ?? []}
+          users={users ?? []}
           onSubmit={handleSubmit}
           onCancel={handleCloseModal}
         />

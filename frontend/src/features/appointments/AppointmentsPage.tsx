@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   appointmentsApi,
@@ -7,6 +7,7 @@ import {
   type AppointmentStatus,
 } from '../../api/appointments';
 import { useToast } from '../../hooks/useToast';
+import { useFetch } from '../../hooks/useFetch';
 import { useAuth } from '../../auth/AuthContext';
 import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
@@ -49,8 +50,6 @@ export function AppointmentsPage() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
 
   // Filters
@@ -58,25 +57,16 @@ export function AppointmentsPage() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
-  const fetchAppointments = async () => {
-    try {
-      setLoading(true);
+  const { data: appointments, loading, refetch: refetchAppointments } = useFetch<Appointment[]>(
+    () => {
       const filters: AppointmentFilters = {};
       if (statusFilter) filters.status = statusFilter as AppointmentStatus;
       if (fromDate) filters.from = fromDate;
       if (toDate) filters.to = toDate;
-      const data = await appointmentsApi.findAll(filters);
-      setAppointments(data);
-    } catch {
-      toast.error('Error al cargar los turnos');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAppointments();
-  }, [statusFilter, fromDate, toDate]);
+      return appointmentsApi.findAll(filters);
+    },
+    [statusFilter, fromDate, toDate],
+  );
 
   const handleAction = async (
     action: 'confirm' | 'cancel' | 'complete',
@@ -95,7 +85,7 @@ export function AppointmentsPage() {
         toast.success('Turno completado');
       }
       setSelectedAppointment(null);
-      await fetchAppointments();
+      await refetchAppointments();
     } catch {
       toast.error('Error al actualizar el turno');
     }
@@ -318,7 +308,7 @@ export function AppointmentsPage() {
       <div className={styles.tableContainer}>
         <Table
           columns={columns}
-          data={appointments}
+          data={appointments ?? []}
           keyExtractor={(a) => a.id}
           loading={loading}
           emptyMessage="No hay turnos que coincidan con los filtros"

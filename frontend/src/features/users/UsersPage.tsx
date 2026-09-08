@@ -1,6 +1,7 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { usersApi, type UserListItem } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
+import { useFetch } from '../../hooks/useFetch';
 import { useConfirm } from '../../hooks/useConfirm';
 import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
@@ -26,27 +27,16 @@ export function UsersPage() {
   const { toast } = useToast();
   const { confirm, dialogProps, ConfirmDialog } = useConfirm();
 
+  const { data: fetchedUsers, loading } = useFetch<UserListItem[]>(() => usersApi.findAll());
   const [users, setUsers] = useState<UserListItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [search, setSearch] = useState('');
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const data = await usersApi.findAll();
-      setUsers(data);
-    } catch {
-      toast.error('Error al cargar los usuarios');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Sync fetched data into local state (needed for optimistic updates on role/toggle)
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (fetchedUsers) setUsers(fetchedUsers);
+  }, [fetchedUsers]);
 
   const handleRoleChange = async (user: UserListItem, newRole: string) => {
     if (newRole === user.role) return;

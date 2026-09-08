@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { patientsApi, type Patient } from '../../api/patients';
 import { usersApi, type UserListItem } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
+import { useFetch } from '../../hooks/useFetch';
 import { useAuth } from '../../auth/AuthContext';
 import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
@@ -13,32 +14,15 @@ import styles from './PatientsPage.module.css';
 export function PatientsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [users, setUsers] = useState<UserListItem[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const { data: patients, loading: loadingPatients, refetch: refetchPatients } = useFetch<Patient[]>(() => patientsApi.findAll());
+  const { data: users, loading: loadingUsers } = useFetch<UserListItem[]>(() => usersApi.findAll());
+
+  const loading = loadingPatients || loadingUsers;
+
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | undefined>(undefined);
   const [search, setSearch] = useState('');
-
-  const fetchPatients = async () => {
-    try {
-      setLoading(true);
-      const [data, usersData] = await Promise.all([
-        patientsApi.findAll(),
-        usersApi.findAll(),
-      ]);
-      setPatients(data);
-      setUsers(usersData);
-    } catch {
-      toast.error('Error al cargar los pacientes');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPatients();
-  }, []);
 
   const handleOpenCreate = () => {
     setSelectedPatient(undefined);
@@ -84,12 +68,12 @@ export function PatientsPage() {
       toast.success('Paciente creado correctamente');
     }
     handleCloseModal();
-    await fetchPatients();
+    await refetchPatients();
   };
 
   const isAdmin = user?.role === 'ADMIN';
 
-  const filteredPatients = patients.filter((p) => {
+  const filteredPatients = (patients ?? []).filter((p) => {
     const term = search.toLowerCase();
     const name = p.user?.name?.toLowerCase() ?? '';
     const email = p.user?.email?.toLowerCase() ?? '';
@@ -215,7 +199,7 @@ export function PatientsPage() {
         >
           <PatientForm
             patient={selectedPatient}
-            users={users}
+            users={users ?? []}
             onSubmit={handleSubmit}
             onCancel={handleCloseModal}
           />

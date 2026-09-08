@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { specialtiesApi, type Specialty } from '../../api/specialties';
 import { useToast } from '../../hooks/useToast';
+import { useFetch } from '../../hooks/useFetch';
 import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -10,26 +11,9 @@ import styles from './SpecialtiesPage.module.css';
 
 export function SpecialtiesPage() {
   const { toast } = useToast();
-  const [specialties, setSpecialties] = useState<Specialty[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: specialties, loading, refetch } = useFetch<Specialty[]>(() => specialtiesApi.findAll());
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSpecialty, setSelectedSpecialty] = useState<Specialty | undefined>(undefined);
-
-  const fetchSpecialties = async () => {
-    try {
-      setLoading(true);
-      const data = await specialtiesApi.findAll();
-      setSpecialties(data);
-    } catch {
-      toast.error('Error al cargar las especialidades');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSpecialties();
-  }, []);
 
   const handleOpenCreate = () => {
     setSelectedSpecialty(undefined);
@@ -55,7 +39,7 @@ export function SpecialtiesPage() {
       toast.success('Especialidad creada correctamente');
     }
     handleCloseModal();
-    await fetchSpecialties();
+    await refetch();
   };
 
   const handleDelete = async (specialty: Specialty) => {
@@ -67,7 +51,7 @@ export function SpecialtiesPage() {
     try {
       await specialtiesApi.remove(specialty.id);
       toast.success('Especialidad eliminada');
-      await fetchSpecialties();
+      await refetch();
     } catch {
       toast.error('Error al eliminar la especialidad');
     }
@@ -144,7 +128,7 @@ export function SpecialtiesPage() {
       <div className={styles.tableContainer}>
         <Table
           columns={columns}
-          data={specialties}
+          data={specialties ?? []}
           keyExtractor={(s) => s.id}
           loading={loading}
           emptyMessage="No hay especialidades registradas"

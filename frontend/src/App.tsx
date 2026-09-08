@@ -1,22 +1,26 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 import { Layout } from './components/Layout/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute/ProtectedRoute';
-import { LoginPage } from './features/auth/LoginPage';
-import { RegisterPage } from './features/auth/RegisterPage';
-import { DashboardPage } from './features/dashboard/DashboardPage';
-import { SpecialtiesPage } from './features/specialties/SpecialtiesPage';
-import { DoctorsPage } from './features/doctors/DoctorsPage';
-import { AvailabilityPage } from './features/doctors/AvailabilityPage';
-import { PatientsPage } from './features/patients/PatientsPage';
-import { PatientProfilePage } from './features/patients/PatientProfilePage';
-import { AppointmentsPage } from './features/appointments/AppointmentsPage';
-import { NewAppointmentPage } from './features/appointments/NewAppointmentPage';
-import { UsersPage } from './features/users/UsersPage';
+import { Spinner } from './components/ui/Spinner';
+
+const LoginPage = lazy(() => import('./features/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import('./features/auth/RegisterPage').then((m) => ({ default: m.RegisterPage })));
+const DashboardPage = lazy(() => import('./features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })));
+const SpecialtiesPage = lazy(() => import('./features/specialties/SpecialtiesPage').then((m) => ({ default: m.SpecialtiesPage })));
+const DoctorsPage = lazy(() => import('./features/doctors/DoctorsPage').then((m) => ({ default: m.DoctorsPage })));
+const AvailabilityPage = lazy(() => import('./features/doctors/AvailabilityPage').then((m) => ({ default: m.AvailabilityPage })));
+const PatientsPage = lazy(() => import('./features/patients/PatientsPage').then((m) => ({ default: m.PatientsPage })));
+const PatientProfilePage = lazy(() => import('./features/patients/PatientProfilePage').then((m) => ({ default: m.PatientProfilePage })));
+const AppointmentsPage = lazy(() => import('./features/appointments/AppointmentsPage').then((m) => ({ default: m.AppointmentsPage })));
+const NewAppointmentPage = lazy(() => import('./features/appointments/NewAppointmentPage').then((m) => ({ default: m.NewAppointmentPage })));
+const UsersPage = lazy(() => import('./features/users/UsersPage').then((m) => ({ default: m.UsersPage })));
 
 export function App() {
   return (
     <ErrorBoundary>
+    <Suspense fallback={<Spinner />}>
     <Routes>
       {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
@@ -57,6 +61,7 @@ export function App() {
       {/* Redirect root to dashboard */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
+    </Suspense>
     </ErrorBoundary>
   );
 }
