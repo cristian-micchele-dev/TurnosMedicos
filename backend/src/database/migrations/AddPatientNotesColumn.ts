@@ -1,6 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddPatientNotesColumn1694000000000 implements MigrationInterface {
+export class AddPatientNotesColumn1710000000006 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "patients" ADD COLUMN "notes" text`);
   }

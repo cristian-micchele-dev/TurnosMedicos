@@ -4,6 +4,7 @@ import { JwtAuthGuard, Roles, RolesGuard } from '../../../auth/adapters/http/aut
 import { Role } from '../../../users/domain/user';
 import { PatientService } from '../../application/patient.service';
 import { CreatePatientDto, UpdatePatientDto } from '../../application/dto/patient.dto';
+import { ForbiddenError } from '../../../../shared/domain/errors';
 
 @Controller('patients')
 @UseGuards(JwtAuthGuard)
@@ -31,7 +32,12 @@ export class PatientController {
   }
 
   @Patch(':id') @UseGuards(RolesGuard) @Roles(Role.ADMIN, Role.PATIENT)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdatePatientDto) {
+  async update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdatePatientDto, @Req() req: Request) {
+    const user = (req as any).user;
+    if (user.role === Role.PATIENT) {
+      const patient = await this.service.findOne(id);
+      if (patient.userId !== user.sub) throw new ForbiddenError();
+    }
     return this.service.update(id, dto);
   }
 }

@@ -4,7 +4,7 @@ import { createHash } from 'crypto';
 
 describe('AuthService', () => {
   const now = new Date('2026-01-01T00:00:00Z');
-  const user = new User('u1', 'x@y.com', 'hash:good', Role.PATIENT);
+  const user = new User('u1', 'x@y.com', '', 'hash:good', Role.PATIENT);
   const users: any = { findByEmail: jest.fn(), findById: jest.fn(), save: jest.fn(), update: jest.fn() };
   const hasher: any = { hash: jest.fn(async (value: string) => `hash:${value}`), verify: jest.fn(async (hash: string, value: string) => hash === `hash:${value}`) };
   const tokens: any = { signAccess: jest.fn(() => 'access'), signRefresh: jest.fn(() => 'refresh'), verifyRefresh: jest.fn(() => ({ jti: 'j1', familyId: 'f1' })), refreshTtlMs: () => 1000 };

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doctorsApi, type Doctor, type AvailabilitySlot } from '../../api/doctors';
 import { useToast } from '../../hooks/useToast';
+import { useAuth } from '../../auth/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
 import { Input } from '../../components/ui/Input';
@@ -64,10 +65,12 @@ let localIdCounter = 0;
 const nextId = () => `slot-${++localIdCounter}`;
 
 export function AvailabilityPage() {
-  const { id: doctorId } = useParams<{ id: string }>();
+  const { id: routeDoctorId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
 
+  const [resolvedDoctorId, setResolvedDoctorId] = useState<string | undefined>(routeDoctorId);
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [slots, setSlots] = useState<SlotRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,24 +82,42 @@ export function AvailabilityPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!doctorId) return;
     const load = async () => {
       try {
         setLoading(true);
-        const [doctorData, availability] = await Promise.all([
-          doctorsApi.findOne(doctorId),
-          doctorsApi.getAvailability(doctorId),
-        ]);
-        setDoctor(doctorData);
-        setSlots(
-          availability.map((a) => ({
-            _id: nextId(),
-            dayOfWeek: a.dayOfWeek,
-            startTime: a.startTime,
-            endTime: a.endTime,
-            slotDuration: a.slotDuration,
-          })),
-        );
+        let effectiveDoctorId = routeDoctorId;
+        if (!effectiveDoctorId) {
+          // DOCTOR viewing own availability via /disponibilidad
+          const me = await doctorsApi.me();
+          setDoctor(me);
+          setResolvedDoctorId(me.id);
+          effectiveDoctorId = me.id;
+          const availability = await doctorsApi.getAvailability(effectiveDoctorId);
+          setSlots(
+            availability.map((a) => ({
+              _id: nextId(),
+              dayOfWeek: a.dayOfWeek,
+              startTime: a.startTime,
+              endTime: a.endTime,
+              slotDuration: a.slotDuration,
+            })),
+          );
+        } else {
+          const [doctorData, availability] = await Promise.all([
+            doctorsApi.findOne(effectiveDoctorId),
+            doctorsApi.getAvailability(effectiveDoctorId),
+          ]);
+          setDoctor(doctorData);
+          setSlots(
+            availability.map((a) => ({
+              _id: nextId(),
+              dayOfWeek: a.dayOfWeek,
+              startTime: a.startTime,
+              endTime: a.endTime,
+              slotDuration: a.slotDuration,
+            })),
+          );
+        }
       } catch {
         toast.error('Error al cargar la disponibilidad');
       } finally {
@@ -104,7 +125,7 @@ export function AvailabilityPage() {
       }
     };
     load();
-  }, [doctorId]);
+  }, [routeDoctorId]);
 
   const validateForm = (): boolean => {
     const errs: SlotErrors = {};
@@ -164,7 +185,7 @@ export function AvailabilityPage() {
   };
 
   const handleSave = async () => {
-    if (!doctorId) return;
+    if (!resolvedDoctorId) return;
     try {
       setSaving(true);
       const payload: AvailabilitySlot[] = slots.map(({ dayOfWeek, startTime, endTime, slotDuration }) => ({
@@ -173,7 +194,7 @@ export function AvailabilityPage() {
         endTime,
         slotDuration,
       }));
-      await doctorsApi.setAvailability(doctorId, payload);
+      await doctorsApi.setAvailability(resolvedDoctorId, payload);
       toast.success('Disponibilidad guardada correctamente');
     } catch {
       toast.error('Error al guardar la disponibilidad');
@@ -203,7 +224,7 @@ export function AvailabilityPage() {
     <div className={styles.page}>
       <header className={styles.pageHeader}>
         <div className={styles.headerLeft}>
-          <button className={styles.backBtn} onClick={() => navigate('/doctors')}>
+          <button className={styles.backBtn} onClick={() => navigate(user?.role === 'ADMIN' ? '/doctores' : '/dashboard')}>
             ← Volver
           </button>
           <div>

@@ -168,6 +168,18 @@ export function PatientProfilePage() {
                 onChange={(e) => setInsuranceNumber(e.target.value)}
                 placeholder="Ej: OSDE 12345678"
               />
+              <div className={styles.fieldFullWidth}>
+                <label className={styles.fieldLabel} htmlFor="notes-create">
+                  Notas médicas
+                </label>
+                <textarea
+                  id="notes-create"
+                  className={styles.notesTextarea}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Alergias, condiciones preexistentes, observaciones..."
+                />
+              </div>
             </div>
             <div className={styles.formFooter}>
               <Button type="submit" variant="primary" isLoading={submitting}>
@@ -224,6 +236,18 @@ export function PatientProfilePage() {
                 onChange={(e) => setInsuranceNumber(e.target.value)}
                 placeholder="Ej: OSDE 12345678"
               />
+              <div className={styles.fieldFullWidth}>
+                <label className={styles.fieldLabel} htmlFor="notes-edit">
+                  Notas médicas
+                </label>
+                <textarea
+                  id="notes-edit"
+                  className={styles.notesTextarea}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Alergias, condiciones preexistentes, observaciones..."
+                />
+              </div>
             </div>
             <div className={styles.formFooter}>
               <Button
@@ -268,6 +292,10 @@ export function PatientProfilePage() {
               <div className={styles.profileItem}>
                 <span className={styles.profileLabel}>Obra Social</span>
                 <span className={styles.profileValue}>{patient?.insuranceNumber ?? '—'}</span>
+              </div>
+              <div className={`${styles.profileItem} ${styles.profileItemFullWidth}`}>
+                <span className={styles.profileLabel}>Notas médicas</span>
+                <span className={styles.profileValue}>{patient?.notes ?? '—'}</span>
               </div>
             </div>
           </>

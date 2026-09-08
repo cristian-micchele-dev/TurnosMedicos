@@ -175,7 +175,7 @@ export function NewAppointmentPage() {
         dateTime,
       });
       toast.success('Turno solicitado correctamente');
-      navigate('/appointments');
+      navigate(user?.role === 'PATIENT' ? '/mis-turnos' : '/turnos');
     } catch {
       toast.error('Error al solicitar el turno');
     } finally {

@@ -31,7 +31,7 @@ describe('PatientController', () => {
   });
 
   it('update delega al service', async () => {
-    await controller.update('p1', { phone: '123' });
+    await controller.update('p1', { phone: '123' }, { user: { sub: 'u1', role: 'ADMIN' } } as any);
     expect(service.update).toHaveBeenCalledWith('p1', { phone: '123' });
   });
 });

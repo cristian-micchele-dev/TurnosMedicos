@@ -155,7 +155,7 @@ export function DoctorsPage() {
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/doctors/${d.id}/availability`);
+              navigate(`/doctores/${d.id}/availability`);
             }}
           >
             Horarios

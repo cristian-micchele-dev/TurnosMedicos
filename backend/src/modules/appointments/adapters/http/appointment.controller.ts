@@ -4,14 +4,24 @@ import { JwtAuthGuard, Roles, RolesGuard } from '../../../auth/adapters/http/aut
 import { Role } from '../../../users/domain/user';
 import { AppointmentService } from '../../application/appointment.service';
 import { CreateAppointmentDto, CancelAppointmentDto, QueryAppointmentsDto } from '../../application/dto/appointment.dto';
+import { PatientService } from '../../../patients/application/patient.service';
+import { ForbiddenError } from '../../../../shared/domain/errors';
 
 @Controller('appointments')
 @UseGuards(JwtAuthGuard)
 export class AppointmentController {
-  constructor(private readonly service: AppointmentService) {}
+  constructor(
+    private readonly service: AppointmentService,
+    private readonly patients: PatientService,
+  ) {}
 
   @Post()
-  create(@Body() dto: CreateAppointmentDto) {
+  async create(@Body() dto: CreateAppointmentDto, @Req() req: Request) {
+    const user = (req as any).user;
+    if (user.role === Role.PATIENT) {
+      const patient = await this.patients.findOne(dto.patientId);
+      if (patient.userId !== user.sub) throw new ForbiddenError();
+    }
     return this.service.create(dto);
   }
 
@@ -32,7 +42,13 @@ export class AppointmentController {
   }
 
   @Patch(':id/cancel')
-  cancel(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CancelAppointmentDto) {
+  async cancel(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CancelAppointmentDto, @Req() req: Request) {
+    const user = (req as any).user;
+    if (user.role === Role.PATIENT) {
+      const appointment = await this.service.findOne(id);
+      const patient = await this.patients.findOne(appointment.patientId);
+      if (patient.userId !== user.sub) throw new ForbiddenError();
+    }
     return this.service.cancel(id, dto);
   }
 

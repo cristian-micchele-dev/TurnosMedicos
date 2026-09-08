@@ -18,7 +18,7 @@ describe('PatientService', () => {
 
   describe('create', () => {
     it('crea paciente cuando usuario es PATIENT', async () => {
-      users.findById.mockResolvedValue(new User('u1', 'pat@test.com', 'hash', Role.PATIENT));
+      users.findById.mockResolvedValue(new User('u1', 'pat@test.com', '', 'hash', Role.PATIENT));
       patients.save.mockImplementation(async (p: Patient) => p);
       const result = await service().create({ userId: 'u1', phone: '123' });
       expect(result.userId).toBe('u1');
@@ -26,12 +26,12 @@ describe('PatientService', () => {
     });
 
     it('rechaza si usuario no tiene rol PATIENT', async () => {
-      users.findById.mockResolvedValue(new User('u1', 'doc@test.com', 'hash', Role.DOCTOR));
+      users.findById.mockResolvedValue(new User('u1', 'doc@test.com', '', 'hash', Role.DOCTOR));
       await expect(service().create({ userId: 'u1' })).rejects.toMatchObject({ status: 409 });
     });
 
     it('rechaza si ya tiene perfil de paciente', async () => {
-      users.findById.mockResolvedValue(new User('u1', 'pat@test.com', 'hash', Role.PATIENT));
+      users.findById.mockResolvedValue(new User('u1', 'pat@test.com', '', 'hash', Role.PATIENT));
       patients.findByUserId.mockResolvedValue(new Patient('p1', 'u1'));
       await expect(service().create({ userId: 'u1' })).rejects.toMatchObject({ status: 409 });
     });
