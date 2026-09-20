@@ -32,20 +32,20 @@
 
 .success {
   background: var(--success-light);
-  color: #059669;
+  color: var(--success);
 }
 
 .warning {
   background: var(--warning-light);
-  color: #b45309;
+  color: var(--warning);
 }
 
 .danger {
   background: var(--danger-light);
-  color: #dc2626;
+  color: var(--danger);
 }
 
 .neutral {
   background: var(--snow);
-  color: var(--slate);
+  color: var(--muted);
 }

@@ -1,6 +1,18 @@
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .page {
   padding: 2rem;
   max-width: 1100px;
+  margin: 0 auto;
 }
 
 .pageHeader {
@@ -9,6 +21,8 @@
   justify-content: space-between;
   margin-bottom: 2rem;
   gap: 1rem;
+  opacity: 0;
+  animation: fadeSlideUp 0.5s ease 0.1s both;
 }
 
 .title {
@@ -29,6 +43,8 @@
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+  opacity: 0;
+  animation: fadeSlideUp 0.5s ease 0.2s both;
 }
 
 .nameCell {
@@ -57,5 +73,45 @@
 }
 
 .deleteBtn:hover {
-  background: #fef2f2 !important;
+  background: rgba(220, 38, 38, 0.1) !important;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.searchBar {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--surface);
+  outline: none;
+  width: 240px;
+  transition: border-color 0.15s ease;
+}
+
+.searchBar:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.searchBar::placeholder {
+  color: var(--text-tertiary);
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 1.25rem 1rem;
+  }
+
+  .pageHeader {
+    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }

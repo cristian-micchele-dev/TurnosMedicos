@@ -45,11 +45,11 @@
   font-size: 14px;
   font-weight: 500;
   font-family: var(--font);
-  color: #ffffff;
+  color: #0a0f1e;
   background: var(--primary);
   border-radius: var(--radius-md);
   border: 1px solid var(--primary);
-  box-shadow: 0 1px 2px rgba(79, 141, 245, 0.20), 0 1px 3px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1px 2px rgba(56, 189, 248, 0.20), 0 1px 3px rgba(0, 0, 0, 0.2);
   cursor: pointer;
   transition:
     background var(--transition),
@@ -59,7 +59,7 @@
 
 .action:hover {
   background: var(--primary-hover);
-  box-shadow: 0 4px 10px rgba(79, 141, 245, 0.28), 0 1px 3px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 10px rgba(56, 189, 248, 0.28), 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .action:active {

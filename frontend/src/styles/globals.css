@@ -1,81 +1,232 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Hide react-joyride beacon globally */
+.react-joyride__beacon { display: none !important; }
+
+/* ═══════════════════════════════════════════════
+   PANEL ADMIN — Dark Theme (default)
+   Fondo: azul marino casi negro
+   Acentos: cian #38BDF8 y turquesa #2DD4BF
+═══════════════════════════════════════════════ */
 :root {
-  /* ── Slate-Blue Spectrum ── */
-  --deep:    #0c1222;
-  --dark:    #131b2e;
-  --mid:     #1e293b;
-  --slate:   #334155;
-  --cool:    #64748b;
-  --muted:   #94a3b8;
-  --light:   #cbd5e1;
-  --ice:     #e2e8f0;
-  --snow:    #f1f5f9;
-  --surface: #ffffff;
-  --bg:      #f1f5f9;
+  /* ── Superficies ── */
+  --deep:          #070d1a;
+  --dark:          #0b1120;
+  --mid:           #0f1729;
+  --slate:         #151e32;
+  --cool:          #1e2a44;
+  --muted:         #2a3a5c;
+  --light:         #6b7e9f;
+  --ice:           rgba(255, 255, 255, 0.05);
+  --snow:          rgba(255, 255, 255, 0.03);
+  --surface:       rgba(21, 30, 50, 0.80);
+  --surface-solid: #0f1729;
+  --bg:            #0b1120;
 
-  /* ── Accent ── */
-  --primary:       #4f8df5;
-  --primary-hover: #3b7ae0;
-  --primary-light: rgba(79, 141, 245, 0.08);
-  --primary-ring:  rgba(79, 141, 245, 0.15);
+  /* ── Brand ── */
+  --brand-primary:       #4A6FA5;
+  --brand-primary-light: #6B9BD1;
+  --brand-primary-dark:  #2E4E80;
+  --brand-teal:          #2DD4BF;
+  --brand-teal-dark:     #0D9488;
 
-  /* ── Semantic ── */
-  --success:       #34d399;
-  --success-light: rgba(52, 211, 153, 0.10);
-  --success-dark:  #059669;
-  --warning:       #fbbf24;
-  --warning-light: rgba(251, 191, 36, 0.10);
-  --warning-dark:  #b45309;
-  --danger:        #f87171;
-  --danger-light:  rgba(248, 113, 113, 0.10);
-  --danger-dark:   #dc2626;
-  --danger-ring:   rgba(248, 113, 113, 0.25);
+  /* ── Accent (cian) ── */
+  --primary:       #38bdf8;
+  --primary-hover: #0ea5e9;
+  --primary-light: rgba(56, 189, 248, 0.10);
+  --primary-ring:  rgba(56, 189, 248, 0.20);
 
-  /* ── Text ── */
-  --text-primary:   #1e293b;
-  --text-secondary: #64748b;
-  --text-tertiary:  #94a3b8;
+  /* ── Estados de turno ── */
+  --success:             #10b981;
+  --success-light:       rgba(16, 185, 129, 0.12);
+  --success-dark:        #6ee7b7;
+  --state-confirmed:     #10b981;
+  --state-confirmed-bg:  rgba(6, 78, 59, 0.60);
+  --state-confirmed-text:#6ee7b7;
 
-  /* ── Borders ── */
-  --border:       #e2e8f0;
-  --border-hover: #cbd5e1;
+  --warning:             #f59e0b;
+  --warning-light:       rgba(245, 158, 11, 0.12);
+  --warning-dark:        #fcd34d;
+  --state-pending:       #f59e0b;
+  --state-pending-bg:    rgba(120, 53, 15, 0.60);
+  --state-pending-text:  #fcd34d;
+
+  --danger:              #ef4444;
+  --danger-light:        rgba(239, 68, 68, 0.12);
+  --danger-dark:         #fca5a5;
+  --danger-ring:         rgba(239, 68, 68, 0.25);
+  --state-cancelled:     #ef4444;
+  --state-cancelled-bg:  rgba(127, 29, 29, 0.60);
+  --state-cancelled-text:#fca5a5;
+
+  --state-completed:     #6366f1;
+  --state-completed-bg:  rgba(49, 46, 129, 0.60);
+  --state-completed-text:#a5b4fc;
+
+  /* ── Texto ── */
+  --text-primary:   #e2e8f0;
+  --text-secondary: #8892a4;
+  --text-tertiary:  #6b7e9f;
+
+  /* ── Bordes ── */
+  --border:         rgba(255, 255, 255, 0.07);
+  --border-hover:   rgba(255, 255, 255, 0.13);
+  --border-input:   #3d4f73;
 
   /* ── Sidebar ── */
-  --sidebar-bg:          #0c1222;
-  --sidebar-text:        #94a3b8;
-  --sidebar-active-bg:   rgba(79, 141, 245, 0.12);
-  --sidebar-active-text: #4f8df5;
+  --sidebar-bg:          #070d1a;
+  --sidebar-text:        #8892a4;
+  --sidebar-active-bg:   rgba(56, 189, 248, 0.10);
+  --sidebar-active-text: #38bdf8;
   --sidebar-hover-bg:    rgba(255, 255, 255, 0.04);
 
-  /* ── Dimensions ── */
+  /* ── Dimensiones ── */
   --sidebar-width: 264px;
   --header-height: 68px;
+
+  /* ── Radios ── */
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
   --radius-xl: 20px;
+  --radius-full: 9999px;
 
-  /* ── Shadows — slate-tinted, very subtle ── */
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
-  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.10), 0 8px 10px -6px rgba(15, 23, 42, 0.06);
+  /* ── Espaciado (base 4px) ── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
 
-  /* ── Typography & Motion ── */
-  --font:            'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  --transition:      180ms ease;
+  /* ── Sombras ── */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.45), 0 2px 4px -2px rgba(0, 0, 0, 0.30);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.50), 0 4px 6px -4px rgba(0, 0, 0, 0.30);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.55), 0 8px 10px -6px rgba(0, 0, 0, 0.30);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.40);
+  --shadow-glow: 0 4px 16px rgba(56, 189, 248, 0.20);
+
+  /* ── Tipografía & Motion ── */
+  --font:            'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:       'JetBrains Mono', 'Courier New', monospace;
+  --transition:      150ms ease;
   --transition-slow: 300ms ease;
+
+  --color-scheme: dark;
 }
 
+/* ═══════════════════════════════════════════════
+   SITIO PÚBLICO — Light Theme
+   Fondo: blanco y gris muy suave
+   Primario: azul marca #4A6FA5
+═══════════════════════════════════════════════ */
+[data-theme="light"] {
+  /* ── Superficies ──
+     Lógica: fondo de página con tinte azul suave (no blanco puro),
+     cards blancas que "flotan" sobre él con sombra visible.
+     Contraste bg→card = profundidad sin agresividad visual.
+  ── */
+  --deep:          #e8eff8;   /* secciones alternadas / hover de sidebar */
+  --dark:          #edf3fb;   /* fondo de inputs, selects */
+  --mid:           #dce6f2;   /* bordes, divisores */
+  --slate:         #ffffff;   /* bg de CARDS — blanco puro, flotando sobre --bg */
+  --cool:          #94a3b8;   /* elementos desactivados */
+  --muted:         #64748b;   /* texto terciario */
+  --light:         #475569;   /* texto secundario */
+  --ice:           rgba(74, 111, 165, 0.04);
+  --snow:          rgba(74, 111, 165, 0.02);
+  --surface:       rgba(255, 255, 255, 0.90);
+  --surface-solid: #ffffff;
+  --bg:            #eff4fb;   /* fondo de página — azul médico suave, no blanco puro */
+
+  /* ── Brand (más visible en claro) ── */
+  --brand-primary:       #4A6FA5;
+  --brand-primary-light: #6B9BD1;
+  --brand-primary-dark:  #2E4E80;
+  --brand-teal:          #2DD4BF;
+  --brand-teal-dark:     #0D9488;
+
+  /* ── Accent ── */
+  --primary:       #0ea5e9;
+  --primary-hover: #0284c7;
+  --primary-light: rgba(14, 165, 233, 0.08);
+  --primary-ring:  rgba(14, 165, 233, 0.20);
+
+  /* ── Estados de turno (modo claro) ── */
+  --success:             #059669;
+  --success-light:       rgba(5, 150, 105, 0.08);
+  --success-dark:        #047857;
+  --state-confirmed:     #059669;
+  --state-confirmed-bg:  #d1fae5;
+  --state-confirmed-text:#065f46;
+
+  --warning:             #d97706;
+  --warning-light:       rgba(217, 119, 6, 0.08);
+  --warning-dark:        #b45309;
+  --state-pending:       #d97706;
+  --state-pending-bg:    #fef3c7;
+  --state-pending-text:  #92400e;
+
+  --danger:              #dc2626;
+  --danger-light:        rgba(220, 38, 38, 0.08);
+  --danger-dark:         #b91c1c;
+  --danger-ring:         rgba(220, 38, 38, 0.15);
+  --state-cancelled:     #dc2626;
+  --state-cancelled-bg:  #fee2e2;
+  --state-cancelled-text:#991b1b;
+
+  --state-completed:     #4f46e5;
+  --state-completed-bg:  #eef2ff;
+  --state-completed-text:#3730a3;
+
+  /* ── Texto ── */
+  --text-primary:   #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary:  #64748b;
+
+  /* ── Bordes ── */
+  --border:       rgba(74, 111, 165, 0.15);
+  --border-hover: rgba(74, 111, 165, 0.30);
+  --border-input: #b8cce0;
+
+  /* ── Sidebar — siempre oscuro para contraste ── */
+  --sidebar-bg:          #0f1729;
+  --sidebar-text:        #8892a4;
+  --sidebar-active-bg:   rgba(56, 189, 248, 0.10);
+  --sidebar-active-text: #38bdf8;
+  --sidebar-hover-bg:    rgba(255, 255, 255, 0.04);
+
+  /* ── Sombras — más visibles en claro para dar elevación real ── */
+  --shadow-xs:   0 1px 3px rgba(74, 111, 165, 0.08);
+  --shadow-sm:   0 2px 6px rgba(74, 111, 165, 0.10), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md:   0 4px 12px rgba(74, 111, 165, 0.12), 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-lg:   0 10px 24px rgba(74, 111, 165, 0.14), 0 4px 8px rgba(0, 0, 0, 0.06);
+  --shadow-xl:   0 20px 40px rgba(74, 111, 165, 0.16), 0 8px 16px rgba(0, 0, 0, 0.06);
+  --shadow-card: 0 2px 12px rgba(74, 111, 165, 0.12), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-glow: 0 4px 16px rgba(74, 111, 165, 0.30);
+
+  --color-scheme: light;
+}
+
+/* ═══════════════════════════════════════════════
+   BASE
+═══════════════════════════════════════════════ */
 body {
   font-family: var(--font);
   background: var(--bg);
   color: var(--text-primary);
+  color-scheme: var(--color-scheme, dark);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -102,11 +253,93 @@ h1, h2, h3, h4, h5, h6 {
 
 p { color: var(--text-secondary); }
 
+/* ── Código de turno TM-XXXXX ── */
+.appointment-code {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--primary);
+  background: var(--primary-light);
+  border: 1px solid var(--primary-ring);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  letter-spacing: 0.05em;
+}
+
+/* ── Badges de estado ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.badge-confirmed  { background: var(--state-confirmed-bg);  color: var(--state-confirmed-text); }
+.badge-pending    { background: var(--state-pending-bg);    color: var(--state-pending-text); }
+.badge-cancelled  { background: var(--state-cancelled-bg);  color: var(--state-cancelled-text); }
+.badge-completed  { background: var(--state-completed-bg);  color: var(--state-completed-text); }
+
+/* ── Entrada de páginas ── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-enter {
+  animation: fadeSlideUp 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* ═══════════════════════════════════════════════
+   FOCUS VISIBLE — global baseline (WCAG 2.2 AA)
+   Cubre todos los elementos interactivos que no
+   tengan su propio :focus-visible en el módulo.
+═══════════════════════════════════════════════ */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Neutraliza :focus en favor de :focus-visible
+   (sólo en browsers que lo soportan) */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Inputs — el ring de foco ya lo maneja cada módulo,
+   evitamos el outline doble */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
+/* ═══════════════════════════════════════════════
+   PREFERS-REDUCED-MOTION — global (WCAG 2.1 §2.3)
+   Desactiva animaciones y transiciones para usuarios
+   que tienen movimiento reducido en su sistema.
+═══════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar          { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track    { background: transparent; }
-::-webkit-scrollbar-thumb    { background: var(--light); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+::-webkit-scrollbar-thumb    { background: var(--muted); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--light); }
 
 /* ── Selection ── */
 ::selection { background: var(--primary-ring); color: var(--text-primary); }

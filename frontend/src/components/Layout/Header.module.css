@@ -7,11 +7,10 @@
   justify-content: space-between;
   height: var(--header-height);
   padding: 0 32px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(10, 15, 30, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
-  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
   flex-shrink: 0;
 }
 
@@ -69,26 +68,25 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   line-height: 1;
-  /* Subtle inner ring */
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* ADMIN — accent blue */
+/* ADMIN — cyan */
 .roleADMIN {
-  background: var(--primary-light);
-  color: var(--primary);
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
 }
 
-/* DOCTOR — mint green */
+/* DOCTOR — emerald */
 .roleDOCTOR {
   background: var(--success-light);
-  color: var(--success-dark);
+  color: #6ee7b7;
 }
 
-/* PATIENT — warm amber */
+/* PATIENT — amber */
 .rolePATIENT {
   background: var(--warning-light);
-  color: var(--warning-dark);
+  color: #fcd34d;
 }
 
 /* ── Avatar ring (for future avatar img) ── */
@@ -105,6 +103,23 @@
   font-weight: 700;
   color: var(--primary);
   flex-shrink: 0;
+}
+
+/* ── Theme toggle ── */
+.themeToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  transition: background var(--transition), color var(--transition);
+}
+
+.themeToggle:hover {
+  background: var(--ice);
+  color: var(--text-primary);
 }
 
 /* ── Hamburger button (hidden on desktop) ── */
@@ -137,8 +152,118 @@
   transition: background var(--transition);
 }
 
+/* ── Notification bell ── */
+.notifBell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  transition: background var(--transition), color var(--transition);
+  flex-shrink: 0;
+}
+
+.notifBell:hover {
+  background: var(--ice);
+  color: var(--text-primary);
+}
+
+.notifBadge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 16px;
+  height: 16px;
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.notifPanel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  z-index: 100;
+}
+
+.notifHeader {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notifMarkAll {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.notifMarkAll:hover {
+  text-decoration: underline;
+}
+
+.notifItem {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--snow);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.notifItem:last-child {
+  border-bottom: none;
+}
+
+.notifItem:hover {
+  background: var(--ice);
+}
+
+.notifItemUnread {
+  border-left: 2px solid var(--primary);
+}
+
+.notifEmpty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 0.8125rem;
+}
+
+.notifTime {
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
+  margin-top: 0.25rem;
+}
+
 @media (max-width: 768px) {
   .header      { padding: 0 16px; }
   .userDetails { display: none; }
   .hamburger   { display: flex; }
+  .notifPanel  { width: 280px; right: -8px; }
 }

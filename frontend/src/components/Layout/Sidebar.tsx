@@ -11,10 +11,12 @@ interface NavItem {
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  onRestartTour?: () => void;
 }
 
 const sharedItems: NavItem[] = [
-  { to: '/dashboard', label: 'Dashboard' },
+  { to: '/dashboard',  label: 'Dashboard' },
+  { to: '/calendario', label: 'Calendario' },
 ];
 
 const adminItems: NavItem[] = [
@@ -26,24 +28,18 @@ const adminItems: NavItem[] = [
 ];
 
 const doctorItems: NavItem[] = [
+  { to: '/agenda', label: 'Mi Agenda' },
   { to: '/mis-turnos', label: 'Mis Turnos' },
   { to: '/disponibilidad', label: 'Mi Disponibilidad' },
-];
-
-const patientItems: NavItem[] = [
-  { to: '/mis-turnos', label: 'Mis Turnos' },
-  { to: '/nuevo-turno', label: 'Nuevo Turno' },
-  { to: '/mi-perfil', label: 'Mi Perfil' },
 ];
 
 function getNavItems(role: string | undefined): NavItem[] {
   if (role === 'ADMIN') return [...sharedItems, ...adminItems];
   if (role === 'DOCTOR') return [...sharedItems, ...doctorItems];
-  if (role === 'PATIENT') return [...sharedItems, ...patientItems];
   return sharedItems;
 }
 
-export function Sidebar({ isOpen, onClose }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, onRestartTour }: SidebarProps) {
   const { user, logout } = useAuth();
   const navItems = getNavItems(user?.role);
 
@@ -58,7 +54,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <span className={styles.logoText}>TurnoMed</span>
         </div>
 
-        <nav className={styles.nav}>
+        <nav className={styles.nav} data-tour="sidebar-nav">
           <ul className={styles.navList}>
             {navItems.map((item) => (
               <li key={item.to}>
@@ -77,6 +73,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </nav>
 
         <div className={styles.footer}>
+          {onRestartTour && (
+            <button className={styles.tourLink} onClick={() => { onRestartTour(); onClose(); }}>
+              Ver tutorial
+            </button>
+          )}
           <button className={styles.logoutBtn} onClick={logout}>
             <span>Cerrar sesión</span>
           </button>

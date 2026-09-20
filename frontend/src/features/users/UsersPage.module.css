@@ -1,6 +1,18 @@
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .page {
   padding: 2rem;
   max-width: 1200px;
+  margin: 0 auto;
 }
 
 .pageHeader {
@@ -9,6 +21,8 @@
   justify-content: space-between;
   margin-bottom: 2rem;
   gap: 1rem;
+  opacity: 0;
+  animation: fadeSlideUp 0.5s ease 0.1s both;
 }
 
 .title {
@@ -29,6 +43,8 @@
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+  opacity: 0;
+  animation: fadeSlideUp 0.5s ease 0.3s both;
 }
 
 .emailCell {
@@ -124,6 +140,32 @@
   color: var(--text-tertiary);
 }
 
+.filterSelect {
+  appearance: none;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--surface);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.filterSelect:hover {
+  border-color: var(--primary);
+}
+
+.filterSelect:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
 .createForm {
   display: flex;
   flex-direction: column;
@@ -135,4 +177,27 @@
   justify-content: flex-end;
   gap: 0.75rem;
   margin-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 1.25rem 1rem;
+  }
+
+  .pageHeader {
+    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .headerActions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .searchBar {
+    width: 100%;
+    flex: 1;
+    min-width: 0;
+  }
 }

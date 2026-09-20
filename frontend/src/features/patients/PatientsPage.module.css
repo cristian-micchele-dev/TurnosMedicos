@@ -1,6 +1,18 @@
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .page {
   padding: 2rem;
   max-width: 1200px;
+  margin: 0 auto;
 }
 
 .pageHeader {
@@ -10,6 +22,8 @@
   margin-bottom: 2rem;
   gap: 1rem;
   flex-wrap: wrap;
+  opacity: 0;
+  animation: fadeSlideUp 0.5s ease 0.1s both;
 }
 
 .title {
@@ -30,6 +44,8 @@
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+  opacity: 0;
+  animation: fadeSlideUp 0.5s ease 0.3s both;
 }
 
 .nameCell {
@@ -89,4 +105,27 @@
 
 .searchBar::placeholder {
   color: var(--text-tertiary);
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 1.25rem 1rem;
+  }
+
+  .pageHeader {
+    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .headerActions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .searchBar {
+    width: 100%;
+    flex: 1;
+    min-width: 0;
+  }
 }

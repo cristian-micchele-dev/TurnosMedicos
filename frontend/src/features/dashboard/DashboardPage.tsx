@@ -1,31 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Stethoscope, HeartPulse, Users, Zap, AlertTriangle, RefreshCw, Calendar, Clock, CheckCircle, ChevronRight } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+  BarChart, Bar,
+} from 'recharts';
 import { useAuth } from '../../auth/AuthContext';
-import { dashboardApi, type DashboardStats } from '../../api/dashboard';
+import { dashboardApi, type DashboardStats, type ChartData } from '../../api/dashboard';
 import { appointmentsApi, type Appointment } from '../../api/appointments';
-import { Spinner } from '../../components/ui/Spinner';
+import { Skeleton } from '../../components/ui/Skeleton';
 import { Badge } from '../../components/ui/Badge';
+
+import { todayLocal } from '../../utils/date';
 import styles from './DashboardPage.module.css';
-
-function useParallax() {
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => {
-    // The scroll container is <main class="content"> in Layout — not window.
-    const container = document.querySelector('main');
-    if (!container) return;
-
-    const handler = () => setScrollY(container.scrollTop);
-    container.addEventListener('scroll', handler, { passive: true });
-    return () => container.removeEventListener('scroll', handler);
-  }, []);
-
-  return scrollY;
-}
 
 interface StatCard {
   label: string;
   value: string | number;
+  icon: LucideIcon;
   accent: 'blue' | 'green' | 'amber' | 'slate';
 }
 
@@ -37,16 +31,18 @@ interface QuickAction {
 
 function buildAdminCards(stats: DashboardStats): StatCard[] {
   return [
-    { label: 'Total Doctores', value: stats.totalDoctors ?? '—', accent: 'blue' },
-    { label: 'Total Pacientes', value: stats.totalPatients ?? '—', accent: 'green' },
-    { label: 'Total Usuarios', value: stats.totalUsers ?? '—', accent: 'amber' },
-    { label: 'Usuarios Activos', value: stats.activeUsers ?? '—', accent: 'slate' },
+    { label: 'Doctores', value: stats.totalDoctors ?? '—', icon: Stethoscope, accent: 'blue' },
+    { label: 'Pacientes', value: stats.totalPatients ?? '—', icon: HeartPulse, accent: 'green' },
+    { label: 'Usuarios', value: stats.totalUsers ?? '—', icon: Users, accent: 'amber' },
+    { label: 'Activos', value: stats.activeUsers ?? '—', icon: Zap, accent: 'slate' },
   ];
 }
 
-function buildDefaultCards(stats: DashboardStats): StatCard[] {
+function buildDoctorCards(todayCount: number, pendingCount: number, completedCount: number): StatCard[] {
   return [
-    { label: 'Total Usuarios', value: stats.totalUsers ?? '—', accent: 'blue' },
+    { label: 'Turnos Hoy', value: todayCount, icon: Calendar, accent: 'blue' },
+    { label: 'Pendientes', value: pendingCount, icon: Clock, accent: 'amber' },
+    { label: 'Completados', value: completedCount, icon: CheckCircle, accent: 'green' },
   ];
 }
 
@@ -60,11 +56,6 @@ const QUICK_ACTIONS: Record<string, QuickAction[]> = {
   DOCTOR: [
     { label: 'Mis Turnos', to: '/mis-turnos', accent: 'blue' },
     { label: 'Mi Disponibilidad', to: '/disponibilidad', accent: 'green' },
-  ],
-  PATIENT: [
-    { label: 'Sacar Turno', to: '/nuevo-turno', accent: 'blue' },
-    { label: 'Mis Turnos', to: '/mis-turnos', accent: 'green' },
-    { label: 'Mi Perfil', to: '/mi-perfil', accent: 'slate' },
   ],
 };
 
@@ -85,13 +76,19 @@ const STATUS_LABEL: Record<string, string> = {
 const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrador',
   DOCTOR: 'Doctor',
-  PATIENT: 'Paciente',
 };
 
 const ROLE_ACCENT: Record<string, string> = {
   ADMIN: styles.badgeAdmin,
   DOCTOR: styles.badgeDoctor,
-  PATIENT: styles.badgePatient,
+};
+
+// Maps Spanish status labels to semantic chart colors
+const STATUS_CHART_COLOR: Record<string, string> = {
+  Pendiente: '#fbbf24',
+  Confirmado: '#06b6d4',
+  Completado: '#34d399',
+  Cancelado: '#f87171',
 };
 
 export function DashboardPage() {
@@ -99,34 +96,103 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [roleCards, setRoleCards] = useState<StatCard[]>([]);
+  const [chartData, setChartData] = useState<ChartData | null>(null);
   const [loading, setLoading] = useState(true);
-  const scrollY = useParallax();
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    Promise.all([
+  const fetchData = () => {
+    setLoading(true);
+    setError(null);
+
+    const today = todayLocal();
+
+    const baseRequests: Promise<unknown>[] = [
       dashboardApi.getStats(),
-      appointmentsApi.findAll({ status: 'PENDING' }).catch(() => [] as Appointment[]),
-    ])
-      .then(([statsData, appts]) => {
+      appointmentsApi.findAll({ status: 'PENDING' }, 1, 5).catch(() => ({ data: [] as Appointment[], total: 0 })),
+    ];
+
+    if (user?.role === 'ADMIN') {
+      baseRequests.push(dashboardApi.getCharts().catch(() => null));
+    } else if (user?.role === 'DOCTOR') {
+      baseRequests.push(
+        appointmentsApi.findAll({ from: today, to: today }, 1, 1).catch(() => ({ total: 0 })),
+        appointmentsApi.findAll({ status: 'PENDING' }, 1, 1).catch(() => ({ total: 0 })),
+        appointmentsApi.findAll({ status: 'COMPLETED' }, 1, 1).catch(() => ({ total: 0 })),
+      );
+    }
+
+    Promise.all(baseRequests)
+      .then((results) => {
+        const statsData = results[0] as DashboardStats;
+        const appts = results[1] as { data: Appointment[]; total: number };
         setStats(statsData);
-        setAppointments(appts.slice(0, 5));
+        setAppointments(appts.data);
+
+        if (user?.role === 'ADMIN') {
+          setChartData(results[2] as ChartData | null);
+        } else if (user?.role === 'DOCTOR') {
+          const todayRes = results[2] as { total: number };
+          const pendingRes = results[3] as { total: number };
+          const completedRes = results[4] as { total: number };
+          setRoleCards(buildDoctorCards(todayRes.total, pendingRes.total, completedRes.total));
+        }
       })
+      .catch(() => setError('No se pudo cargar el dashboard. Verificá tu conexión.'))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { fetchData(); }, []);
 
   if (!user) return null;
 
   const displayName = user.name || user.email.split('@')[0];
   const cards: StatCard[] = stats
-    ? user.role === 'ADMIN' ? buildAdminCards(stats) : buildDefaultCards(stats)
+    ? user.role === 'ADMIN' ? buildAdminCards(stats) : roleCards
     : [];
   const actions = QUICK_ACTIONS[user.role] ?? [];
 
   if (loading) {
     return (
       <div className={styles.page}>
-        <div className={styles.spinnerWrapper}>
-          <Spinner size="lg" label="Cargando..." />
+        <div className={styles.meshBg} aria-hidden="true" />
+        <div className={styles.inner}>
+          <div className={styles.skeletonHeader}>
+            <Skeleton variant="text" width="280px" height="2rem" />
+            <Skeleton variant="text" width="180px" height="1rem" />
+          </div>
+          <div className={styles.grid}>
+            <Skeleton variant="rectangular" height="80px" />
+            <Skeleton variant="rectangular" height="80px" />
+            <Skeleton variant="rectangular" height="80px" />
+            <Skeleton variant="rectangular" height="80px" />
+          </div>
+          <div className={styles.skeletonSection}>
+            <Skeleton variant="text" width="140px" height="0.75rem" />
+            <div className={styles.skeletonRows}>
+              <Skeleton variant="rectangular" height="52px" />
+              <Skeleton variant="rectangular" height="52px" />
+              <Skeleton variant="rectangular" height="52px" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.meshBg} aria-hidden="true" />
+        <div className={styles.inner}>
+          <div className={styles.errorState}>
+            <AlertTriangle size={40} strokeWidth={1.5} />
+            <p className={styles.errorText}>{error}</p>
+            <button className={styles.retryBtn} onClick={fetchData}>
+              <RefreshCw size={16} strokeWidth={2} />
+              Reintentar
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -134,37 +200,19 @@ export function DashboardPage() {
 
   return (
     <div className={styles.page}>
-      {/* ── Parallax Hero ── */}
-      <section className={styles.hero} aria-label="Hero">
-        {/* Layer 1 — farthest, slowest (0.2x) */}
-        <div
-          className={styles.heroLayer1}
-          style={{ transform: `translateY(${scrollY * 0.2}px)` }}
-          aria-hidden="true"
-        />
-        {/* Layer 2 — middle floating shapes (0.4x) */}
-        <div
-          className={styles.heroLayer2}
-          style={{ transform: `translateY(${scrollY * 0.4}px)` }}
-          aria-hidden="true"
-        >
-          <div className={styles.shapeCircleLg} />
-          <div className={styles.shapeRect} />
-          <div className={styles.shapeCircleSm} />
-        </div>
-        {/* Layer 3 — dots grid, closest (0.6x) */}
-        <div
-          className={styles.heroLayer3}
-          style={{ transform: `translateY(${scrollY * 0.6}px)` }}
-          aria-hidden="true"
-        />
-
-        {/* Foreground — no parallax */}
-        <div className={styles.heroContent}>
-          <div className={styles.heroGlass}>
+      {/* ── Animated gradient mesh background ── */}
+      <div className={styles.meshBg} aria-hidden="true" />
+      <div className={styles.inner}>
+        {/* ── Hero banner ── */}
+        <div className={styles.hero}>
+          <div className={styles.heroBg} aria-hidden="true" />
+          <div className={styles.heroOverlay} aria-hidden="true" />
+          <div className={styles.heroContent}>
             <div>
-              <h1 className={styles.heroGreeting}>Bienvenido, {displayName}</h1>
-              <p className={styles.heroSubtext}>Aquí está el resumen de tu actividad</p>
+              <h1 className={styles.greeting}>
+                Bienvenido, <span className={styles.greetingAccent}>{displayName}</span>
+              </h1>
+              <p className={styles.subtext}>Resumen de tu actividad médica</p>
             </div>
             <span className={`${styles.badge} ${ROLE_ACCENT[user.role] ?? ''}`}>
               {ROLE_LABELS[user.role] ?? user.role}
@@ -172,89 +220,177 @@ export function DashboardPage() {
           </div>
         </div>
 
-        {/* Decorative medical cross SVG */}
-        <svg
-          className={styles.heroCross}
-          viewBox="0 0 64 64"
-          aria-hidden="true"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <rect x="24" y="4"  width="16" height="56" rx="4" />
-          <rect x="4"  y="24" width="56" height="16" rx="4" />
-        </svg>
-
-        {/* Bottom fade-to-page blend */}
-        <div className={styles.heroFade} aria-hidden="true" />
-      </section>
-
-      <div className={styles.grid}>
-        {cards.map((card) => (
-          <div key={card.label} className={`${styles.card} ${styles[card.accent]}`}>
-            <div className={styles.cardBody}>
-              <span className={styles.cardValue}>{card.value}</span>
-              <span className={styles.cardLabel}>{card.label}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Acciones rápidas</h2>
-        <div className={styles.actionsGrid}>
-          {actions.map((action) => (
-            <button
-              key={action.to}
-              className={`${styles.actionCard} ${styles[action.accent]}`}
-              onClick={() => navigate(action.to)}
-            >
-              <span className={styles.actionLabel}>{action.label}</span>
-              <span className={styles.actionArrow}>→</span>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Próximos turnos</h2>
-        {appointments.length === 0 ? (
-          <div className={styles.emptyState}>
-            <p className={styles.emptyText}>No hay turnos pendientes</p>
-          </div>
-        ) : (
-          <div className={styles.appointmentsList}>
-            {appointments.map((appt) => (
-              <div key={appt.id} className={styles.appointmentRow}>
-                <div className={styles.appointmentInfo}>
-                  <span className={styles.appointmentDate}>
-                    {new Date(appt.dateTime).toLocaleDateString('es-AR', {
-                      weekday: 'short',
-                      day: 'numeric',
-                      month: 'short',
-                    })}
-                  </span>
-                  <span className={styles.appointmentTime}>
-                    {new Date(appt.dateTime).toLocaleTimeString('es-AR', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </span>
-                </div>
-                <div className={styles.appointmentDetails}>
-                  <span className={styles.appointmentDoctor}>
-                    {appt.doctor?.user?.name || appt.doctor?.specialty?.name || 'Doctor'}
-                  </span>
-                  <span className={styles.appointmentPatient}>
-                    {appt.patient?.user?.name || 'Paciente'}
-                  </span>
-                </div>
-                <Badge variant={STATUS_VARIANT[appt.status] ?? 'neutral'} size="sm">
-                  {STATUS_LABEL[appt.status] ?? appt.status}
-                </Badge>
+        {/* ── Stat cards ── */}
+        <div className={styles.grid} data-tour="stats">
+          {cards.map((card) => {
+            const Icon = card.icon;
+            return (
+            <div key={card.label} className={`${styles.card} ${styles[card.accent]}`}>
+              <div className={styles.cardIcon}>
+                <Icon size={22} strokeWidth={1.8} />
               </div>
+              <div className={styles.cardBody}>
+                <span className={styles.cardValue}>{card.value}</span>
+                <span className={styles.cardLabel}>{card.label}</span>
+              </div>
+            </div>
+            );
+          })}
+        </div>
+
+        {/* ── Quick actions ── */}
+        <section className={styles.section} data-tour="actions">
+          <h2 className={styles.sectionTitle}>Acciones rápidas</h2>
+          <div className={styles.actionsGrid}>
+            {actions.map((action) => (
+              <button
+                key={action.to}
+                className={`${styles.actionCard} ${styles[action.accent]}`}
+                onClick={() => navigate(action.to)}
+              >
+                <span className={styles.actionLabel}>{action.label}</span>
+                <span className={styles.actionArrow}>{'\u2192'}</span>
+              </button>
             ))}
           </div>
+        </section>
+
+        {/* ── Upcoming appointments ── */}
+        <section className={styles.section} data-tour="appointments">
+          <h2 className={styles.sectionTitle}>Próximos turnos</h2>
+          {appointments.length === 0 ? (
+            <div className={styles.emptyState}>
+              <p className={styles.emptyText}>No hay turnos pendientes</p>
+            </div>
+          ) : (
+            <div className={styles.appointmentsList}>
+              {appointments.map((appt) => (
+                <div
+                  key={appt.id}
+                  className={`${styles.appointmentRow} ${styles.clickable}`}
+                  onClick={() => navigate('/turnos')}
+                >
+                  <div className={styles.appointmentInfo}>
+                    <span className={styles.appointmentDate}>
+                      {new Date(appt.dateTime).toLocaleDateString('es-AR', {
+                        weekday: 'short',
+                        day: 'numeric',
+                        month: 'short',
+                      })}
+                    </span>
+                    <span className={styles.appointmentTime}>
+                      {new Date(appt.dateTime).toLocaleTimeString('es-AR', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
+                  <div className={styles.appointmentDetails}>
+                    <span className={styles.appointmentDoctor}>
+                      {appt.doctor?.user?.name || appt.doctor?.specialty?.name || 'Doctor'}
+                    </span>
+                    <span className={styles.appointmentPatient}>
+                      {appt.patient?.name || 'Paciente'}
+                    </span>
+                  </div>
+                  <Badge variant={STATUS_VARIANT[appt.status] ?? 'neutral'} size="sm">
+                    {STATUS_LABEL[appt.status] ?? appt.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+          <span className={styles.viewAllLink} onClick={() => navigate('/turnos')}>
+            Ver todos
+            <ChevronRight size={14} strokeWidth={2.5} />
+          </span>
+        </section>
+
+        {/* ── Analytics charts — ADMIN only ── */}
+        {user.role === 'ADMIN' && chartData && (
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>Analítica</h2>
+            <div className={styles.chartsGrid}>
+
+              {/* Turnos por mes */}
+              <div className={`${styles.chartCard} ${styles.chartWide}`}>
+                <p className={styles.chartTitle}>Turnos por mes</p>
+                <ResponsiveContainer width="100%" height={220}>
+                  <AreaChart data={chartData.appointmentsByMonth} margin={{ top: 8, right: 16, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
+                    <XAxis dataKey="month" tick={{ fill: '#64748b', fontSize: 12 }} axisLine={false} tickLine={false} />
+                    <YAxis allowDecimals={false} tick={{ fill: '#64748b', fontSize: 12 }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#e2e8f0', fontSize: 13 }}
+                      cursor={{ stroke: 'rgba(6,182,212,0.2)', strokeWidth: 1 }}
+                      formatter={(value) => [value ?? 0, 'Turnos']}
+                    />
+                    <Area type="monotone" dataKey="count" stroke="#06b6d4" strokeWidth={2} fill="url(#areaGradient)" dot={false} activeDot={{ r: 4, fill: '#06b6d4' }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Turnos por estado */}
+              <div className={styles.chartCard}>
+                <p className={styles.chartTitle}>Estado de turnos</p>
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie
+                      data={chartData.appointmentsByStatus}
+                      dataKey="count"
+                      nameKey="status"
+                      cx="50%"
+                      cy="45%"
+                      innerRadius={55}
+                      outerRadius={80}
+                      paddingAngle={3}
+                      stroke="none"
+                    >
+                      {chartData.appointmentsByStatus.map((entry) => (
+                        <Cell key={entry.status} fill={STATUS_CHART_COLOR[entry.status] ?? '#64748b'} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#e2e8f0', fontSize: 13 }}
+                      formatter={(value, name) => [value ?? 0, name]}
+                    />
+                    <Legend
+                      iconType="circle"
+                      iconSize={8}
+                      formatter={(value) => <span style={{ color: '#94a3b8', fontSize: 12 }}>{value}</span>}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Top especialidades */}
+              <div className={styles.chartCard}>
+                <p className={styles.chartTitle}>Top especialidades</p>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={chartData.topSpecialties} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" horizontal={false} />
+                    <XAxis type="number" allowDecimals={false} tick={{ fill: '#64748b', fontSize: 12 }} axisLine={false} tickLine={false} />
+                    <YAxis type="category" dataKey="name" width={100} tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#e2e8f0', fontSize: 13 }}
+                      cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                      formatter={(value) => [value ?? 0, 'Turnos']}
+                    />
+                    <Bar dataKey="count" fill="#06b6d4" radius={[0, 4, 4, 0]} maxBarSize={20} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+            </div>
+          </section>
         )}
-      </section>
+      </div>
     </div>
   );
 }

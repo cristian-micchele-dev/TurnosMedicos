@@ -1,6 +1,18 @@
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .page {
   padding: 2rem;
   max-width: 900px;
+  margin: 0 auto;
 }
 
 /* ── Header ── */
@@ -11,6 +23,8 @@
   margin-bottom: 2rem;
   gap: 1rem;
   flex-wrap: wrap;
+  opacity: 0;
+  animation: fadeSlideUp 0.5s ease 0.1s both;
 }
 
 .headerLeft {
@@ -83,6 +97,8 @@
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   box-shadow: var(--shadow-sm);
+  opacity: 0;
+  animation: fadeSlideUp 0.5s ease 0.2s both;
 }
 
 .formTitle {
@@ -114,6 +130,8 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+  opacity: 0;
+  animation: fadeSlideUp 0.5s ease 0.35s both;
 }
 
 .scheduleHeader {
@@ -177,7 +195,7 @@
 }
 
 .removeBtn:hover {
-  background: #fef2f2 !important;
+  background: rgba(220, 38, 38, 0.1) !important;
 }
 
 .scheduleFooter {
@@ -197,6 +215,103 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 3rem;
+}
+
+/* ── Blocks Section ── */
+.blocksSection {
+  margin-top: 2.5rem;
+  opacity: 0;
+  animation: fadeSlideUp 0.5s ease 0.45s both;
+}
+
+.blocksSectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.blocksSectionTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.blocksSectionSubtitle {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.blockFormCard {
+  background: var(--surface);
+  border: 1px solid var(--warning, #f59e0b);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.blockFormGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.blocksList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.blockCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.875rem 1.25rem;
+  transition: background var(--transition);
+}
+
+.blockCard:hover {
+  background: var(--bg);
+}
+
+.blockDates {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.blockDateRange {
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.blockReason {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.blocksEmpty {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
 }
 
 /* ── Loading ── */

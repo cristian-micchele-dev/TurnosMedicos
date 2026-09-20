@@ -29,7 +29,7 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: #fef2f2;
+  background: rgba(220, 38, 38, 0.12);
   color: var(--danger);
   margin-bottom: 4px;
 }

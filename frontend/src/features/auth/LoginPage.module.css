@@ -17,8 +17,8 @@
    * + a barely-visible second glow from bottom-right for depth
    */
   background-image:
-    radial-gradient(ellipse 70% 55% at -5% 0%, rgba(79, 141, 245, 0.07) 0%, transparent 65%),
-    radial-gradient(ellipse 50% 40% at 105% 100%, rgba(79, 141, 245, 0.04) 0%, transparent 60%);
+    radial-gradient(ellipse 70% 55% at -5% 0%, rgba(56, 189, 248, 0.07) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 105% 100%, rgba(56, 189, 248, 0.04) 0%, transparent 60%);
 }
 
 /* ---------- Card ---------- */
@@ -33,11 +33,11 @@
    * Layered shadow: tight 1 px border ring (replaces border) +
    * three progressive shadow layers for premium depth
    */
+  border: 1px solid var(--border);
   box-shadow:
-    0 0 0 1px rgba(15, 23, 42, 0.06),
-    0 1px 3px rgba(15, 23, 42, 0.04),
-    0 8px 24px rgba(15, 23, 42, 0.07),
-    0 24px 48px rgba(15, 23, 42, 0.06);
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(0, 0, 0, 0.25),
+    0 24px 48px rgba(0, 0, 0, 0.2);
 
   animation: cardFadeUp var(--transition-slow) both;
 }
@@ -70,7 +70,7 @@
   margin-bottom: 0.625rem;
 
   /* Soft glow halo behind the icon */
-  filter: drop-shadow(0 4px 12px rgba(79, 141, 245, 0.3));
+  filter: drop-shadow(0 4px 12px rgba(56, 189, 248, 0.3));
 }
 
 .appName {
@@ -145,19 +145,8 @@
   color: var(--primary);
 }
 
-.registerText {
-  font-family: var(--font), system-ui, sans-serif;
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-}
-
-.linkPrimary {
-  color: var(--primary);
-  font-weight: 600;
-  text-decoration: none;
-  transition: color var(--transition);
-}
-
-.linkPrimary:hover {
-  color: var(--primary-hover);
+@media (max-width: 560px) {
+  .card {
+    padding: 2rem 1.25rem;
+  }
 }
