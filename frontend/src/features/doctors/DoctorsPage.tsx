@@ -21,18 +21,20 @@ export function DoctorsPage() {
   const [search, setSearch] = useState('');
 
   const { data: result, loading: loadingDoctors, refetch: refetchDoctors } = useFetch<PaginatedResponse<Doctor>>(
+    ['doctors', page],
     () => doctorsApi.findAll(page),
-    [page],
   );
   const doctors = result?.data ?? [];
   const totalPages = result?.totalPages ?? 1;
 
   const { data: specialtiesResult, loading: loadingSpecialties } = useFetch<PaginatedResponse<Specialty>>(
+    ['specialties', 'all'],
     () => specialtiesApi.findAll(1, 100),
   );
   const specialties = specialtiesResult?.data ?? [];
 
   const { data: usersResult, loading: loadingUsers } = useFetch<PaginatedResponse<UserListItem>>(
+    ['users', 'all'],
     () => usersApi.findAll(1, 100),
   );
   const users = usersResult?.data ?? [];
@@ -97,7 +99,8 @@ export function DoctorsPage() {
     const term = search.toLowerCase();
     const name = d.user?.name?.toLowerCase() ?? '';
     const email = d.user?.email?.toLowerCase() ?? '';
-    return name.includes(term) || email.includes(term);
+    const specialty = d.specialty?.name?.toLowerCase() ?? '';
+    return name.includes(term) || email.includes(term) || specialty.includes(term);
   });
 
   const columns = [
@@ -194,7 +197,7 @@ export function DoctorsPage() {
           <input
             className={styles.searchBar}
             type="search"
-            placeholder="Buscar por nombre o email..."
+            placeholder="Buscar por nombre o especialidad..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           />

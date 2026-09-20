@@ -1,27 +1,33 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
-export function useFetch<T>(fetcher: () => Promise<T>, deps: unknown[] = []) {
-  const [data, setData] = useState<T | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | undefined>(undefined);
+export type QueryKey = readonly unknown[];
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const refetch = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(undefined);
-      const result = await fetcher();
-      setData(result);
-    } catch (e) {
-      setError(e instanceof Error ? e : new Error(String(e)));
-    } finally {
-      setLoading(false);
-    }
-  }, deps);
+export function useFetch<T>(queryKey: QueryKey, fetcher: () => Promise<T>) {
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
+  const query = useQuery<T, Error>({
+    queryKey,
+    queryFn: async () => {
+      try {
+        return await fetcher();
+      } catch (e) {
+        throw e instanceof Error ? e : new Error(String(e));
+      }
+    },
+  });
 
-  return { data, loading, error, refetch };
+  // Invalidates every query sharing the resource prefix (queryKey[0]),
+  // so a mutation on one page refreshes the same resource on any other page.
+  const refetch = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: [queryKey[0]] }),
+    [queryClient, queryKey[0]],
+  );
+
+  return {
+    data: query.data,
+    loading: query.isPending,
+    error: query.error ?? undefined,
+    refetch,
+  };
 }

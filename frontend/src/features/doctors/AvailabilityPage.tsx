@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doctorsApi, type Doctor, type AvailabilitySlot } from '../../api/doctors';
+import { doctorsApi, type Doctor, type AvailabilitySlot, type ScheduleBlock, type CreateScheduleBlockDto } from '../../api/doctors';
 import { useToast } from '../../hooks/useToast';
 import { useAuth } from '../../auth/AuthContext';
 import { Button } from '../../components/ui/Button';
@@ -40,6 +40,19 @@ const DURATION_OPTIONS = [
 interface SlotRow extends AvailabilitySlot {
   _id: string; // local key for React
 }
+
+interface BlockFormState {
+  startDate: string;
+  endDate: string;
+  reason: string;
+}
+
+interface BlockFormErrors {
+  startDate?: string;
+  endDate?: string;
+}
+
+const EMPTY_BLOCK_FORM: BlockFormState = { startDate: '', endDate: '', reason: '' };
 
 interface SlotFormState {
   dayOfWeek: string;
@@ -81,6 +94,12 @@ export function AvailabilityPage() {
   const [formErrors, setFormErrors] = useState<SlotErrors>({});
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  const [blocks, setBlocks] = useState<ScheduleBlock[]>([]);
+  const [showBlockForm, setShowBlockForm] = useState(false);
+  const [blockForm, setBlockForm] = useState<BlockFormState>(EMPTY_BLOCK_FORM);
+  const [blockFormErrors, setBlockFormErrors] = useState<BlockFormErrors>({});
+  const [savingBlock, setSavingBlock] = useState(false);
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -92,7 +111,10 @@ export function AvailabilityPage() {
           setDoctor(me);
           setResolvedDoctorId(me.id);
           effectiveDoctorId = me.id;
-          const availability = await doctorsApi.getAvailability(effectiveDoctorId);
+          const [availability, blocksData] = await Promise.all([
+            doctorsApi.getAvailability(effectiveDoctorId),
+            doctorsApi.getBlocks(effectiveDoctorId),
+          ]);
           setSlots(
             availability.map((a) => ({
               _id: nextId(),
@@ -102,10 +124,12 @@ export function AvailabilityPage() {
               slotDuration: a.slotDuration,
             })),
           );
+          setBlocks(blocksData);
         } else {
-          const [doctorData, availability] = await Promise.all([
+          const [doctorData, availability, blocksData] = await Promise.all([
             doctorsApi.findOne(effectiveDoctorId),
             doctorsApi.getAvailability(effectiveDoctorId),
+            doctorsApi.getBlocks(effectiveDoctorId),
           ]);
           setDoctor(doctorData);
           setSlots(
@@ -117,6 +141,7 @@ export function AvailabilityPage() {
               slotDuration: a.slotDuration,
             })),
           );
+          setBlocks(blocksData);
         }
       } catch {
         toast.error('Error al cargar la disponibilidad');
@@ -200,6 +225,53 @@ export function AvailabilityPage() {
       toast.error('Error al guardar la disponibilidad');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const formatBlockDate = (iso: string) =>
+    new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+  const validateBlockForm = (): boolean => {
+    const errs: BlockFormErrors = {};
+    if (!blockForm.startDate) errs.startDate = 'Ingresá la fecha de inicio';
+    if (!blockForm.endDate) errs.endDate = 'Ingresá la fecha de fin';
+    else if (blockForm.startDate && blockForm.endDate <= blockForm.startDate) {
+      errs.endDate = 'La fecha de fin debe ser posterior al inicio';
+    }
+    setBlockFormErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleAddBlock = async () => {
+    if (!resolvedDoctorId || !validateBlockForm()) return;
+    try {
+      setSavingBlock(true);
+      const dto: CreateScheduleBlockDto = {
+        startDate: new Date(blockForm.startDate).toISOString(),
+        endDate: new Date(blockForm.endDate).toISOString(),
+        ...(blockForm.reason.trim() ? { reason: blockForm.reason.trim() } : {}),
+      };
+      const saved = await doctorsApi.addBlock(resolvedDoctorId, dto);
+      setBlocks((prev) => [...prev, saved].sort((a, b) => a.startDate.localeCompare(b.startDate)));
+      setBlockForm(EMPTY_BLOCK_FORM);
+      setBlockFormErrors({});
+      setShowBlockForm(false);
+      toast.success('Bloqueo agregado correctamente');
+    } catch {
+      toast.error('Error al agregar el bloqueo');
+    } finally {
+      setSavingBlock(false);
+    }
+  };
+
+  const handleRemoveBlock = async (blockId: string) => {
+    if (!resolvedDoctorId) return;
+    try {
+      await doctorsApi.removeBlock(resolvedDoctorId, blockId);
+      setBlocks((prev) => prev.filter((b) => b.id !== blockId));
+      toast.success('Bloqueo eliminado');
+    } catch {
+      toast.error('Error al eliminar el bloqueo');
     }
   };
 
@@ -363,6 +435,93 @@ export function AvailabilityPage() {
           </div>
         </div>
       )}
+
+      {/* ── Schedule Blocks ── */}
+      <section className={styles.blocksSection}>
+        <div className={styles.blocksSectionHeader}>
+          <div>
+            <h2 className={styles.blocksSectionTitle}>Bloqueos de Agenda</h2>
+            <p className={styles.blocksSectionSubtitle}>Períodos en los que el médico no estará disponible (vacaciones, licencias, etc.)</p>
+          </div>
+          {!showBlockForm && (
+            <Button variant="secondary" size="sm" onClick={() => setShowBlockForm(true)}>
+              + Agregar Bloqueo
+            </Button>
+          )}
+        </div>
+
+        {showBlockForm && (
+          <div className={styles.blockFormCard}>
+            <h3 className={styles.formTitle}>Nuevo bloqueo</h3>
+            <div className={styles.blockFormGrid}>
+              <Input
+                label="Fecha y hora de inicio"
+                type="datetime-local"
+                value={blockForm.startDate}
+                onChange={(e) => {
+                  setBlockForm((prev) => ({ ...prev, startDate: e.target.value }));
+                  if (blockFormErrors.startDate) setBlockFormErrors((prev) => ({ ...prev, startDate: undefined }));
+                }}
+                error={blockFormErrors.startDate}
+              />
+              <Input
+                label="Fecha y hora de fin"
+                type="datetime-local"
+                value={blockForm.endDate}
+                onChange={(e) => {
+                  setBlockForm((prev) => ({ ...prev, endDate: e.target.value }));
+                  if (blockFormErrors.endDate) setBlockFormErrors((prev) => ({ ...prev, endDate: undefined }));
+                }}
+                error={blockFormErrors.endDate}
+              />
+              <Input
+                label="Motivo (opcional)"
+                type="text"
+                value={blockForm.reason}
+                onChange={(e) => setBlockForm((prev) => ({ ...prev, reason: e.target.value }))}
+                placeholder="Ej: Vacaciones, Congreso médico..."
+              />
+            </div>
+            <div className={styles.formActions}>
+              <Button variant="secondary" size="sm" onClick={() => { setShowBlockForm(false); setBlockForm(EMPTY_BLOCK_FORM); setBlockFormErrors({}); }}>
+                Cancelar
+              </Button>
+              <Button variant="primary" size="sm" onClick={handleAddBlock} isLoading={savingBlock} disabled={savingBlock}>
+                Agregar
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {blocks.length === 0 ? (
+          <div className={styles.blocksEmpty}>
+            <p>No hay bloqueos configurados</p>
+          </div>
+        ) : (
+          <ul className={styles.blocksList}>
+            {blocks.map((block) => (
+              <li key={block.id} className={styles.blockCard}>
+                <div className={styles.blockDates}>
+                  <span className={styles.blockDateRange}>
+                    {formatBlockDate(block.startDate)} — {formatBlockDate(block.endDate)}
+                  </span>
+                  {block.reason && (
+                    <span className={styles.blockReason}>{block.reason}</span>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={styles.removeBtn}
+                  onClick={() => handleRemoveBlock(block.id)}
+                >
+                  Eliminar
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

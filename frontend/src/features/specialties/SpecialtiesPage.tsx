@@ -14,12 +14,18 @@ import styles from './SpecialtiesPage.module.css';
 export function SpecialtiesPage() {
   const { toast } = useToast();
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
   const { data: result, loading, refetch } = useFetch<PaginatedResponse<Specialty>>(
+    ['specialties', page],
     () => specialtiesApi.findAll(page),
-    [page],
   );
   const specialties = result?.data ?? [];
   const totalPages = result?.totalPages ?? 1;
+
+  const filteredSpecialties = specialties.filter((s) =>
+    s.name.toLowerCase().includes(search.toLowerCase()),
+  );
+
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSpecialty, setSelectedSpecialty] = useState<Specialty | undefined>(undefined);
 
@@ -128,15 +134,24 @@ export function SpecialtiesPage() {
           <h1 className={styles.title}>Especialidades</h1>
           <p className={styles.subtitle}>Gestioná las especialidades médicas del sistema</p>
         </div>
-        <Button variant="primary" onClick={handleOpenCreate}>
-          + Nueva Especialidad
-        </Button>
+        <div className={styles.headerActions}>
+          <input
+            className={styles.searchBar}
+            type="search"
+            placeholder="Buscar por nombre..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          />
+          <Button variant="primary" onClick={handleOpenCreate}>
+            + Nueva Especialidad
+          </Button>
+        </div>
       </header>
 
       <div className={styles.tableContainer}>
         <Table
           columns={columns}
-          data={specialties}
+          data={filteredSpecialties}
           keyExtractor={(s) => s.id}
           loading={loading}
           emptyMessage="No hay especialidades registradas"

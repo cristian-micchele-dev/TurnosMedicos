@@ -28,6 +28,21 @@ export interface AvailabilitySlot {
   slotDuration: number;
 }
 
+export interface ScheduleBlock {
+  id: string;
+  doctorId: string;
+  startDate: string; // ISO
+  endDate: string;   // ISO
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface CreateScheduleBlockDto {
+  startDate: string; // ISO
+  endDate: string;   // ISO
+  reason?: string;
+}
+
 export const doctorsApi = {
   findAll: (page = 1, limit = 20) => api.get<PaginatedResponse<Doctor>>(`/doctors?page=${page}&limit=${limit}`),
   findOne: (id: string) => api.get<Doctor>(`/doctors/${id}`),
@@ -38,5 +53,8 @@ export const doctorsApi = {
     const query = date ? `?date=${date}` : '';
     return api.get<Availability[]>(`/doctors/${id}/availability${query}`);
   },
-  setAvailability: (id: string, slots: AvailabilitySlot[]) => api.put<Availability[]>(`/doctors/${id}/availability`, { slots }),
+  setAvailability: (id: string, slots: AvailabilitySlot[]) => api.post<Availability[]>(`/doctors/${id}/availability`, { slots }),
+  getBlocks: (id: string) => api.get<ScheduleBlock[]>(`/doctors/${id}/blocks`),
+  addBlock: (id: string, dto: CreateScheduleBlockDto) => api.post<ScheduleBlock>(`/doctors/${id}/blocks`, dto),
+  removeBlock: (id: string, blockId: string) => api.delete<void>(`/doctors/${id}/blocks/${blockId}`),
 };
