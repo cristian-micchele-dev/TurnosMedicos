@@ -9,8 +9,12 @@ describe('DoctorController', () => {
     update: jest.fn().mockResolvedValue({ id: 'd1' }),
     setAvailability: jest.fn().mockResolvedValue([]),
     getAvailability: jest.fn().mockResolvedValue([]),
+    addBlock: jest.fn().mockResolvedValue({ id: 'b1' }),
+    removeBlock: jest.fn().mockResolvedValue(undefined),
   };
   const controller = new DoctorController(service);
+  const doctor = { sub: 'u1', role: 'DOCTOR' };
+  const doctorReq = { user: doctor } as any;
 
   it('create delega al service', async () => {
     await controller.create({ userId: 'u1', specialtyId: 's1', licenseNumber: 'MP-1' });
@@ -37,14 +41,22 @@ describe('DoctorController', () => {
     expect(service.findOne).toHaveBeenCalledWith('d1');
   });
 
-  it('update delega al service', async () => {
-    await controller.update('d1', { phone: '123' });
-    expect(service.update).toHaveBeenCalledWith('d1', { phone: '123' });
+  it('update pasa el actor al service', async () => {
+    await controller.update('d1', { phone: '123' }, doctorReq);
+    expect(service.update).toHaveBeenCalledWith('d1', { phone: '123' }, doctor);
   });
 
-  it('setAvailability delega al service', async () => {
-    await controller.setAvailability('d1', { slots: [] });
-    expect(service.setAvailability).toHaveBeenCalledWith('d1', { slots: [] });
+  it('setAvailability pasa el actor al service', async () => {
+    await controller.setAvailability('d1', { slots: [] }, doctorReq);
+    expect(service.setAvailability).toHaveBeenCalledWith('d1', { slots: [] }, doctor);
+  });
+
+  it('addBlock y removeBlock pasan el actor al service', async () => {
+    const dto = { startDate: '2026-10-01T00:00:00Z', endDate: '2026-10-02T00:00:00Z' };
+    await controller.addBlock('d1', dto, doctorReq);
+    expect(service.addBlock).toHaveBeenCalledWith('d1', dto, doctor);
+    await controller.removeBlock('d1', 'b1', doctorReq);
+    expect(service.removeBlock).toHaveBeenCalledWith('d1', 'b1', doctor);
   });
 
   it('getAvailability pasa fecha opcional', async () => {

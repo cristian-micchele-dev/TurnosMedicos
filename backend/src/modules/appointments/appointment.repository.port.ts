@@ -17,6 +17,9 @@ export interface AppointmentRepository {
   findAll(filters: AppointmentFilters): Promise<[Appointment[], number]>;
   findByDoctorAndDateTime(doctorId: string, dateTime: Date): Promise<Appointment[]>;
   findByPatientSpecialtyAndDateRange(patientId: string, specialtyId: string, from: Date, to: Date): Promise<Appointment[]>;
+  findLastCode(): Promise<string | null>;
+  /** PENDING/CONFIRMED appointments with dateTime in [from, to). */
+  findActiveBetween(from: Date, to: Date): Promise<Appointment[]>;
   save(appointment: Appointment): Promise<Appointment>;
   update(appointment: Appointment): Promise<void>;
 }

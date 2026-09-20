@@ -14,6 +14,15 @@ export class CancelAppointmentDto {
   @IsOptional() @IsString() @MaxLength(500) reason?: string;
 }
 
+export class CompleteAppointmentDto {
+  @IsOptional() @IsString() @MaxLength(2000) diagnosis?: string;
+  @IsOptional() @IsString() @MaxLength(500) notes?: string;
+}
+
+export class RescheduleAppointmentDto {
+  @IsDateString() dateTime!: string;
+}
+
 export class QueryAppointmentsDto {
   @IsOptional() @IsUUID() doctorId?: string;
   @IsOptional() @IsUUID() patientId?: string;

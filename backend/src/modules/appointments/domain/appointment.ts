@@ -13,6 +13,8 @@ export class Appointment {
     public notes: string | null = null,
     public cancellationReason: string | null = null,
     public readonly createdAt: Date = new Date(),
+    public code: string = '',
+    public diagnosis: string | null = null,
   ) {}
 
   confirm() {
@@ -33,9 +35,9 @@ export class Appointment {
 
   toPublic() {
     return {
-      id: this.id, doctorId: this.doctorId, patientId: this.patientId, specialtyId: this.specialtyId,
+      id: this.id, code: this.code, doctorId: this.doctorId, patientId: this.patientId, specialtyId: this.specialtyId,
       dateTime: this.dateTime.toISOString(), durationMinutes: this.durationMinutes, status: this.status,
-      notes: this.notes, cancellationReason: this.cancellationReason, createdAt: this.createdAt,
+      notes: this.notes, diagnosis: this.diagnosis, cancellationReason: this.cancellationReason, createdAt: this.createdAt,
     };
   }
 }

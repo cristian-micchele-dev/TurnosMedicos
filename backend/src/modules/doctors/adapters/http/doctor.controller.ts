@@ -1,10 +1,13 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard, Roles, RolesGuard } from '../../../auth/adapters/http/auth.guards';
 import { Role } from '../../../users/domain/user';
 import { DoctorService } from '../../application/doctor.service';
-import { CreateDoctorDto, UpdateDoctorDto, SetAvailabilityDto } from '../../application/dto/doctor.dto';
+import { CreateDoctorDto, UpdateDoctorDto, SetAvailabilityDto, CreateScheduleBlockDto } from '../../application/dto/doctor.dto';
 import { PaginationDto } from '../../../../shared/application/pagination';
+import { Actor } from '../../../users/domain/actor';
+
+const actorOf = (req: Request): Actor => (req as Request & { user: Actor }).user;
 
 @Controller('doctors')
 @UseGuards(JwtAuthGuard)
@@ -23,7 +26,7 @@ export class DoctorController {
 
   @Get('me')
   findMe(@Req() req: Request) {
-    return this.service.findByUserId((req as any).user.sub);
+    return this.service.findByUserId(actorOf(req).sub);
   }
 
   @Get(':id')
@@ -32,17 +35,32 @@ export class DoctorController {
   }
 
   @Patch(':id') @UseGuards(RolesGuard) @Roles(Role.ADMIN, Role.DOCTOR)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateDoctorDto) {
-    return this.service.update(id, dto);
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateDoctorDto, @Req() req: Request) {
+    return this.service.update(id, dto, actorOf(req));
   }
 
   @Post(':id/availability') @UseGuards(RolesGuard) @Roles(Role.ADMIN, Role.DOCTOR)
-  setAvailability(@Param('id', ParseUUIDPipe) id: string, @Body() dto: SetAvailabilityDto) {
-    return this.service.setAvailability(id, dto);
+  setAvailability(@Param('id', ParseUUIDPipe) id: string, @Body() dto: SetAvailabilityDto, @Req() req: Request) {
+    return this.service.setAvailability(id, dto, actorOf(req));
   }
 
   @Get(':id/availability')
   getAvailability(@Param('id', ParseUUIDPipe) id: string, @Query('date') date?: string) {
     return this.service.getAvailability(id, date);
+  }
+
+  @Post(':id/blocks') @UseGuards(RolesGuard) @Roles(Role.ADMIN, Role.DOCTOR)
+  addBlock(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CreateScheduleBlockDto, @Req() req: Request) {
+    return this.service.addBlock(id, dto, actorOf(req));
+  }
+
+  @Get(':id/blocks')
+  getBlocks(@Param('id', ParseUUIDPipe) id: string) {
+    return this.service.getBlocks(id);
+  }
+
+  @Delete(':id/blocks/:blockId') @UseGuards(RolesGuard) @Roles(Role.ADMIN, Role.DOCTOR)
+  removeBlock(@Param('id', ParseUUIDPipe) id: string, @Param('blockId', ParseUUIDPipe) blockId: string, @Req() req: Request) {
+    return this.service.removeBlock(id, blockId, actorOf(req));
   }
 }

@@ -2,58 +2,50 @@ import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, U
 import { Request } from 'express';
 import { JwtAuthGuard, Roles, RolesGuard } from '../../../auth/adapters/http/auth.guards';
 import { Role } from '../../../users/domain/user';
+import { Actor } from '../../../users/domain/actor';
 import { AppointmentService } from '../../application/appointment.service';
-import { CreateAppointmentDto, CancelAppointmentDto, QueryAppointmentsDto } from '../../application/dto/appointment.dto';
-import { PatientService } from '../../../patients/application/patient.service';
-import { ForbiddenError } from '../../../../shared/domain/errors';
+import { CreateAppointmentDto, CancelAppointmentDto, CompleteAppointmentDto, QueryAppointmentsDto, RescheduleAppointmentDto } from '../../application/dto/appointment.dto';
+
+const actorOf = (req: Request): Actor => (req as Request & { user: Actor }).user;
 
 @Controller('appointments')
 @UseGuards(JwtAuthGuard)
 export class AppointmentController {
-  constructor(
-    private readonly service: AppointmentService,
-    private readonly patients: PatientService,
-  ) {}
+  constructor(private readonly service: AppointmentService) {}
 
   @Post()
-  async create(@Body() dto: CreateAppointmentDto, @Req() req: Request) {
-    const user = (req as any).user;
-    if (user.role === Role.PATIENT) {
-      const patient = await this.patients.findOne(dto.patientId);
-      if (patient.userId !== user.sub) throw new ForbiddenError();
-    }
-    return this.service.create(dto);
+  create(@Body() dto: CreateAppointmentDto, @Req() req: Request) {
+    return this.service.create(dto, actorOf(req));
   }
 
   @Get()
   findAll(@Query() query: QueryAppointmentsDto, @Req() req: Request) {
-    const user = (req as any).user;
+    const user = actorOf(req);
     return this.service.findAll(query, user.sub, user.role);
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.service.findOne(id);
+  findOne(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
+    return this.service.findOne(id, actorOf(req));
   }
 
   @Patch(':id/confirm') @UseGuards(RolesGuard) @Roles(Role.DOCTOR, Role.ADMIN)
-  confirm(@Param('id', ParseUUIDPipe) id: string) {
-    return this.service.confirm(id);
+  confirm(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
+    return this.service.confirm(id, actorOf(req));
   }
 
   @Patch(':id/cancel')
-  async cancel(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CancelAppointmentDto, @Req() req: Request) {
-    const user = (req as any).user;
-    if (user.role === Role.PATIENT) {
-      const appointment = await this.service.findOne(id);
-      const patient = await this.patients.findOne(appointment.patientId);
-      if (patient.userId !== user.sub) throw new ForbiddenError();
-    }
-    return this.service.cancel(id, dto);
+  cancel(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CancelAppointmentDto, @Req() req: Request) {
+    return this.service.cancel(id, dto, actorOf(req));
+  }
+
+  @Patch(':id/reschedule') @UseGuards(RolesGuard) @Roles(Role.DOCTOR, Role.ADMIN)
+  reschedule(@Param('id', ParseUUIDPipe) id: string, @Body() dto: RescheduleAppointmentDto, @Req() req: Request) {
+    return this.service.reschedule(id, dto, actorOf(req));
   }
 
   @Patch(':id/complete') @UseGuards(RolesGuard) @Roles(Role.DOCTOR, Role.ADMIN)
-  complete(@Param('id', ParseUUIDPipe) id: string) {
-    return this.service.complete(id);
+  complete(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CompleteAppointmentDto, @Req() req: Request) {
+    return this.service.complete(id, dto, actorOf(req));
   }
 }

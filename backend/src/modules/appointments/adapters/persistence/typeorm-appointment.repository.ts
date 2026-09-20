@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Between, In, MoreThanOrEqual, LessThan, And, Repository } from 'typeorm';
+import { AppointmentStatus } from '../../domain/appointment-status.enum';
 import { AppointmentRepository, AppointmentFilters } from '../../appointment.repository.port';
 import { Appointment } from '../../domain/appointment';
 import { AppointmentOrmEntity } from './appointment.entity';
@@ -10,7 +11,7 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
   constructor(@InjectRepository(AppointmentOrmEntity) private readonly repo: Repository<AppointmentOrmEntity>) {}
 
   private map(e: AppointmentOrmEntity): Appointment {
-    return new Appointment(e.id, e.doctorId, e.patientId, e.specialtyId, e.dateTime, e.durationMinutes, e.status, e.notes, e.cancellationReason, e.createdAt);
+    return new Appointment(e.id, e.doctorId, e.patientId, e.specialtyId, e.dateTime, e.durationMinutes, e.status, e.notes, e.cancellationReason, e.createdAt, e.code, e.diagnosis);
   }
 
   async findById(id: string) {
@@ -43,15 +44,28 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
     return entities.map(e => this.map(e));
   }
 
+  async findActiveBetween(from: Date, to: Date) {
+    const entities = await this.repo.find({
+      where: { status: In([AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED]), dateTime: And(MoreThanOrEqual(from), LessThan(to)) },
+      order: { dateTime: 'ASC' },
+    });
+    return entities.map(e => this.map(e));
+  }
+
+  async findLastCode(): Promise<string | null> {
+    const e = await this.repo.findOne({ where: {}, order: { code: 'DESC' } });
+    return e?.code ?? null;
+  }
+
   async save(a: Appointment) {
     const e = await this.repo.save(Object.assign(new AppointmentOrmEntity(), {
-      id: a.id, doctorId: a.doctorId, patientId: a.patientId, specialtyId: a.specialtyId,
+      id: a.id, code: a.code, doctorId: a.doctorId, patientId: a.patientId, specialtyId: a.specialtyId,
       dateTime: a.dateTime, durationMinutes: a.durationMinutes, status: a.status, notes: a.notes, cancellationReason: a.cancellationReason,
     }));
     return this.map(e);
   }
 
   async update(a: Appointment) {
-    await this.repo.update(a.id, { status: a.status, notes: a.notes, cancellationReason: a.cancellationReason, dateTime: a.dateTime, durationMinutes: a.durationMinutes });
+    await this.repo.update(a.id, { status: a.status, notes: a.notes, diagnosis: a.diagnosis, cancellationReason: a.cancellationReason, dateTime: a.dateTime, durationMinutes: a.durationMinutes });
   }
 }

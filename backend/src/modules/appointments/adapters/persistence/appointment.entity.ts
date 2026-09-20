@@ -10,7 +10,9 @@ export class AppointmentOrmEntity {
   @Index() @Column('timestamptz', { name: 'date_time' }) dateTime!: Date;
   @Column('smallint', { name: 'duration_minutes', default: 30 }) durationMinutes!: number;
   @Column('enum', { enum: AppointmentStatus, default: AppointmentStatus.PENDING }) status!: AppointmentStatus;
+  @Column({ type: 'varchar', length: 20, unique: true }) code!: string;
   @Column('text', { nullable: true }) notes!: string | null;
+  @Column('text', { nullable: true }) diagnosis!: string | null;
   @Column('text', { name: 'cancellation_reason', nullable: true }) cancellationReason!: string | null;
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' }) createdAt!: Date;
 }

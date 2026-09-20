@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn, Index, Unique, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, PrimaryColumn, Column, CreateDateColumn, Index, Unique, ManyToOne, JoinColumn } from 'typeorm';
 import { UserOrmEntity } from '../../../users/adapters/persistence/entities';
 import { SpecialtyOrmEntity } from '../../../specialties/adapters/persistence/specialty.entity';
 
@@ -30,4 +30,14 @@ export class AvailabilityOrmEntity {
   @Column('time', { name: 'start_time' }) startTime!: string;
   @Column('time', { name: 'end_time' }) endTime!: string;
   @Column('smallint', { name: 'slot_duration_minutes', default: 30 }) slotDurationMinutes!: number;
+}
+
+@Entity('schedule_blocks')
+export class ScheduleBlockOrmEntity {
+  @PrimaryGeneratedColumn('uuid') id!: string;
+  @Column('uuid', { name: 'doctor_id' }) doctorId!: string;
+  @Column('timestamptz', { name: 'start_date' }) startDate!: Date;
+  @Column('timestamptz', { name: 'end_date' }) endDate!: Date;
+  @Column('varchar', { length: 255, nullable: true }) reason!: string | null;
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' }) createdAt!: Date;
 }

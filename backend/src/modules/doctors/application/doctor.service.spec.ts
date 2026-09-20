@@ -7,10 +7,12 @@ import { Specialty } from '../../specialties/domain/specialty';
 describe('DoctorService', () => {
   const doctors: any = { findById: jest.fn(), findByUserId: jest.fn(), findByLicense: jest.fn(), findAll: jest.fn(), save: jest.fn(), update: jest.fn() };
   const availabilities: any = { findByDoctor: jest.fn(), findByDoctorAndDay: jest.fn(), save: jest.fn(), deleteByDoctor: jest.fn() };
+  const scheduleBlocks: any = { findByDoctor: jest.fn(), findOverlapping: jest.fn(), save: jest.fn(), delete: jest.fn(), findById: jest.fn() };
   const specialties: any = { findById: jest.fn() };
   const users: any = { findById: jest.fn(), findByEmail: jest.fn(), save: jest.fn(), update: jest.fn() };
 
-  const service = () => new DoctorService(doctors, availabilities, specialties, users);
+  const admin = { sub: 'admin-1', role: Role.ADMIN };
+  const service = () => new DoctorService(doctors, availabilities, scheduleBlocks, specialties, users);
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -20,6 +22,9 @@ describe('DoctorService', () => {
     doctors.findAll.mockResolvedValue([[], 0]);
     availabilities.findByDoctor.mockResolvedValue([]);
     availabilities.findByDoctorAndDay.mockResolvedValue([]);
+    scheduleBlocks.findByDoctor.mockResolvedValue([]);
+    scheduleBlocks.findOverlapping.mockResolvedValue([]);
+    scheduleBlocks.findById.mockResolvedValue(undefined);
     specialties.findById.mockResolvedValue(undefined);
     users.findById.mockResolvedValue(undefined);
   });
@@ -35,7 +40,7 @@ describe('DoctorService', () => {
     });
 
     it('rechaza si usuario no tiene rol DOCTOR', async () => {
-      users.findById.mockResolvedValue(new User('u1', 'pat@test.com', '', 'hash', Role.PATIENT));
+      users.findById.mockResolvedValue(new User('u1', 'admin@test.com', '', 'hash', Role.ADMIN));
       await expect(service().create({ userId: 'u1', specialtyId: 's1', licenseNumber: 'MP-123' })).rejects.toMatchObject({ status: 409 });
     });
 
@@ -91,20 +96,20 @@ describe('DoctorService', () => {
   describe('update', () => {
     it('actualiza campos parcialmente', async () => {
       doctors.findById.mockResolvedValue(new Doctor('d1', 'u1', 's1', 'MP-1'));
-      const result = await service().update('d1', { phone: '1155667788' });
+      const result = await service().update('d1', { phone: '1155667788' }, admin);
       expect(result.phone).toBe('1155667788');
       expect(doctors.update).toHaveBeenCalled();
     });
 
     it('valida especialidad al cambiarla', async () => {
       doctors.findById.mockResolvedValue(new Doctor('d1', 'u1', 's1', 'MP-1'));
-      await expect(service().update('d1', { specialtyId: 'bad' })).rejects.toMatchObject({ status: 404 });
+      await expect(service().update('d1', { specialtyId: 'bad' }, admin)).rejects.toMatchObject({ status: 404 });
     });
 
     it('rechaza matrícula duplicada de otro médico', async () => {
       doctors.findById.mockResolvedValue(new Doctor('d1', 'u1', 's1', 'MP-1'));
       doctors.findByLicense.mockResolvedValue(new Doctor('d2', 'u2', 's1', 'MP-999'));
-      await expect(service().update('d1', { licenseNumber: 'MP-999' })).rejects.toMatchObject({ status: 409 });
+      await expect(service().update('d1', { licenseNumber: 'MP-999' }, admin)).rejects.toMatchObject({ status: 409 });
     });
   });
 
@@ -112,14 +117,14 @@ describe('DoctorService', () => {
     it('reemplaza disponibilidad completa', async () => {
       doctors.findById.mockResolvedValue(new Doctor('d1', 'u1', 's1', 'MP-1'));
       availabilities.save.mockImplementation(async (a: Availability) => a);
-      const result = await service().setAvailability('d1', { slots: [{ dayOfWeek: 1, startTime: '09:00', endTime: '17:00' }] });
+      const result = await service().setAvailability('d1', { slots: [{ dayOfWeek: 1, startTime: '09:00', endTime: '17:00' }] }, admin);
       expect(availabilities.deleteByDoctor).toHaveBeenCalledWith('d1');
       expect(result).toHaveLength(1);
       expect(result[0].dayOfWeek).toBe(1);
     });
 
     it('lanza 404 si médico no existe', async () => {
-      await expect(service().setAvailability('missing', { slots: [] })).rejects.toMatchObject({ status: 404 });
+      await expect(service().setAvailability('missing', { slots: [] }, admin)).rejects.toMatchObject({ status: 404 });
     });
   });
 
@@ -137,6 +142,46 @@ describe('DoctorService', () => {
       availabilities.findByDoctorAndDay.mockResolvedValue([new Availability('a1', 'd1', 1, '09:00', '11:00', 30)]);
       const result = await service().getAvailability('d1', '2026-09-07');
       expect((result[0] as any).slots).toEqual(['09:00', '09:30', '10:00', '10:30']);
+    });
+  });
+
+  describe('ownership (rol DOCTOR)', () => {
+    const me = { sub: 'u-me', role: Role.DOCTOR };
+    const setupTwoDoctors = () => {
+      doctors.findByUserId.mockResolvedValue(new Doctor('d-me', 'u-me', 's1', 'MP-1'));
+      doctors.findById.mockImplementation(async (id: string) => id === 'd-me' ? new Doctor('d-me', 'u-me', 's1', 'MP-1') : id === 'd-other' ? new Doctor('d-other', 'u-other', 's1', 'MP-2') : undefined);
+    };
+
+    it('un médico puede editar su propio perfil', async () => {
+      setupTwoDoctors();
+      await expect(service().update('d-me', { phone: '1' }, me)).resolves.toMatchObject({ id: 'd-me' });
+    });
+
+    it('un médico NO puede editar el perfil de otro médico', async () => {
+      setupTwoDoctors();
+      await expect(service().update('d-other', { phone: '1' }, me)).rejects.toMatchObject({ status: 403 });
+      expect(doctors.update).not.toHaveBeenCalled();
+    });
+
+    it('un médico NO puede cambiar la disponibilidad de otro médico', async () => {
+      setupTwoDoctors();
+      await expect(service().setAvailability('d-other', { slots: [] }, me)).rejects.toMatchObject({ status: 403 });
+      expect(availabilities.deleteByDoctor).not.toHaveBeenCalled();
+    });
+
+    it('un médico NO puede bloquear la agenda de otro médico', async () => {
+      setupTwoDoctors();
+      await expect(service().addBlock('d-other', { startDate: '2026-10-01T00:00:00Z', endDate: '2026-10-02T00:00:00Z' }, me)).rejects.toMatchObject({ status: 403 });
+    });
+
+    it('un médico NO puede borrar bloqueos de otro médico', async () => {
+      setupTwoDoctors();
+      await expect(service().removeBlock('d-other', 'b1', me)).rejects.toMatchObject({ status: 403 });
+      expect(scheduleBlocks.delete).not.toHaveBeenCalled();
+    });
+
+    it('un DOCTOR sin perfil recibe 404', async () => {
+      await expect(service().update('d-me', { phone: '1' }, me)).rejects.toMatchObject({ status: 404 });
     });
   });
 });

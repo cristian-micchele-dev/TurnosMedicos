@@ -9,7 +9,7 @@ export class Availability {
   ) {}
 
   toPublic() {
-    return { id: this.id, doctorId: this.doctorId, dayOfWeek: this.dayOfWeek, startTime: this.startTime, endTime: this.endTime, slotDurationMinutes: this.slotDurationMinutes };
+    return { id: this.id, doctorId: this.doctorId, dayOfWeek: this.dayOfWeek, startTime: this.startTime, endTime: this.endTime, slotDuration: this.slotDurationMinutes };
   }
 
   generateSlots(): string[] {
