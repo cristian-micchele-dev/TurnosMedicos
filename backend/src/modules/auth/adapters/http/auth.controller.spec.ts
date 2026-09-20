@@ -19,10 +19,9 @@ describe('AuthController', () => {
     expect(service.refresh).toHaveBeenCalledWith('old-refresh');
   });
 
-  it('register delega al service', async () => {
-    const service: any = { register: jest.fn().mockResolvedValue({ id: 'u1', email: 'x@y.com' }) };
-    const controller = new AuthController(service);
-    await expect(controller.register({ email: 'x@y.com', password: 'pass' } as any)).resolves.toMatchObject({ id: 'u1' });
+  it('no expone endpoint de auto-registro', () => {
+    const controller = new AuthController({} as any);
+    expect((controller as any).register).toBeUndefined();
   });
 
   it('me delega al service', async () => {

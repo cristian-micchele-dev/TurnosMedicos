@@ -27,11 +27,11 @@ describe('JwtTokenService', () => {
   const service = new JwtTokenService(config);
 
   it('firma y verifica access token', () => {
-    const token = service.signAccess({ sub: 'u1', role: 'PATIENT' });
+    const token = service.signAccess({ sub: 'u1', role: 'DOCTOR' });
     expect(typeof token).toBe('string');
     const payload = service.verifyAccess(token);
     expect(payload.sub).toBe('u1');
-    expect(payload.role).toBe('PATIENT');
+    expect(payload.role).toBe('DOCTOR');
     expect(payload.iss).toBe('test-issuer');
   });
 

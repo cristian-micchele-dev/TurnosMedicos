@@ -14,6 +14,10 @@ function getCsrfFromCookie(): string | null {
   return match ? match.split('=')[1] : null;
 }
 
+// Endpoints whose own 401 means "bad credentials / bad token", never "expired session".
+// Refreshing on them would loop (or, on /login, wipe state and reload the page).
+const NO_REFRESH_PATHS = ['/auth/login', '/auth/refresh', '/auth/forgot-password', '/auth/reset-password'];
+
 class HttpClient {
   private baseUrl: string;
   private isRefreshing = false;
@@ -87,8 +91,11 @@ class HttpClient {
       this.refreshQueue.forEach(({ reject }) => reject(err));
       this.refreshQueue = [];
 
-      localStorage.clear();
-      window.location.href = '/login';
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('csrf_token');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
 
       throw err;
     } finally {
@@ -110,7 +117,10 @@ class HttpClient {
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     });
 
-    if (response.status === 401) {
+    const canRefresh =
+      !NO_REFRESH_PATHS.some((p) => path.startsWith(p)) && localStorage.getItem('access_token') !== null;
+
+    if (response.status === 401 && canRefresh) {
       const newToken = await this.handleRefresh();
 
       const retryResponse = await fetch(url, {

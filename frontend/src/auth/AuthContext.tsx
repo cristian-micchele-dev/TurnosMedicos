@@ -29,6 +29,9 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+const DEV_AUTO_LOGIN = false;
+const DEV_CREDENTIALS = { email: 'admin@turno.med', password: 'Admin1234' };
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [state, setState] = useState<AuthState>(initialState);
 
@@ -40,10 +43,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
   }, []);
 
+  const loginDirect = useCallback(
+    async (email: string, password: string) => {
+      const { accessToken } = await authApi.login({ email, password });
+      localStorage.setItem('access_token', accessToken);
+      const csrf = getCsrfFromCookie();
+      if (csrf) localStorage.setItem('csrf_token', csrf);
+      const profile = await authApi.me();
+      setUser(profile);
+    },
+    [setUser],
+  );
+
   useEffect(() => {
     const token = localStorage.getItem('access_token');
 
     if (!token) {
+      if (DEV_AUTO_LOGIN) {
+        loginDirect(DEV_CREDENTIALS.email, DEV_CREDENTIALS.password).catch(() =>
+          setState({ user: null, isLoading: false, isAuthenticated: false }),
+        );
+        return;
+      }
       setState({ user: null, isLoading: false, isAuthenticated: false });
       return;
     }
@@ -54,9 +75,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       .catch(() => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('csrf_token');
+        if (DEV_AUTO_LOGIN) {
+          loginDirect(DEV_CREDENTIALS.email, DEV_CREDENTIALS.password).catch(() =>
+            setState({ user: null, isLoading: false, isAuthenticated: false }),
+          );
+          return;
+        }
         setState({ user: null, isLoading: false, isAuthenticated: false });
       });
-  }, [setUser]);
+  }, [setUser, loginDirect]);
 
   const login = useCallback(
     async (email: string, password: string): Promise<void> => {
@@ -75,14 +102,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     [setUser],
   );
 
-  const register = useCallback(
-    async (email: string, password: string): Promise<void> => {
-      await authApi.register({ email, password });
-      await login(email, password);
-    },
-    [login],
-  );
-
   const logout = useCallback(async (): Promise<void> => {
     try {
       await authApi.logout();
@@ -96,7 +115,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value: AuthContextValue = {
     ...state,
     login,
-    register,
     logout,
   };
 

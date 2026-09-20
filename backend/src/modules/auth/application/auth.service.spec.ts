@@ -4,7 +4,7 @@ import { createHash } from 'crypto';
 
 describe('AuthService', () => {
   const now = new Date('2026-01-01T00:00:00Z');
-  const user = new User('u1', 'x@y.com', '', 'hash:good', Role.PATIENT);
+  const user = new User('u1', 'x@y.com', '', 'hash:good', Role.DOCTOR);
   const users: any = { findByEmail: jest.fn(), findById: jest.fn(), save: jest.fn(), update: jest.fn() };
   const hasher: any = { hash: jest.fn(async (value: string) => `hash:${value}`), verify: jest.fn(async (hash: string, value: string) => hash === `hash:${value}`) };
   const tokens: any = { signAccess: jest.fn(() => 'access'), signRefresh: jest.fn(() => 'refresh'), verifyRefresh: jest.fn(() => ({ jti: 'j1', familyId: 'f1' })), refreshTtlMs: () => 1000 };
@@ -14,12 +14,8 @@ describe('AuthService', () => {
   const service = () => new AuthService(users, hasher, tokens, sessions, resets, mailer, { now: () => now });
   beforeEach(() => { jest.clearAllMocks(); users.findByEmail.mockResolvedValue(undefined); users.findById.mockResolvedValue(undefined); });
 
-  it('normaliza email, hashea password y rechaza duplicados', async () => {
-    users.save.mockImplementation(async (value: User) => value);
-    await expect(service().register({ email: ' X@Y.COM ', password: 'password' })).resolves.toMatchObject({ email: 'x@y.com' });
-    expect(hasher.hash).toHaveBeenCalledWith('password');
-    users.findByEmail.mockResolvedValue(user);
-    await expect(service().register({ email: 'x@y.com', password: 'password' })).rejects.toMatchObject({ status: 409 });
+  it('no expone auto-registro: el alta de usuarios es exclusiva del admin', () => {
+    expect((service() as any).register).toBeUndefined();
   });
 
   it('emite sesión al autenticar y rechaza usuario inactivo', async () => {
@@ -38,7 +34,7 @@ describe('AuthService', () => {
   });
   it('rechaza login uniforme',async()=>await expect(service().login({email:'x@y.com',password:'bad'})).rejects.toMatchObject({status:401}));
   it('detecta reuse y revoca la familia', async () => {
-    const user={id:'u1',email:'x@y.com',passwordHash:'hash',role:'PATIENT',active:true,toPublic:()=>({id:'u1'})};
+    const user={id:'u1',email:'x@y.com',passwordHash:'hash',role:'DOCTOR',active:true,toPublic:()=>({id:'u1'})};
     const sessions:any={findByJti:async()=>({id:'s1',userId:'u1',familyId:'f1',tokenHash:'other',expiresAt:new Date(Date.now()+10000)}),revokeFamily:jest.fn()};
     const tokens:any={verifyRefresh:()=>({jti:'j1',familyId:'f1'})};
     const instance=new AuthService(users,{} as any,tokens,sessions,{} as any,{} as any,{now:()=>new Date()});

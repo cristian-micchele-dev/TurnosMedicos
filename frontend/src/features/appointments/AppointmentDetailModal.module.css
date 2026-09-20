@@ -10,6 +10,14 @@
   gap: 0.75rem;
 }
 
+.appointmentCode {
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.06em;
+}
+
 .infoGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -44,8 +52,8 @@
 
 /* Cancellation reason display */
 .cancellationBox {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.25);
   border-radius: var(--radius-md);
   padding: 0.875rem 1rem;
   display: flex;
@@ -61,8 +69,8 @@
 
 /* Cancel flow */
 .cancelBox {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.25);
   border-radius: var(--radius-md);
   padding: 1rem;
   display: flex;
@@ -81,7 +89,7 @@
 .textarea {
   width: 100%;
   padding: 0.625rem 0.75rem;
-  border: 1px solid #fecaca;
+  border: 1px solid rgba(220, 38, 38, 0.25);
   border-radius: var(--radius-md);
   font-size: 0.875rem;
   font-family: inherit;
@@ -120,4 +128,425 @@
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+}
+
+/* Reports section */
+.reportsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.reportsSectionTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.reportsEmpty {
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+}
+
+.reportsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.reportItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+}
+
+.reportIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.reportIconPdf {
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--primary);
+}
+
+.reportIconImage {
+  background: rgba(52, 211, 153, 0.12);
+  color: var(--success);
+}
+
+.reportInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.reportTitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reportFilename {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reportMeta {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.reportActions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+
+.reportActionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.875rem;
+  height: 1.875rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border);
+  transition: color var(--transition), background var(--transition), border-color var(--transition);
+  cursor: pointer;
+}
+
+.reportActionBtn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.reportActionBtnDanger {
+  color: var(--text-tertiary);
+}
+
+.reportActionBtnDanger:hover {
+  color: var(--danger);
+  border-color: var(--danger-ring);
+  background: var(--danger-light);
+}
+
+/* Upload form */
+.uploadForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.uploadField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.uploadInput {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--surface);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.uploadInput::placeholder {
+  color: var(--text-tertiary);
+}
+
+.uploadInput:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-ring);
+}
+
+.fileInput {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.fileInput::file-selector-button {
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-solid);
+  color: var(--text-secondary);
+  cursor: pointer;
+  margin-right: 0.625rem;
+  transition: border-color var(--transition), color var(--transition);
+}
+
+.fileInput::file-selector-button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.uploadActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.required {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* Clinical notes / diagnosis display */
+.clinicalBox {
+  background: rgba(56, 189, 248, 0.06);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: var(--radius-md);
+  padding: 0.875rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.clinicalLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--primary);
+}
+
+.clinicalText {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* Reschedule flow */
+.rescheduleBox {
+  background: rgba(56, 189, 248, 0.06);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rescheduleInput {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--surface);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.rescheduleInput:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-ring);
+}
+
+/* Complete flow */
+.completeBox {
+  background: rgba(56, 189, 248, 0.06);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.completeField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.textareaPrimary {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--surface);
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  line-height: 1.5;
+}
+
+.textareaPrimary::placeholder {
+  color: var(--text-tertiary);
+}
+
+.textareaPrimary:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-ring);
+}
+
+.completeActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+/* Prescriptions section */
+.prescriptionsSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.prescriptionNewBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--primary);
+  background: var(--primary-light);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.prescriptionNewBtn:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+.prescriptionMedsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.prescriptionMedRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.prescriptionMedFields {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+@media (max-width: 540px) {
+  .prescriptionMedFields {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.prescriptionRemoveBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.875rem;
+  height: 1.875rem;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition), background var(--transition);
+}
+
+.prescriptionRemoveBtn:hover {
+  color: var(--danger);
+  border-color: var(--danger-ring);
+  background: var(--danger-light);
+}
+
+.prescriptionAddMedBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition);
+  align-self: flex-start;
+}
+
+.prescriptionAddMedBtn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Download receipt button */
+.downloadBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--primary);
+  background: transparent;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  white-space: nowrap;
+}
+
+.downloadBtn:hover {
+  background: var(--primary-light);
 }

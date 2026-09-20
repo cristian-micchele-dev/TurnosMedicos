@@ -15,13 +15,11 @@ import styles from './UsersPage.module.css';
 const ROLE_LABELS: Record<UserListItem['role'], string> = {
   ADMIN: 'Admin',
   DOCTOR: 'Doctor',
-  PATIENT: 'Paciente',
 };
 
 const ROLE_OPTIONS: { value: UserListItem['role']; label: string }[] = [
   { value: 'ADMIN', label: 'Admin' },
   { value: 'DOCTOR', label: 'Doctor' },
-  { value: 'PATIENT', label: 'Paciente' },
 ];
 
 export function UsersPage() {
@@ -30,10 +28,11 @@ export function UsersPage() {
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<UserListItem['role'] | ''>('');
 
   const { data: fetchedResult, loading } = useFetch<PaginatedResponse<UserListItem>>(
+    ['users', page],
     () => usersApi.findAll(page),
-    [page],
   );
   const [users, setUsers] = useState<UserListItem[]>([]);
   const totalPages = fetchedResult?.totalPages ?? 1;
@@ -100,9 +99,14 @@ export function UsersPage() {
     toast.success('Usuario creado correctamente');
   };
 
-  const filteredUsers = users.filter((u) =>
-    u.email.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filteredUsers = users.filter((u) => {
+    const term = search.toLowerCase();
+    const matchesSearch =
+      u.email.toLowerCase().includes(term) ||
+      (u.name?.toLowerCase() ?? '').includes(term);
+    const matchesRole = roleFilter === '' || u.role === roleFilter;
+    return matchesSearch && matchesRole;
+  });
 
   const columns = [
     {
@@ -206,10 +210,23 @@ export function UsersPage() {
           <input
             type="search"
             className={styles.searchBar}
-            placeholder="Buscar por email..."
+            placeholder="Buscar por nombre o email..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           />
+          <select
+            className={styles.filterSelect}
+            value={roleFilter}
+            onChange={(e) => { setRoleFilter(e.target.value as UserListItem['role'] | ''); setPage(1); }}
+            aria-label="Filtrar por rol"
+          >
+            <option value="">Todos los roles</option>
+            {ROLE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
           <Button variant="primary" onClick={() => setShowCreateModal(true)}>
             + Nuevo Usuario
           </Button>
@@ -255,7 +272,7 @@ function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'ADMIN' | 'DOCTOR' | 'PATIENT'>('PATIENT');
+  const [role, setRole] = useState<'ADMIN' | 'DOCTOR'>('DOCTOR');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -328,9 +345,8 @@ function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
         label="Rol"
         id="new-user-role"
         value={role}
-        onChange={(value) => setRole(value as 'ADMIN' | 'DOCTOR' | 'PATIENT')}
+        onChange={(value) => setRole(value as 'ADMIN' | 'DOCTOR')}
         options={[
-          { value: 'PATIENT', label: 'Paciente' },
           { value: 'DOCTOR', label: 'Doctor' },
           { value: 'ADMIN', label: 'Admin' },
         ]}

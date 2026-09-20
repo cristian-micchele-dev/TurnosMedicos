@@ -5,15 +5,18 @@ export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLET
 
 export interface Appointment {
   id: string;
+  code: string;
   doctorId: string;
   patientId: string;
   specialtyId: string;
   dateTime: string;
   durationMinutes: number;
   status: AppointmentStatus;
+  notes: string | null;
+  diagnosis: string | null;
   cancellationReason: string | null;
-  doctor?: { id: string; user?: { name: string }; specialty?: { name: string }; licenseNumber: string };
-  patient?: { id: string; user?: { name: string } };
+  doctor?: { id: string; licenseNumber: string; user?: { id: string; email: string; name: string }; specialty?: { id: string; name: string } };
+  patient?: { id: string; name: string; email: string | null };
 }
 
 export interface AppointmentFilters {
@@ -22,6 +25,7 @@ export interface AppointmentFilters {
   patientId?: string;
   from?: string;
   to?: string;
+  code?: string;
 }
 
 export const appointmentsApi = {
@@ -40,5 +44,6 @@ export const appointmentsApi = {
   create: (data: { doctorId: string; patientId: string; dateTime: string }) => api.post<Appointment>('/appointments', data),
   confirm: (id: string) => api.patch<Appointment>(`/appointments/${id}/confirm`),
   cancel: (id: string, reason?: string) => api.patch<Appointment>(`/appointments/${id}/cancel`, { reason }),
-  complete: (id: string) => api.patch<Appointment>(`/appointments/${id}/complete`),
+  complete: (id: string, data?: { diagnosis?: string; notes?: string }) => api.patch<Appointment>(`/appointments/${id}/complete`, data),
+  reschedule: (id: string, dateTime: string) => api.patch<Appointment>(`/appointments/${id}/reschedule`, { dateTime }),
 };

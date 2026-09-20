@@ -99,12 +99,6 @@ export function LoginPage() {
           <Link to="/forgot-password" className={styles.link}>
             ¿Olvidaste tu contraseña?
           </Link>
-          <p className={styles.registerText}>
-            ¿No tenés cuenta?{' '}
-            <Link to="/register" className={styles.linkPrimary}>
-              Registrate
-            </Link>
-          </p>
         </div>
       </div>
     </div>

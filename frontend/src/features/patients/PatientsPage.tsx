@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { patientsApi, type Patient } from '../../api/patients';
-import { usersApi, type UserListItem, type PaginatedResponse } from '../../api/users';
+import { patientsApi, type Patient, type PatientInput } from '../../api/patients';
+import type { PaginatedResponse } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
 import { useFetch } from '../../hooks/useFetch';
 import { useAuth } from '../../auth/AuthContext';
@@ -19,19 +19,12 @@ export function PatientsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
 
-  const { data: result, loading: loadingPatients, refetch: refetchPatients } = useFetch<PaginatedResponse<Patient>>(
+  const { data: result, loading, refetch: refetchPatients } = useFetch<PaginatedResponse<Patient>>(
+    ['patients', page],
     () => patientsApi.findAll(page),
-    [page],
   );
   const patients = result?.data ?? [];
   const totalPages = result?.totalPages ?? 1;
-
-  const { data: usersResult, loading: loadingUsers } = useFetch<PaginatedResponse<UserListItem>>(
-    () => usersApi.findAll(1, 100),
-  );
-  const users = usersResult?.data ?? [];
-
-  const loading = loadingPatients || loadingUsers;
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | undefined>(undefined);
@@ -51,32 +44,12 @@ export function PatientsPage() {
     setSelectedPatient(undefined);
   };
 
-  const handleSubmit = async (data: {
-    userId?: string;
-    phone?: string;
-    dateOfBirth?: string;
-    address?: string;
-    insuranceNumber?: string;
-    notes?: string;
-  }) => {
+  const handleSubmit = async (data: PatientInput) => {
     if (selectedPatient) {
-      await patientsApi.update(selectedPatient.id, {
-        phone: data.phone,
-        dateOfBirth: data.dateOfBirth,
-        address: data.address,
-        insuranceNumber: data.insuranceNumber,
-        notes: data.notes,
-      });
+      await patientsApi.update(selectedPatient.id, data);
       toast.success('Paciente actualizado correctamente');
     } else {
-      await patientsApi.create({
-        userId: data.userId!,
-        phone: data.phone,
-        dateOfBirth: data.dateOfBirth,
-        address: data.address,
-        insuranceNumber: data.insuranceNumber,
-        notes: data.notes,
-      });
+      await patientsApi.create(data);
       toast.success('Paciente creado correctamente');
     }
     handleCloseModal();
@@ -87,8 +60,8 @@ export function PatientsPage() {
 
   const filteredPatients = patients.filter((p) => {
     const term = search.toLowerCase();
-    const name = p.user?.name?.toLowerCase() ?? '';
-    const email = p.user?.email?.toLowerCase() ?? '';
+    const name = p.name.toLowerCase();
+    const email = p.email?.toLowerCase() ?? '';
     return name.includes(term) || email.includes(term);
   });
 
@@ -97,14 +70,14 @@ export function PatientsPage() {
       key: 'name',
       header: 'Nombre',
       render: (p: Patient) => (
-        <span className={styles.nameCell}>{p.user?.name ?? '—'}</span>
+        <span className={styles.nameCell}>{p.name}</span>
       ),
     },
     {
       key: 'email',
       header: 'Email',
       render: (p: Patient) => (
-        <span className={styles.emailCell}>{p.user?.email ?? '—'}</span>
+        <span className={styles.emailCell}>{p.email ?? '—'}</span>
       ),
     },
     {
@@ -211,9 +184,7 @@ export function PatientsPage() {
           size="md"
         >
           <PatientForm
-            patient={selectedPatient}
-            users={users ?? []}
-            onSubmit={handleSubmit}
+            patient={selectedPatient}            onSubmit={handleSubmit}
             onCancel={handleCloseModal}
           />
         </Modal>

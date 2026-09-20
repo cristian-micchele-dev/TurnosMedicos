@@ -14,7 +14,6 @@ export class CreateUserDto {
   @IsString()
   name?: string;
 
-  @IsOptional()
   @IsEnum(Role)
-  role?: Role;
+  role!: Role;
 }

@@ -1,17 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { createHash, randomBytes, randomUUID } from 'crypto';
-import { ConflictError, UnauthorizedError } from '../../../shared/domain/errors';
+import { UnauthorizedError } from '../../../shared/domain/errors';
 import { CLOCK as CLOCK_TOKEN, Clock, HASHER, Hasher, TOKEN_SERVICE, TokenService } from '../../../shared/application/ports';
 import { UserRepository } from '../../users/user.repository.port';
-import { Role, User } from '../../users/domain/user';
-import { LoginDto, RegisterDto, ResetPasswordDto } from '../../users/application/dto/auth.dto';
+import { User } from '../../users/domain/user';
+import { LoginDto, ResetPasswordDto } from '../../users/application/dto/auth.dto';
 import { MailerPort, MAILER, RESET_REPOSITORY, ResetRepository, SESSION_REPOSITORY, SessionRepository } from '../ports/repositories';
 const sha = (value: string) => createHash('sha256').update(value).digest('hex');
 
 @Injectable()
 export class AuthService {
   constructor(@Inject('USER_REPOSITORY') private readonly users: UserRepository, @Inject(HASHER) private readonly hasher: Hasher, @Inject(TOKEN_SERVICE) private readonly tokens: TokenService, @Inject(SESSION_REPOSITORY) private readonly sessions: SessionRepository, @Inject(RESET_REPOSITORY) private readonly resets: ResetRepository, @Inject(MAILER) private readonly mailer: MailerPort, @Inject(CLOCK_TOKEN) private readonly clock: Clock) {}
-  async register(dto: RegisterDto) { const email = dto.email.trim().toLowerCase(); if (await this.users.findByEmail(email)) throw new ConflictError('No se pudo registrar el usuario'); const user = await this.users.save(new User(randomUUID(), email, dto.name ?? '', await this.hasher.hash(dto.password), Role.PATIENT)); return user.toPublic(); }
   private async issue(user: User, familyId: string = randomUUID()) { const jti = randomUUID(); const refreshToken = this.tokens.signRefresh({ sub: user.id, jti, familyId }); await this.sessions.save({ id: randomUUID(), userId: user.id, familyId, tokenHash: sha(refreshToken), jti, expiresAt: new Date(this.clock.now().getTime() + (this.tokens.refreshTtlMs?.() ?? 7 * 86400000)) }); return { accessToken: this.tokens.signAccess({ sub: user.id, role: user.role }), refreshToken }; }
   async login(dto: LoginDto) { const user = await this.users.findByEmail(dto.email.trim().toLowerCase()); if (!user || !user.active || !(await this.hasher.verify(user.passwordHash, dto.password))) throw new UnauthorizedError(); return this.issue(user); }
   async refresh(raw: string) { try { if (!raw) throw new UnauthorizedError(); const payload = this.tokens.verifyRefresh(raw); const session = await this.sessions.findByJti(String(payload.jti)); if (!session || session.familyId !== String(payload.familyId) || session.revokedAt || session.expiresAt <= this.clock.now() || session.tokenHash !== sha(raw)) { if (session) await this.sessions.revokeFamily(session.familyId); throw new UnauthorizedError(); } const user = await this.users.findById(session.userId); if (!user?.active) throw new UnauthorizedError(); const replacement = await this.issue(user, session.familyId); const replacementPayload = this.tokens.verifyRefresh(replacement.refreshToken); if (!await this.sessions.rotate(session.id, sha(raw), String(replacementPayload.jti), this.clock.now())) { await this.sessions.revokeFamily(session.familyId); throw new UnauthorizedError(); } return replacement; } catch (error) { if (error instanceof UnauthorizedError) throw error; throw new UnauthorizedError(); } }

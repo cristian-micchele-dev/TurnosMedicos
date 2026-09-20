@@ -73,6 +73,7 @@ describe('foundation HTTP', () => {
   let app: any;
   beforeAll(async () => {
     users.clear(); sessions.clear(); resets.clear(); mailer.sendPasswordReset.mockClear();
+    users.set('seed-doctor', new User('seed-doctor', 'doctor@example.com', 'Doctor', 'hash:strong-password', Role.DOCTOR));
     const module = await Test.createTestingModule({ imports: [E2eModule] }).compile();
     app = configureApp(module.createNestApplication());
     await app.init();
@@ -87,11 +88,8 @@ describe('foundation HTTP', () => {
     });
   });
 
-  it('valida payloads y ejecuta registro/login/me sin exponer secretos', async () => {
-    await request(app.getHttpServer()).post('/api/v1/auth/register').send({ email: 'bad', password: 'short', extra: true }).expect(400);
-    await request(app.getHttpServer()).post('/api/v1/auth/register').send({ email: 'Doctor@Example.com', password: 'strong-password' }).expect(201).expect((response) => {
-      expect(response.body).not.toHaveProperty('passwordHash');
-    });
+  it('no expone auto-registro y ejecuta login/me sin exponer secretos', async () => {
+    await request(app.getHttpServer()).post('/api/v1/auth/register').send({ email: 'x@y.com', password: 'strong-password' }).expect(404);
     const login = await request(app.getHttpServer()).post('/api/v1/auth/login').send({ email: 'doctor@example.com', password: 'strong-password' }).expect(201);
     expect(login.body).toEqual({ accessToken: expect.stringMatching(/^access:/) });
     await request(app.getHttpServer()).get('/api/v1/auth/me').set('Authorization', `Bearer ${login.body.accessToken}`).expect(200).expect((response) => expect(response.body.email).toBe('doctor@example.com'));
@@ -149,7 +147,6 @@ describe('foundation HTTP', () => {
     const before = users.size;
     await request(app.getHttpServer()).post('/api/v1/auth/forgot-password').send({ email: 'not-an-email', extra: true }).expect(400);
     await request(app.getHttpServer()).post('/api/v1/auth/reset-password').send({ token: 'x', password: 'short' }).expect(400);
-    await request(app.getHttpServer()).post('/api/v1/auth/register').send({ email: 'bad', password: 'short', extra: true }).expect(400);
     expect(users.size).toBe(before);
     const login = await request(app.getHttpServer()).post('/api/v1/auth/login').send({ email: 'doctor@example.com', password: 'new-strong-password' }).expect(201);
     await request(app.getHttpServer()).get('/api/v1/admin-only').set('Authorization', `Bearer ${login.body.accessToken}`).expect(403);

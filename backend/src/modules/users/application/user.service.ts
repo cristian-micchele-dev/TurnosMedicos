@@ -1,6 +1,6 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { Role, User } from '../domain/user';
+import { User } from '../domain/user';
 import { HASHER, Hasher } from '../../../shared/application/ports';
 import { UserRepository } from '../user.repository.port';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -20,7 +20,7 @@ export class UserService {
       throw new ConflictException('Ya existe un usuario con ese email');
     }
     const user = await this.users.save(
-      new User(randomUUID(), email, dto.name ?? '', await this.hasher.hash(dto.password), dto.role ?? Role.PATIENT),
+      new User(randomUUID(), email, dto.name ?? '', await this.hasher.hash(dto.password), dto.role),
     );
     return user.toPublic();
   }

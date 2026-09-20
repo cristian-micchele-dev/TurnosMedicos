@@ -18,6 +18,6 @@ describe('Availability', () => {
 
   it('toPublic retorna la proyección correcta', () => {
     const a = new Availability('a1', 'd1', 3, '14:00', '18:00', 30);
-    expect(a.toPublic()).toEqual({ id: 'a1', doctorId: 'd1', dayOfWeek: 3, startTime: '14:00', endTime: '18:00', slotDurationMinutes: 30 });
+    expect(a.toPublic()).toEqual({ id: 'a1', doctorId: 'd1', dayOfWeek: 3, startTime: '14:00', endTime: '18:00', slotDuration: 30 });
   });
 });

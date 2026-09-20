@@ -3,7 +3,7 @@ import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { randomBytes } from 'crypto';
 import { AuthService } from '../../application/auth.service';
-import { ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from '../../../users/application/dto/auth.dto';
+import { ForgotPasswordDto, LoginDto, ResetPasswordDto } from '../../../users/application/dto/auth.dto';
 import { JwtAuthGuard } from './auth.guards';
 
 @Controller('auth')
@@ -15,7 +15,6 @@ export class AuthController {
     response.cookie(process.env.REFRESH_COOKIE_NAME ?? 'refresh_token', token, { httpOnly: true, secure, sameSite: 'lax', path });
     response.cookie(process.env.CSRF_COOKIE_NAME ?? 'csrf_token', randomBytes(24).toString('hex'), { secure, sameSite: 'lax', path });
   }
-  @Throttle({ default: { ttl: 60000, limit: 3 } }) @Post('register') register(@Body() dto: RegisterDto) { return this.service.register(dto); }
   @Throttle({ default: { ttl: 60000, limit: 5 } }) @Post('login') async login(@Body() dto: LoginDto, @Res({ passthrough: true }) response: Response) { const result = await this.service.login(dto); this.cookie(response, result.refreshToken); return { accessToken: result.accessToken }; }
   @Post('refresh') async refresh(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
     const csrf = request.headers['x-csrf-token'];

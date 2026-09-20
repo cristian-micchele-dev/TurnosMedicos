@@ -3,14 +3,17 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import configuration from './config/configuration';
 import { validateEnv } from './config/env.schema';
 import { HealthController } from './health.controller';
 import { UserOrmEntity, AuthSessionOrmEntity, ResetTokenOrmEntity } from './modules/users/adapters/persistence/entities';
 import { SpecialtyOrmEntity } from './modules/specialties/adapters/persistence/specialty.entity';
-import { DoctorOrmEntity, AvailabilityOrmEntity } from './modules/doctors/adapters/persistence/doctor.entity';
+import { DoctorOrmEntity, AvailabilityOrmEntity, ScheduleBlockOrmEntity } from './modules/doctors/adapters/persistence/doctor.entity';
 import { PatientOrmEntity } from './modules/patients/adapters/persistence/patient.entity';
 import { AppointmentOrmEntity } from './modules/appointments/adapters/persistence/appointment.entity';
+import { MedicalReportOrmEntity } from './modules/medical-reports/adapters/persistence/medical-report.entity';
+import { PrescriptionOrmEntity } from './modules/prescriptions/adapters/persistence/prescription.entity';
 import { SharedModule } from './shared/shared.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -19,17 +22,21 @@ import { DoctorsModule } from './modules/doctors/doctors.module';
 import { PatientsModule } from './modules/patients/patients.module';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { MedicalReportsModule } from './modules/medical-reports/medical-reports.module';
+import { PrescriptionsModule } from './modules/prescriptions/prescriptions.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [configuration], validate: validateEnv }),
-    ThrottlerModule.forRoot([{ name: 'default', ttl: 60000, limit: 20 }]),
+    ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([{ name: 'default', ttl: 60000, limit: 100 }]),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.getOrThrow('databaseUrl'),
-        entities: [UserOrmEntity, AuthSessionOrmEntity, ResetTokenOrmEntity, SpecialtyOrmEntity, DoctorOrmEntity, AvailabilityOrmEntity, PatientOrmEntity, AppointmentOrmEntity],
+        entities: [UserOrmEntity, AuthSessionOrmEntity, ResetTokenOrmEntity, SpecialtyOrmEntity, DoctorOrmEntity, AvailabilityOrmEntity, ScheduleBlockOrmEntity, PatientOrmEntity, AppointmentOrmEntity, MedicalReportOrmEntity, PrescriptionOrmEntity],
         synchronize: false,
       }),
     }),
@@ -41,6 +48,9 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     PatientsModule,
     AppointmentsModule,
     DashboardModule,
+    MedicalReportsModule,
+    PrescriptionsModule,
+    NotificationsModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

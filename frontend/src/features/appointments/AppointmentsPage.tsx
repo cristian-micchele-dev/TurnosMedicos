@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   appointmentsApi,
@@ -6,6 +6,7 @@ import {
   type AppointmentFilters,
   type AppointmentStatus,
 } from '../../api/appointments';
+import { specialtiesApi } from '../../api/specialties';
 import type { PaginatedResponse } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
 import { useFetch } from '../../hooks/useFetch';
@@ -55,12 +56,25 @@ export function AppointmentsPage() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
 
   // Filters
+  const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [specialtyFilter, setSpecialtyFilter] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [page, setPage] = useState(1);
 
+  const { data: specialtiesResult } = useFetch(
+    ['specialties', 'all'],
+    () => specialtiesApi.findAll(1, 100),
+  );
+  const specialtyOptions = useMemo(() => {
+    const base = [{ value: '', label: 'Todas las especialidades' }];
+    const fetched = (specialtiesResult?.data ?? []).map((s) => ({ value: s.name, label: s.name }));
+    return [...base, ...fetched];
+  }, [specialtiesResult]);
+
   const { data: result, loading, refetch: refetchAppointments } = useFetch<PaginatedResponse<Appointment>>(
+    ['appointments', 'list', statusFilter, fromDate, toDate, page],
     () => {
       const filters: AppointmentFilters = {};
       if (statusFilter) filters.status = statusFilter as AppointmentStatus;
@@ -68,15 +82,35 @@ export function AppointmentsPage() {
       if (toDate) filters.to = toDate;
       return appointmentsApi.findAll(filters, page);
     },
-    [statusFilter, fromDate, toDate, page],
   );
-  const appointments = result?.data ?? [];
+
+  const allAppointments = result?.data ?? [];
   const totalPages = result?.totalPages ?? 1;
+
+  const appointments = useMemo(() => {
+    let list = allAppointments;
+    if (searchText.trim()) {
+      const q = searchText.trim().toLowerCase();
+      list = list.filter(
+        (a) =>
+          (a.code ?? '').toLowerCase().includes(q) ||
+          (a.doctor?.user?.name ?? '').toLowerCase().includes(q) ||
+          (a.patient?.name ?? '').toLowerCase().includes(q),
+      );
+    }
+    if (specialtyFilter) {
+      list = list.filter(
+        (a) => (a.doctor?.specialty?.name ?? '') === specialtyFilter,
+      );
+    }
+    return list;
+  }, [allAppointments, searchText, specialtyFilter]);
 
   const handleAction = async (
     action: 'confirm' | 'cancel' | 'complete',
     appointment: Appointment,
     reason?: string,
+    completeData?: { diagnosis?: string; notes?: string },
   ) => {
     try {
       if (action === 'confirm') {
@@ -86,7 +120,7 @@ export function AppointmentsPage() {
         await appointmentsApi.cancel(appointment.id, reason);
         toast.success('Turno cancelado');
       } else {
-        await appointmentsApi.complete(appointment.id);
+        await appointmentsApi.complete(appointment.id, completeData);
         toast.success('Turno completado');
       }
       setSelectedAppointment(null);
@@ -96,8 +130,8 @@ export function AppointmentsPage() {
     }
   };
 
-  const role = user?.role ?? 'PATIENT';
-  const canCreate = role === 'PATIENT' || role === 'ADMIN';
+  const role = user?.role;
+  const canCreate = role === 'ADMIN' || role === 'DOCTOR';
 
   const renderActions = (appt: Appointment) => {
     const { status } = appt;
@@ -181,29 +215,20 @@ export function AppointmentsPage() {
           </Button>,
         );
       }
-    } else if (role === 'PATIENT') {
-      if (status !== 'CANCELLED' && status !== 'COMPLETED') {
-        buttons.push(
-          <Button
-            key="cancel"
-            variant="ghost"
-            size="sm"
-            className={styles.dangerBtn}
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedAppointment(appt);
-            }}
-          >
-            Cancelar
-          </Button>,
-        );
-      }
     }
 
     return <div className={styles.actions}>{buttons}</div>;
   };
 
   const columns = [
+    {
+      key: 'code',
+      header: 'Código',
+      width: '110px',
+      render: (a: Appointment) => (
+        <span className={styles.codeCell}>{a.code}</span>
+      ),
+    },
     {
       key: 'dateTime',
       header: 'Fecha / Hora',
@@ -215,7 +240,7 @@ export function AppointmentsPage() {
       key: 'patient',
       header: 'Paciente',
       render: (a: Appointment) => (
-        <span className={styles.nameCell}>{a.patient?.user?.name ?? '—'}</span>
+        <span className={styles.nameCell}>{a.patient?.name ?? '—'}</span>
       ),
     },
     {
@@ -263,52 +288,88 @@ export function AppointmentsPage() {
         <div>
           <h1 className={styles.title}>Turnos</h1>
           <p className={styles.subtitle}>
-            {role === 'PATIENT' ? 'Tus turnos médicos' : 'Gestión de turnos'}
+            {role === 'DOCTOR' ? 'Tus turnos' : 'Gestión de turnos'}
           </p>
         </div>
         {canCreate && (
-          <Button variant="primary" onClick={() => navigate('/appointments/new')}>
+          <Button variant="primary" onClick={() => navigate('/nuevo-turno')}>
             + Nuevo Turno
           </Button>
         )}
       </header>
 
       <div className={styles.filtersBar}>
-        <Select
-          label="Estado"
-          options={STATUS_OPTIONS}
-          value={statusFilter}
-          onChange={(v) => { setStatusFilter(v); setPage(1); }}
-          placeholder="Todos los estados"
-        />
-        <Input
-          label="Desde"
-          type="date"
-          value={fromDate}
-          onChange={(e) => { setFromDate(e.target.value); setPage(1); }}
-        />
-        <Input
-          label="Hasta"
-          type="date"
-          value={toDate}
-          onChange={(e) => { setToDate(e.target.value); setPage(1); }}
-        />
-        {(statusFilter || fromDate || toDate) && (
-          <div className={styles.clearFilter}>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setStatusFilter('');
-                setFromDate('');
-                setToDate('');
-                setPage(1);
-              }}
+        <div className={styles.searchRow}>
+          <div className={styles.searchInputWrapper}>
+            <svg
+              className={styles.searchIcon}
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
             >
-              Limpiar filtros
-            </Button>
+              <path
+                fillRule="evenodd"
+                d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <input
+              className={styles.searchInput}
+              type="text"
+              placeholder="Buscar por código, paciente o doctor..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+            />
           </div>
-        )}
+        </div>
+
+        <div className={styles.filtersRow}>
+          <Select
+            label="Estado"
+            options={STATUS_OPTIONS}
+            value={statusFilter}
+            onChange={(v) => { setStatusFilter(v); setPage(1); }}
+            placeholder="Todos los estados"
+          />
+          <Select
+            label="Especialidad"
+            options={specialtyOptions}
+            value={specialtyFilter}
+            onChange={(v) => setSpecialtyFilter(v)}
+            placeholder="Todas las especialidades"
+          />
+          <Input
+            label="Desde"
+            type="date"
+            value={fromDate}
+            onChange={(e) => { setFromDate(e.target.value); setPage(1); }}
+          />
+          <Input
+            label="Hasta"
+            type="date"
+            value={toDate}
+            onChange={(e) => { setToDate(e.target.value); setPage(1); }}
+          />
+          {(searchText || statusFilter || specialtyFilter || fromDate || toDate) && (
+            <div className={styles.clearFilter}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchText('');
+                  setStatusFilter('');
+                  setSpecialtyFilter('');
+                  setFromDate('');
+                  setToDate('');
+                  setPage(1);
+                }}
+              >
+                Limpiar filtros
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className={styles.tableContainer}>
@@ -328,7 +389,7 @@ export function AppointmentsPage() {
           appointment={selectedAppointment}
           onClose={() => setSelectedAppointment(null)}
           onAction={handleAction}
-          role={role}
+          role={role ?? 'DOCTOR'}
         />
       )}
     </div>

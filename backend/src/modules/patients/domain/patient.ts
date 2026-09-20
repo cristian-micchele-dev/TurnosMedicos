@@ -1,9 +1,8 @@
 export class Patient {
-  user?: { id: string; email: string; name: string };
-
   constructor(
     public readonly id: string,
-    public readonly userId: string,
+    public name: string,
+    public email: string | null = null,
     public phone: string | null = null,
     public dateOfBirth: string | null = null,
     public address: string | null = null,
@@ -15,9 +14,9 @@ export class Patient {
 
   toPublic() {
     return {
-      id: this.id, userId: this.userId, phone: this.phone, dateOfBirth: this.dateOfBirth,
+      id: this.id, name: this.name, email: this.email, phone: this.phone, dateOfBirth: this.dateOfBirth,
       address: this.address, insuranceNumber: this.insuranceNumber, notes: this.notes, active: this.active,
-      createdAt: this.createdAt, user: this.user,
+      createdAt: this.createdAt,
     };
   }
 }

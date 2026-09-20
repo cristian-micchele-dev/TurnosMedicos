@@ -1,30 +1,47 @@
-import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense, type ReactNode } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 import { Layout } from './components/Layout/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute/ProtectedRoute';
 import { Spinner } from './components/ui/Spinner';
 
+function AnimatedPage({ children }: { children: ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 const LoginPage = lazy(() => import('./features/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
-const RegisterPage = lazy(() => import('./features/auth/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 const DashboardPage = lazy(() => import('./features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const SpecialtiesPage = lazy(() => import('./features/specialties/SpecialtiesPage').then((m) => ({ default: m.SpecialtiesPage })));
 const DoctorsPage = lazy(() => import('./features/doctors/DoctorsPage').then((m) => ({ default: m.DoctorsPage })));
 const AvailabilityPage = lazy(() => import('./features/doctors/AvailabilityPage').then((m) => ({ default: m.AvailabilityPage })));
 const PatientsPage = lazy(() => import('./features/patients/PatientsPage').then((m) => ({ default: m.PatientsPage })));
-const PatientProfilePage = lazy(() => import('./features/patients/PatientProfilePage').then((m) => ({ default: m.PatientProfilePage })));
 const AppointmentsPage = lazy(() => import('./features/appointments/AppointmentsPage').then((m) => ({ default: m.AppointmentsPage })));
 const NewAppointmentPage = lazy(() => import('./features/appointments/NewAppointmentPage').then((m) => ({ default: m.NewAppointmentPage })));
 const UsersPage = lazy(() => import('./features/users/UsersPage').then((m) => ({ default: m.UsersPage })));
+const CalendarPage  = lazy(() => import('./features/calendar/CalendarPage').then((m) => ({ default: m.CalendarPage })));
+const AgendaPage    = lazy(() => import('./features/agenda/AgendaPage').then((m) => ({ default: m.AgendaPage })));
+const NotFoundPage = lazy(() => import('./features/not-found/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 
 export function App() {
+  const location = useLocation();
+
   return (
     <ErrorBoundary>
     <Suspense fallback={<Spinner />}>
-    <Routes>
+    <AnimatePresence mode="wait">
+    <Routes location={location} key={location.pathname}>
       {/* Public routes */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/login" element={<AnimatedPage><LoginPage /></AnimatedPage>} />
 
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
@@ -42,25 +59,22 @@ export function App() {
 
           {/* Doctor */}
           <Route element={<ProtectedRoute roles={['DOCTOR']} />}>
+            <Route path="/agenda" element={<AgendaPage />} />
             <Route path="/disponibilidad" element={<AvailabilityPage />} />
           </Route>
 
-          {/* Patient */}
-          <Route element={<ProtectedRoute roles={['PATIENT']} />}>
-            <Route path="/mi-perfil" element={<PatientProfilePage />} />
-            <Route path="/nuevo-turno" element={<NewAppointmentPage />} />
-          </Route>
-
-          {/* Shared: appointments (all roles, filtered by backend) */}
+          {/* Shared: appointments (ADMIN sees all, DOCTOR only own — filtered by backend) */}
+          <Route path="/nuevo-turno" element={<NewAppointmentPage />} />
           <Route path="/turnos" element={<AppointmentsPage />} />
           <Route path="/mis-turnos" element={<AppointmentsPage />} />
-          <Route path="/appointments/new" element={<NewAppointmentPage />} />
+          <Route path="/calendario" element={<CalendarPage />} />
         </Route>
       </Route>
 
-      {/* Redirect root to dashboard */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      {/* 404 */}
+      <Route path="*" element={<AnimatedPage><NotFoundPage /></AnimatedPage>} />
     </Routes>
+    </AnimatePresence>
     </Suspense>
     </ErrorBoundary>
   );

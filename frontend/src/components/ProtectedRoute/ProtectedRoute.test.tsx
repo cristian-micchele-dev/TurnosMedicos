@@ -19,13 +19,12 @@ function makeAuth(overrides: Partial<AuthContextValue>): AuthContextValue {
     isLoading: false,
     isAuthenticated: false,
     login: vi.fn(),
-    register: vi.fn(),
     logout: vi.fn(),
     ...overrides,
   };
 }
 
-function renderRoute(props?: { roles?: ('ADMIN' | 'DOCTOR' | 'PATIENT')[] }) {
+function renderRoute(props?: { roles?: ('ADMIN' | 'DOCTOR')[] }) {
   return render(
     <MemoryRouter initialEntries={['/protected']}>
       <Routes>
@@ -74,10 +73,10 @@ describe('ProtectedRoute', () => {
     mockUseAuth.mockReturnValue(
       makeAuth({
         isAuthenticated: true,
-        user: { id: '3', email: 'p@b.com', name: 'Carol', role: 'PATIENT' },
+        user: { id: '3', email: 'p@b.com', name: 'Carol', role: 'DOCTOR' },
       }),
     );
-    renderRoute({ roles: ['PATIENT', 'ADMIN'] });
+    renderRoute({ roles: ['DOCTOR', 'ADMIN'] });
     expect(screen.getByText('Protected content')).toBeInTheDocument();
   });
 

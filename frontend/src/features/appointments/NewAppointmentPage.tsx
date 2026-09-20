@@ -3,19 +3,33 @@ import { useNavigate } from 'react-router-dom';
 import { specialtiesApi, type Specialty } from '../../api/specialties';
 import { doctorsApi, type Doctor, type Availability } from '../../api/doctors';
 import { appointmentsApi } from '../../api/appointments';
-import { patientsApi } from '../../api/patients';
+import { patientsApi, type Patient } from '../../api/patients';
 import { useToast } from '../../hooks/useToast';
 import { useAuth } from '../../auth/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
+import { addDaysLocal, localDateTimeToIso, todayLocal } from '../../utils/date';
 import styles from './NewAppointmentPage.module.css';
 
-type Step = 1 | 2 | 3 | 4;
+// ── Step kinds ──────────────────────────────────────────────────────────────
+type StepKind = 'patient' | 'specialty' | 'doctor' | 'datetime' | 'confirm';
 
+const ROLE_FLOWS: Record<'ADMIN' | 'DOCTOR', StepKind[]> = {
+  DOCTOR: ['patient', 'datetime', 'confirm'],
+  ADMIN:  ['patient', 'specialty', 'doctor', 'datetime', 'confirm'],
+};
+
+const STEP_LABEL: Record<StepKind, string> = {
+  patient:   'Paciente',
+  specialty: 'Especialidad',
+  doctor:    'Doctor',
+  datetime:  'Horario',
+  confirm:   'Confirmar',
+};
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
 function getTomorrowDate(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return d.toISOString().split('T')[0];
+  return addDaysLocal(todayLocal(), 1);
 }
 
 function formatDisplayDate(iso: string): string {
@@ -24,88 +38,112 @@ function formatDisplayDate(iso: string): string {
   return `${day}/${month}/${year}`;
 }
 
-/** Build time slots from availability blocks for a given date */
 function buildSlots(availability: Availability[], date: string): string[] {
   const dayOfWeek = new Date(date + 'T12:00:00').getDay();
   const slots: string[] = [];
-
   for (const block of availability) {
     if (block.dayOfWeek !== dayOfWeek) continue;
-
     const [startH, startM] = block.startTime.split(':').map(Number);
     const [endH, endM] = block.endTime.split(':').map(Number);
-
     let current = startH * 60 + startM;
     const end = endH * 60 + endM;
-
-    while (current + block.slotDuration <= end) {
+    const duration = block.slotDuration ?? 30;
+    while (current + duration <= end) {
       const h = String(Math.floor(current / 60)).padStart(2, '0');
       const m = String(current % 60).padStart(2, '0');
       slots.push(`${h}:${m}`);
-      current += block.slotDuration;
+      current += duration;
     }
   }
-
   return slots;
 }
 
-const STEP_LABELS: Record<Step, string> = {
-  1: 'Especialidad',
-  2: 'Doctor',
-  3: 'Horario',
-  4: 'Confirmar',
-};
-
+// ── Component ────────────────────────────────────────────────────────────────
 export function NewAppointmentPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const [step, setStep] = useState<Step>(1);
+  const flow: StepKind[] = ROLE_FLOWS[user?.role ?? 'DOCTOR'];
+  const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
 
-  // Step 1
-  const [specialties, setSpecialties] = useState<Specialty[]>([]);
-  const [specialtiesLoading, setSpecialtiesLoading] = useState(true);
-  const [selectedSpecialty, setSelectedSpecialty] = useState<Specialty | null>(null);
+  const currentKind = flow[step - 1];
+  const totalSteps  = flow.length;
 
-  // Step 2
-  const [allDoctors, setAllDoctors] = useState<Doctor[]>([]);
-  const [doctorsLoading, setDoctorsLoading] = useState(false);
-  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
+  const [patients, setPatients]               = useState<Patient[]>([]);
+  const [patientsLoading, setPatientsLoading] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
 
-  // Step 3
-  const [selectedDate, setSelectedDate] = useState(getTomorrowDate());
+  // Specialty (ADMIN only)
+  const [specialties, setSpecialties]                   = useState<Specialty[]>([]);
+  const [specialtiesLoading, setSpecialtiesLoading]     = useState(false);
+  const [selectedSpecialty, setSelectedSpecialty]       = useState<Specialty | null>(null);
+
+  // Doctor (ADMIN picks; auto-set for DOCTOR role)
+  const [allDoctors, setAllDoctors]           = useState<Doctor[]>([]);
+  const [doctorsLoading, setDoctorsLoading]   = useState(false);
+  const [selectedDoctor, setSelectedDoctor]   = useState<Doctor | null>(null);
+
+  // DateTime
+  const [selectedDate, setSelectedDate]           = useState(getTomorrowDate());
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
-  const [allSlots, setAllSlots] = useState<string[]>([]);
-  const [bookedSlots, setBookedSlots] = useState<Set<string>>(new Set());
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [allSlots, setAllSlots]                   = useState<string[]>([]);
+  const [bookedSlots, setBookedSlots]             = useState<Set<string>>(new Set());
+  const [selectedTime, setSelectedTime]           = useState<string | null>(null);
 
-  // Patient id
-  const [patientId, setPatientId] = useState<string | null>(null);
+  // For DOCTOR role: resolve own profile on mount
+  const [initLoading, setInitLoading] = useState(user?.role === 'DOCTOR');
 
   useEffect(() => {
-    specialtiesApi.findAll().then((data) => {
-      setSpecialties(data.filter((s) => s.active));
-      setSpecialtiesLoading(false);
-    });
-
-    if (user?.role === 'PATIENT') {
-      patientsApi.me().then((p) => setPatientId(p.id)).catch(() => {});
-    }
+    if (user?.role !== 'DOCTOR') return;
+    doctorsApi.me()
+      .then(d => setSelectedDoctor(d))
+      .catch(() => toast.error('Error al cargar tu perfil de médico'))
+      .finally(() => setInitLoading(false));
   }, [user]);
 
+  // Load data when entering each step
   useEffect(() => {
-    if (step !== 2) return;
-    setDoctorsLoading(true);
-    doctorsApi.findAll().then((data) => {
-      setAllDoctors(data.filter((d) => d.active));
-      setDoctorsLoading(false);
-    });
+    if (currentKind === 'patient' && patients.length === 0) {
+      setPatientsLoading(true);
+      patientsApi.findAll(1, 200)
+        .then(res => setPatients(res.data.filter(p => p.active)))
+        .catch(() => toast.error('Error al cargar pacientes'))
+        .finally(() => setPatientsLoading(false));
+    }
+
+    if (currentKind === 'specialty' && specialties.length === 0) {
+      setSpecialtiesLoading(true);
+      specialtiesApi.findAll(1, 100)
+        .then(res => setSpecialties(res.data.filter(s => s.active)))
+        .catch(() => toast.error('Error al cargar especialidades'))
+        .finally(() => setSpecialtiesLoading(false));
+    }
+
+    if (currentKind === 'doctor' && allDoctors.length === 0) {
+      setDoctorsLoading(true);
+      doctorsApi.findAll(1, 100)
+        .then(res => setAllDoctors(res.data.filter(d => d.active)))
+        .catch(() => toast.error('Error al cargar doctores'))
+        .finally(() => setDoctorsLoading(false));
+    }
+
+    if (currentKind === 'datetime') {
+      const doctorId = selectedDoctor?.id;
+      if (doctorId) loadSlots(doctorId, selectedDate);
+    }
   }, [step]);
 
+  // Reload slots when date changes (only when on datetime step)
+  useEffect(() => {
+    if (currentKind !== 'datetime') return;
+    const doctorId = selectedDoctor?.id;
+    if (doctorId) loadSlots(doctorId, selectedDate);
+  }, [selectedDate]);
+
   const filteredDoctors = selectedSpecialty
-    ? allDoctors.filter((d) => d.specialtyId === selectedSpecialty.id)
+    ? allDoctors.filter(d => d.specialtyId === selectedSpecialty.id)
     : allDoctors;
 
   const loadSlots = async (doctorId: string, date: string) => {
@@ -113,20 +151,16 @@ export function NewAppointmentPage() {
     setAllSlots([]);
     setBookedSlots(new Set());
     setSelectedTime(null);
-
     try {
-      const [avail, existingAppts] = await Promise.all([
+      const [avail, apptRes] = await Promise.all([
         doctorsApi.getAvailability(doctorId, date),
         appointmentsApi.findAll({ doctorId, from: date, to: date }),
       ]);
-
-      const slots = buildSlots(avail, date);
-      setAllSlots(slots);
-
+      setAllSlots(buildSlots(avail, date));
       const booked = new Set(
-        existingAppts
-          .filter((a) => a.status !== 'CANCELLED')
-          .map((a) => {
+        (apptRes.data ?? [])
+          .filter(a => a.status !== 'CANCELLED')
+          .map(a => {
             const d = new Date(a.dateTime);
             return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
           }),
@@ -139,43 +173,24 @@ export function NewAppointmentPage() {
     }
   };
 
-  useEffect(() => {
-    if (step === 3 && selectedDoctor && selectedDate) {
-      loadSlots(selectedDoctor.id, selectedDate);
-    }
-  }, [step, selectedDoctor, selectedDate]);
-
   const handleConfirm = async () => {
-    if (!selectedDoctor || !selectedDate || !selectedTime) return;
+    const doctorId = selectedDoctor?.id;
+    if (!doctorId || !selectedDate || !selectedTime) return;
 
-    const dateTime = `${selectedDate}T${selectedTime}:00`;
-
-    let resolvedPatientId = patientId;
-
-    if (user?.role === 'ADMIN' && !resolvedPatientId) {
-      toast.error('No se encontró el paciente para asociar el turno');
+    if (!selectedPatient) {
+      toast.error('Seleccioná un paciente para continuar');
       return;
-    }
-
-    if (!resolvedPatientId) {
-      try {
-        const patient = await patientsApi.me();
-        resolvedPatientId = patient.id;
-      } catch {
-        toast.error('Necesitás completar tu perfil antes de sacar un turno');
-        return;
-      }
     }
 
     try {
       setSubmitting(true);
       await appointmentsApi.create({
-        doctorId: selectedDoctor.id,
-        patientId: resolvedPatientId,
-        dateTime,
+        doctorId,
+        patientId: selectedPatient.id,
+        dateTime: localDateTimeToIso(selectedDate, selectedTime),
       });
-      toast.success('Turno solicitado correctamente');
-      navigate(user?.role === 'PATIENT' ? '/mis-turnos' : '/turnos');
+      toast.success('Turno creado correctamente');
+      navigate(user?.role === 'DOCTOR' ? '/mis-turnos' : '/turnos');
     } catch {
       toast.error('Error al solicitar el turno');
     } finally {
@@ -183,57 +198,110 @@ export function NewAppointmentPage() {
     }
   };
 
-  const goToStep = (s: Step) => {
-    if (s < step) setStep(s);
+  const goBack = () => {
+    if (step > 1) setStep(s => s - 1);
   };
+
+  const goForward = () => {
+    if (step < totalSteps) setStep(s => s + 1);
+  };
+
+  if (initLoading) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.centered}><Spinner /></div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
       <header className={styles.pageHeader}>
         <div>
           <h1 className={styles.title}>Nuevo Turno</h1>
-          <p className={styles.subtitle}>Seleccioná especialidad, doctor y horario</p>
+          <p className={styles.subtitle}>
+            {user?.role === 'DOCTOR' ? 'Asigná un turno a un paciente' : 'Creá un turno para un paciente'}
+          </p>
         </div>
       </header>
 
       {/* Stepper */}
       <div className={styles.stepper}>
-        {([1, 2, 3, 4] as Step[]).map((s) => (
-          <div key={s} className={styles.stepItem}>
-            <button
-              className={[
-                styles.stepCircle,
-                step === s ? styles.stepActive : '',
-                step > s ? styles.stepDone : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              onClick={() => goToStep(s)}
-              disabled={s >= step}
-              type="button"
-              aria-current={step === s ? 'step' : undefined}
-            >
-              {step > s ? '✓' : s}
-            </button>
-            <span
-              className={[
-                styles.stepLabel,
-                step === s ? styles.stepLabelActive : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-            >
-              {STEP_LABELS[s]}
-            </span>
-            {s < 4 && <div className={[styles.stepLine, step > s ? styles.stepLineDone : ''].filter(Boolean).join(' ')} />}
-          </div>
-        ))}
+        {flow.map((kind, idx) => {
+          const s = idx + 1;
+          const isActive = s === step;
+          const isDone   = s < step;
+          return (
+            <div key={kind} className={styles.stepItem}>
+              <button
+                type="button"
+                className={[
+                  styles.stepCircle,
+                  isActive ? styles.stepActive : '',
+                  isDone   ? styles.stepDone   : '',
+                ].filter(Boolean).join(' ')}
+                onClick={() => { if (isDone) setStep(s); }}
+                disabled={!isDone}
+                aria-current={isActive ? 'step' : undefined}
+              >
+                {isDone ? '✓' : s}
+              </button>
+              <span className={[styles.stepLabel, isActive ? styles.stepLabelActive : ''].filter(Boolean).join(' ')}>
+                {STEP_LABEL[kind]}
+              </span>
+              {s < totalSteps && (
+                <div className={[styles.stepLine, isDone ? styles.stepLineDone : ''].filter(Boolean).join(' ')} />
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Step content */}
       <div className={styles.card}>
-        {/* STEP 1 — Especialidad */}
-        {step === 1 && (
+
+        {/* ── PATIENT SELECTION ── */}
+        {currentKind === 'patient' && (
+          <div className={styles.stepContent}>
+            <h2 className={styles.stepTitle}>Seleccioná el paciente</h2>
+            {patientsLoading ? (
+              <div className={styles.centered}><Spinner /></div>
+            ) : patients.length === 0 ? (
+              <p className={styles.emptyMsg}>No hay pacientes registrados.</p>
+            ) : (
+              <div className={styles.cardGrid}>
+                {patients.map(p => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={[
+                      styles.optionCard,
+                      selectedPatient?.id === p.id ? styles.optionCardSelected : '',
+                    ].filter(Boolean).join(' ')}
+                    onClick={() => setSelectedPatient(p)}
+                  >
+                    <span className={styles.optionIcon}>👤</span>
+                    <span className={styles.optionName}>{p.name}</span>
+                    {p.email && (
+                      <span className={styles.optionDesc}>{p.email}</span>
+                    )}
+                    {p.insuranceNumber && (
+                      <span className={styles.optionDesc}>OS: {p.insuranceNumber}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className={styles.stepFooter}>
+              <Button variant="primary" disabled={!selectedPatient} onClick={goForward}>
+                Siguiente →
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ── SPECIALTY ── */}
+        {currentKind === 'specialty' && (
           <div className={styles.stepContent}>
             <h2 className={styles.stepTitle}>Elegí la especialidad</h2>
             {specialtiesLoading ? (
@@ -242,16 +310,14 @@ export function NewAppointmentPage() {
               <p className={styles.emptyMsg}>No hay especialidades disponibles.</p>
             ) : (
               <div className={styles.cardGrid}>
-                {specialties.map((s) => (
+                {specialties.map(s => (
                   <button
                     key={s.id}
                     type="button"
                     className={[
                       styles.optionCard,
                       selectedSpecialty?.id === s.id ? styles.optionCardSelected : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
+                    ].filter(Boolean).join(' ')}
                     onClick={() => setSelectedSpecialty(s)}
                   >
                     <span className={styles.optionIcon}>🏥</span>
@@ -264,19 +330,16 @@ export function NewAppointmentPage() {
               </div>
             )}
             <div className={styles.stepFooter}>
-              <Button
-                variant="primary"
-                disabled={!selectedSpecialty}
-                onClick={() => setStep(2)}
-              >
+              <Button variant="secondary" onClick={goBack}>← Volver</Button>
+              <Button variant="primary" disabled={!selectedSpecialty} onClick={goForward}>
                 Siguiente →
               </Button>
             </div>
           </div>
         )}
 
-        {/* STEP 2 — Doctor */}
-        {step === 2 && (
+        {/* ── DOCTOR ── */}
+        {currentKind === 'doctor' && (
           <div className={styles.stepContent}>
             <h2 className={styles.stepTitle}>
               Elegí un doctor
@@ -290,61 +353,49 @@ export function NewAppointmentPage() {
               <p className={styles.emptyMsg}>No hay doctores disponibles para esta especialidad.</p>
             ) : (
               <div className={styles.cardGrid}>
-                {filteredDoctors.map((d) => (
+                {filteredDoctors.map(d => (
                   <button
                     key={d.id}
                     type="button"
                     className={[
                       styles.optionCard,
                       selectedDoctor?.id === d.id ? styles.optionCardSelected : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
+                    ].filter(Boolean).join(' ')}
                     onClick={() => setSelectedDoctor(d)}
                   >
                     <span className={styles.optionIcon}>👨‍⚕️</span>
                     <span className={styles.optionName}>{d.user?.name ?? '—'}</span>
-                    <span className={styles.optionDesc}>
-                      Mat. {d.licenseNumber}
-                    </span>
-                    {d.phone && (
-                      <span className={styles.optionDesc}>{d.phone}</span>
+                    <span className={styles.optionDesc}>Mat. {d.licenseNumber}</span>
+                    {d.specialty && (
+                      <span className={styles.optionDesc}>{d.specialty.name}</span>
                     )}
                   </button>
                 ))}
               </div>
             )}
             <div className={styles.stepFooter}>
-              <Button variant="secondary" onClick={() => setStep(1)}>
-                ← Volver
-              </Button>
-              <Button
-                variant="primary"
-                disabled={!selectedDoctor}
-                onClick={() => setStep(3)}
-              >
+              <Button variant="secondary" onClick={goBack}>← Volver</Button>
+              <Button variant="primary" disabled={!selectedDoctor} onClick={goForward}>
                 Siguiente →
               </Button>
             </div>
           </div>
         )}
 
-        {/* STEP 3 — Horario */}
-        {step === 3 && (
+        {/* ── DATETIME ── */}
+        {currentKind === 'datetime' && (
           <div className={styles.stepContent}>
             <h2 className={styles.stepTitle}>Seleccioná fecha y horario</h2>
 
             <div className={styles.datePicker}>
-              <label htmlFor="appt-date" className={styles.fieldLabel}>
-                Fecha del turno
-              </label>
+              <label htmlFor="appt-date" className={styles.fieldLabel}>Fecha del turno</label>
               <input
                 id="appt-date"
                 type="date"
                 className={styles.dateInput}
                 value={selectedDate}
                 min={getTomorrowDate()}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                onChange={e => setSelectedDate(e.target.value)}
               />
             </div>
 
@@ -353,14 +404,20 @@ export function NewAppointmentPage() {
             ) : allSlots.length === 0 ? (
               <div className={styles.noSlots}>
                 <span className={styles.noSlotsIcon}>📅</span>
-                <p>El doctor no tiene disponibilidad para esta fecha.</p>
+                <p>
+                  {user?.role === 'DOCTOR'
+                    ? 'No tenés disponibilidad configurada para esta fecha.'
+                    : 'El doctor no tiene disponibilidad para esta fecha.'}
+                </p>
                 <p className={styles.noSlotsHint}>Probá con otro día de la semana.</p>
               </div>
             ) : (
               <>
-                <p className={styles.slotsLabel}>Horarios disponibles para el {formatDisplayDate(selectedDate)}</p>
+                <p className={styles.slotsLabel}>
+                  Horarios disponibles para el {formatDisplayDate(selectedDate)}
+                </p>
                 <div className={styles.slotsGrid}>
-                  {allSlots.map((time) => {
+                  {allSlots.map(time => {
                     const isBooked = bookedSlots.has(time);
                     return (
                       <button
@@ -369,11 +426,9 @@ export function NewAppointmentPage() {
                         disabled={isBooked}
                         className={[
                           styles.slot,
-                          isBooked ? styles.slotBooked : '',
+                          isBooked            ? styles.slotBooked   : '',
                           selectedTime === time ? styles.slotSelected : '',
-                        ]
-                          .filter(Boolean)
-                          .join(' ')}
+                        ].filter(Boolean).join(' ')}
                         onClick={() => !isBooked && setSelectedTime(time)}
                       >
                         {time}
@@ -386,41 +441,41 @@ export function NewAppointmentPage() {
             )}
 
             <div className={styles.stepFooter}>
-              <Button variant="secondary" onClick={() => setStep(2)}>
-                ← Volver
-              </Button>
-              <Button
-                variant="primary"
-                disabled={!selectedTime}
-                onClick={() => setStep(4)}
-              >
+              <Button variant="secondary" onClick={goBack}>← Volver</Button>
+              <Button variant="primary" disabled={!selectedTime} onClick={goForward}>
                 Siguiente →
               </Button>
             </div>
           </div>
         )}
 
-        {/* STEP 4 — Confirmar */}
-        {step === 4 && (
+        {/* ── CONFIRM ── */}
+        {currentKind === 'confirm' && (
           <div className={styles.stepContent}>
-            <h2 className={styles.stepTitle}>Confirmá tu turno</h2>
+            <h2 className={styles.stepTitle}>Confirmá el turno</h2>
             <p className={styles.stepHint}>
-              Revisá los datos antes de confirmar. Una vez solicitado, el turno quedará pendiente de confirmación.
+              Revisá los datos antes de confirmar. El turno quedará pendiente de confirmación.
             </p>
 
             <div className={styles.summaryCard}>
-              <div className={styles.summaryRow}>
-                <span className={styles.summaryLabel}>Especialidad</span>
-                <span className={styles.summaryValue}>{selectedSpecialty?.name}</span>
-              </div>
-              <div className={styles.summaryRow}>
-                <span className={styles.summaryLabel}>Doctor</span>
-                <span className={styles.summaryValue}>{selectedDoctor?.user?.name}</span>
-              </div>
-              <div className={styles.summaryRow}>
-                <span className={styles.summaryLabel}>Matrícula</span>
-                <span className={styles.summaryValue}>{selectedDoctor?.licenseNumber}</span>
-              </div>
+              {selectedPatient && (
+                <div className={styles.summaryRow}>
+                  <span className={styles.summaryLabel}>Paciente</span>
+                  <span className={styles.summaryValue}>{selectedPatient.name ?? '—'}</span>
+                </div>
+              )}
+              {selectedSpecialty && (
+                <div className={styles.summaryRow}>
+                  <span className={styles.summaryLabel}>Especialidad</span>
+                  <span className={styles.summaryValue}>{selectedSpecialty.name}</span>
+                </div>
+              )}
+              {selectedDoctor && (
+                <div className={styles.summaryRow}>
+                  <span className={styles.summaryLabel}>Doctor</span>
+                  <span className={styles.summaryValue}>{selectedDoctor.user?.name ?? '—'}</span>
+                </div>
+              )}
               <div className={styles.summaryRow}>
                 <span className={styles.summaryLabel}>Fecha</span>
                 <span className={styles.summaryValue}>{formatDisplayDate(selectedDate)}</span>
@@ -432,15 +487,14 @@ export function NewAppointmentPage() {
             </div>
 
             <div className={styles.stepFooter}>
-              <Button variant="secondary" onClick={() => setStep(3)} disabled={submitting}>
-                ← Volver
-              </Button>
+              <Button variant="secondary" onClick={goBack} disabled={submitting}>← Volver</Button>
               <Button variant="primary" isLoading={submitting} onClick={handleConfirm}>
                 Confirmar Turno
               </Button>
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

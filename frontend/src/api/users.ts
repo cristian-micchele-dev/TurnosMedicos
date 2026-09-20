@@ -4,7 +4,7 @@ export interface UserListItem {
   id: string;
   email: string;
   name: string;
-  role: 'ADMIN' | 'DOCTOR' | 'PATIENT';
+  role: 'ADMIN' | 'DOCTOR';
   active: boolean;
   createdAt: string;
 }
@@ -13,7 +13,7 @@ export interface CreateUserRequest {
   email: string;
   password: string;
   name?: string;
-  role?: 'ADMIN' | 'DOCTOR' | 'PATIENT';
+  role: 'ADMIN' | 'DOCTOR';
 }
 
 export interface PaginatedResponse<T> {

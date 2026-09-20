@@ -1,7 +1,8 @@
-import { IsBoolean, IsDateString, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsBoolean, IsDateString, IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class CreatePatientDto {
-  @IsUUID() userId!: string;
+  @IsString() @MinLength(2) @MaxLength(120) name!: string;
+  @IsOptional() @IsEmail() @MaxLength(255) email?: string;
   @IsOptional() @IsString() @MaxLength(30) phone?: string;
   @IsOptional() @IsDateString() dateOfBirth?: string;
   @IsOptional() @IsString() @MaxLength(255) address?: string;
@@ -10,6 +11,8 @@ export class CreatePatientDto {
 }
 
 export class UpdatePatientDto {
+  @IsOptional() @IsString() @MinLength(2) @MaxLength(120) name?: string;
+  @IsOptional() @IsEmail() @MaxLength(255) email?: string;
   @IsOptional() @IsString() @MaxLength(30) phone?: string;
   @IsOptional() @IsDateString() dateOfBirth?: string;
   @IsOptional() @IsString() @MaxLength(255) address?: string;
