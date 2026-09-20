@@ -29,3 +29,8 @@ npm-debug.log*
 
 # ATL (agent tools)
 .atl/
+
+# AI tooling (skills instalados localmente)
+.claude/
+.agents/
+skills-lock.json

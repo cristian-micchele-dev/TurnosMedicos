@@ -1,30 +1,70 @@
 name: CI
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 24
+
 jobs:
   backend:
+    name: Backend · lint · unit · e2e · migrations
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
     services:
-      postgres: {image: postgres:16, env: {POSTGRES_USER: turno, POSTGRES_PASSWORD: turno, POSTGRES_DB: turno_medicos}, ports: ['5432:5432'], options: >-
-        --health-cmd="pg_isready -U turno" --health-interval=10s --health-timeout=5s --health-retries=5}
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: turno
+          POSTGRES_PASSWORD: turno
+          POSTGRES_DB: turno_medicos
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U turno"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DATABASE_URL: postgres://turno:turno@localhost:5432/turno_medicos
+      DATABASE_SSL: 'false'
+      NODE_ENV: test
+      JWT_ACCESS_SECRET: ci-access-secret-012345678901234567890123
+      JWT_REFRESH_SECRET: ci-refresh-secret-012345678901234567890123
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: {node-version: 22, cache: npm, cache-dependency-path: backend/package-lock.json}
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
       - run: npm ci
-      - run: npm run lint
-      - run: npm test -- --coverage
-      - run: npm run test:integration
-        env: {DATABASE_URL: postgres://turno:turno@localhost:5432/turno_medicos}
-      - run: npm run test:e2e
-        env: {DATABASE_URL: postgres://turno:turno@localhost:5432/turno_medicos, NODE_ENV: test, JWT_ACCESS_SECRET: ci-access-secret-012345678901234567890123, JWT_REFRESH_SECRET: ci-refresh-secret-012345678901234567890123}
-      - run: npm run migration:run
-        env: {DATABASE_URL: postgres://turno:turno@localhost:5432/turno_medicos}
-      - run: npm run migration:revert
-        env: {DATABASE_URL: postgres://turno:turno@localhost:5432/turno_medicos}
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint -- --max-warnings=0
+      - name: Unit tests (coverage gate 68%)
+        run: npm test -- --coverage
+      - name: Integration tests (PostgreSQL)
+        run: npm run test:integration
+      - name: E2E tests
+        run: npm run test:e2e
+      - name: Migrations apply cleanly
+        run: npm run migration:run
+      - name: Last migration reverts cleanly
+        run: npm run migration:revert
+      - name: Production build
+        run: npm run build
+
   frontend:
+    name: Frontend · typecheck · lint · tests · build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -32,6 +72,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: {node-version: 22, cache: npm, cache-dependency-path: frontend/package-lock.json}
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
       - run: npm ci
-      - run: npm run build
+      - name: Typecheck
+        run: npx tsc --noEmit -p tsconfig.app.json
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+      - name: Production build
+        run: npm run build
