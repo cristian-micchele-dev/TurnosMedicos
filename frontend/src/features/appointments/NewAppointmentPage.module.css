@@ -407,3 +407,37 @@
 }
 
 .stepHeader .stepTitle { margin-bottom: 0; }
+
+.patientSearch {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  margin: 0.75rem 0 1rem;
+  font-size: 0.9375rem;
+  font-family: var(--font);
+  color: var(--text-primary);
+  background: var(--dark);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.patientSearch:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-ring);
+}
+
+.notFound {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--text-secondary);
+  border: 1px dashed var(--border-hover);
+  border-radius: var(--radius-lg);
+}
+
+.notFound strong { color: var(--text-primary); }

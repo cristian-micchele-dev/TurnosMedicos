@@ -40,7 +40,7 @@ beforeEach(() => {
   doctorsApi.me.mockResolvedValue(doctor);
   doctorsApi.findAll.mockResolvedValue({ data: [doctor], total: 1, page: 1, totalPages: 1 });
   doctorsApi.getAvailability.mockResolvedValue([{ id: 'a1', doctorId: 'd1', dayOfWeek: 1, startTime: '09:00', endTime: '10:00', slotDuration: 30 }]);
-  patientsApi.findAll.mockResolvedValue({ data: [patient], total: 1, page: 1, totalPages: 1 });
+  patientsApi.findAll.mockResolvedValue({ data: [patient, { ...patient, id: 'p2', name: 'Bruno Díaz', email: 'bruno@test.com', insuranceNumber: 'OSDE 77' }], total: 2, page: 1, totalPages: 1 });
   specialtiesApi.findAll.mockResolvedValue({ data: [{ id: 's1', name: 'Cardiología', description: null, active: true }], total: 1, page: 1, totalPages: 1 });
   appointmentsApi.findAll.mockResolvedValue({ data: [], total: 0, page: 1, totalPages: 1 });
   appointmentsApi.create.mockResolvedValue({ id: 'appt-1' });
@@ -136,5 +136,31 @@ describe('NewAppointmentPage', () => {
     await waitFor(() => expect(patientsApi.create).toHaveBeenCalledWith(expect.objectContaining({ name: 'Nuevo Walk-in' })));
     expect(await screen.findByText('Nuevo Walk-in')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /siguiente/i })).toBeEnabled();
+  });
+
+  describe('búsqueda de pacientes existentes', () => {
+    it('filtra por nombre, email u obra social sin distinguir acentos', async () => {
+      auth.user.role = 'DOCTOR';
+      renderPage();
+      await screen.findByText('Ana Pérez');
+      const search = screen.getByRole('searchbox', { name: /buscar paciente/i });
+      await userEvent.type(search, 'osde');
+      expect(screen.getByText('Bruno Díaz')).toBeInTheDocument();
+      expect(screen.queryByText('Ana Pérez')).not.toBeInTheDocument();
+      await userEvent.clear(search);
+      await userEvent.type(search, 'perez');
+      expect(screen.getByText('Ana Pérez')).toBeInTheDocument();
+      expect(screen.queryByText('Bruno Díaz')).not.toBeInTheDocument();
+    });
+
+    it('si no encuentra a nadie ofrece registrarlo con el nombre ya cargado', async () => {
+      auth.user.role = 'DOCTOR';
+      renderPage();
+      await screen.findByText('Ana Pérez');
+      await userEvent.type(screen.getByRole('searchbox', { name: /buscar paciente/i }), 'Zoe Nueva');
+      expect(screen.getByText(/no encontramos a/i)).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: /registrar a zoe nueva/i }));
+      expect(await screen.findByLabelText(/nombre completo/i)).toHaveValue('Zoe Nueva');
+    });
   });
 });

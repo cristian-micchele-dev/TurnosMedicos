@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { specialtiesApi, type Specialty } from '../../api/specialties';
 import { doctorsApi, type Doctor, type Availability } from '../../api/doctors';
@@ -77,6 +77,15 @@ export function NewAppointmentPage() {
   const [patientsLoading, setPatientsLoading] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [creatingPatient, setCreatingPatient] = useState(false);
+  const [patientQuery, setPatientQuery] = useState('');
+
+  // Accent-insensitive match on name, email and insurance so "perez" finds "Pérez".
+  const fold = (v: string | null | undefined) => (v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const visiblePatients = useMemo(() => {
+    const q = fold(patientQuery.trim());
+    if (!q) return patients;
+    return patients.filter((p) => fold(p.name).includes(q) || fold(p.email).includes(q) || fold(p.insuranceNumber).includes(q));
+  }, [patients, patientQuery]);
 
   // Walk-in: register the patient here and continue booking without leaving the wizard.
   const handleCreatePatient = async (data: PatientInput) => {
@@ -85,6 +94,7 @@ export function NewAppointmentPage() {
       setPatients((prev) => [created, ...prev]);
       setSelectedPatient(created);
       setCreatingPatient(false);
+      setPatientQuery('');
       toast.success(`Paciente ${created.name} registrado`);
     } catch {
       toast.error('No se pudo registrar el paciente');
@@ -280,18 +290,34 @@ export function NewAppointmentPage() {
         {currentKind === 'patient' && (
           <div className={styles.stepContent}>
             <div className={styles.stepHeader}>
-              <h2 className={styles.stepTitle}>Seleccioná el paciente</h2>
+              <h2 className={styles.stepTitle}>Buscá al paciente</h2>
               <Button variant="secondary" size="sm" onClick={() => setCreatingPatient(true)}>
                 + Nuevo paciente
               </Button>
             </div>
+            <input
+              type="search"
+              className={styles.patientSearch}
+              placeholder="Nombre, email u obra social…"
+              aria-label="Buscar paciente"
+              value={patientQuery}
+              onChange={(e) => setPatientQuery(e.target.value)}
+              autoFocus
+            />
             {patientsLoading ? (
               <div className={styles.centered}><Spinner /></div>
             ) : patients.length === 0 ? (
               <p className={styles.emptyMsg}>Todavía no hay pacientes registrados — creá el primero con el botón de arriba.</p>
+            ) : visiblePatients.length === 0 ? (
+              <div className={styles.notFound}>
+                <p>No encontramos a <strong>"{patientQuery.trim()}"</strong> en el registro.</p>
+                <Button variant="primary" size="sm" onClick={() => setCreatingPatient(true)}>
+                  Registrar a {patientQuery.trim()}
+                </Button>
+              </div>
             ) : (
               <div className={styles.cardGrid}>
-                {patients.map(p => (
+                {visiblePatients.map(p => (
                   <button
                     key={p.id}
                     type="button"
@@ -320,7 +346,7 @@ export function NewAppointmentPage() {
             </div>
 
             <Modal isOpen={creatingPatient} onClose={() => setCreatingPatient(false)} title="Registrar paciente" size="md">
-              <PatientForm onSubmit={handleCreatePatient} onCancel={() => setCreatingPatient(false)} />
+              <PatientForm initialName={visiblePatients.length === 0 ? patientQuery.trim() : ''} onSubmit={handleCreatePatient} onCancel={() => setCreatingPatient(false)} />
             </Modal>
           </div>
         )}

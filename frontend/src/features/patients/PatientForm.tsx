@@ -6,16 +6,18 @@ import styles from './PatientForm.module.css';
 
 interface PatientFormProps {
   patient?: Patient;
+  /** Pre-fills the name when the form opens from a failed search. */
+  initialName?: string;
   onSubmit: (data: PatientInput) => Promise<void>;
   onCancel: () => void;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function PatientForm({ patient, onSubmit, onCancel }: PatientFormProps) {
+export function PatientForm({ patient, initialName = '', onSubmit, onCancel }: PatientFormProps) {
   const isEditing = Boolean(patient);
 
-  const [name, setName] = useState(patient?.name ?? '');
+  const [name, setName] = useState(patient?.name ?? initialName);
   const [email, setEmail] = useState(patient?.email ?? '');
   const [phone, setPhone] = useState(patient?.phone ?? '');
   const [dateOfBirth, setDateOfBirth] = useState(patient?.dateOfBirth ?? '');
