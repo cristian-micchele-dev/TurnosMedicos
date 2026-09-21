@@ -18,6 +18,39 @@ describe('AuthService', () => {
     expect((service() as any).register).toBeUndefined();
   });
 
+  describe('recordarme', () => {
+    const DAY = 86400000;
+    beforeEach(() => { users.findByEmail.mockResolvedValue(user); tokens.rememberTtlMs = () => 30 * DAY; });
+
+    it('sin recordarme: sesión no persistente con el TTL normal de refresh', async () => {
+      const result = await service().login({ email: 'x@y.com', password: 'good' });
+      expect(result.persistent).toBe(false);
+      const session = sessions.save.mock.calls[0][0];
+      expect(session.persistent).toBe(false);
+      expect(session.expiresAt.getTime()).toBe(now.getTime() + 1000);
+      expect(tokens.signRefresh).toHaveBeenCalledWith(expect.any(Object), undefined);
+    });
+
+    it('con recordarme: sesión persistente de 30 días y refresh JWT con el mismo vencimiento', async () => {
+      const result = await service().login({ email: 'x@y.com', password: 'good', rememberMe: true });
+      expect(result.persistent).toBe(true);
+      expect(result.expiresAt.getTime()).toBe(now.getTime() + 30 * DAY);
+      const session = sessions.save.mock.calls[0][0];
+      expect(session.persistent).toBe(true);
+      expect(session.expiresAt.getTime()).toBe(now.getTime() + 30 * DAY);
+      expect(tokens.signRefresh).toHaveBeenCalledWith(expect.any(Object), 30 * DAY);
+    });
+
+    it('la rotación de refresh conserva la persistencia de la sesión original', async () => {
+      users.findById.mockResolvedValue(user);
+      sessions.findByJti.mockResolvedValue({ id: 's1', userId: 'u1', familyId: 'f1', tokenHash: createHash('sha256').update('refresh').digest('hex'), expiresAt: new Date(now.getTime() + DAY), persistent: true });
+      sessions.rotate.mockResolvedValue(true);
+      const result = await service().refresh('refresh');
+      expect(result.persistent).toBe(true);
+      expect(sessions.save.mock.calls[0][0].persistent).toBe(true);
+    });
+  });
+
   it('emite sesión al autenticar y rechaza usuario inactivo', async () => {
     users.findByEmail.mockResolvedValue(user);
     await expect(service().login({ email: 'X@Y.COM', password: 'good' })).resolves.toMatchObject({ accessToken: 'access', refreshToken: 'refresh' });

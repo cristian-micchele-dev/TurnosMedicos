@@ -86,8 +86,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [setUser, loginDirect]);
 
   const login = useCallback(
-    async (email: string, password: string): Promise<void> => {
-      const { accessToken } = await authApi.login({ email, password });
+    async (email: string, password: string, rememberMe = false): Promise<void> => {
+      const { accessToken } = await authApi.login({ email, password, rememberMe });
 
       localStorage.setItem('access_token', accessToken);
 

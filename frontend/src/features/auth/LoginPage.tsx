@@ -11,6 +11,7 @@ export function LoginPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -20,7 +21,7 @@ export function LoginPage() {
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      await login(email, password, rememberMe);
       navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
       const message =
@@ -73,6 +74,15 @@ export function LoginPage() {
             autoComplete="current-password"
             required
           />
+
+          <label className={styles.remember}>
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            <span>Recordarme en este equipo</span>
+          </label>
 
           {error && (
             <div className={styles.errorBanner} role="alert" aria-live="polite">

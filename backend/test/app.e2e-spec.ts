@@ -98,6 +98,23 @@ describe('foundation HTTP', () => {
     await request(app.getHttpServer()).post('/api/v1/auth/logout').expect(201).expect({ message: 'Sesión cerrada' });
   });
 
+  it('recordarme persiste la cookie de refresh; sin recordarme es cookie de sesión', async () => {
+    const plain = await request(app.getHttpServer()).post('/api/v1/auth/login').send({ email: 'doctor@example.com', password: 'strong-password' }).expect(201);
+    const plainRefresh = (plain.headers['set-cookie'] as unknown as string[]).find((c) => c.startsWith('refresh_token='))!;
+    expect(plainRefresh).not.toMatch(/Max-Age=/i);
+
+    const remembered = await request(app.getHttpServer()).post('/api/v1/auth/login').send({ email: 'doctor@example.com', password: 'strong-password', rememberMe: true }).expect(201);
+    const cookies = remembered.headers['set-cookie'] as unknown as string[];
+    const rememberedRefresh = cookies.find((c) => c.startsWith('refresh_token='))!;
+    expect(rememberedRefresh).toMatch(/Max-Age=\d+/i);
+
+    // rotation keeps it persistent
+    const csrf = cookies.find((c) => c.startsWith('csrf_token='))!.match(/^csrf_token=([^;]+)/)![1];
+    const rotated = await request(app.getHttpServer()).post('/api/v1/auth/refresh').set('Cookie', cookies).set('X-CSRF-Token', csrf).expect(201);
+    const rotatedRefresh = (rotated.headers['set-cookie'] as unknown as string[]).find((c) => c.startsWith('refresh_token='))!;
+    expect(rotatedRefresh).toMatch(/Max-Age=\d+/i);
+  });
+
   it('rota refresh correctamente y revoca la familia ante reuse', async () => {
     const login = await request(app.getHttpServer()).post('/api/v1/auth/login').send({ email: 'doctor@example.com', password: 'strong-password' }).expect(201);
     const cookies = login.headers['set-cookie'] as unknown as string[];

@@ -74,7 +74,7 @@ src/
 |---|---|---|
 | Runtime | Node 24, NestJS 12, TypeScript | React 19, Vite, TypeScript |
 | Datos | PostgreSQL 16, TypeORM | TanStack Query |
-| Auth | JWT access + refresh rotativo en cookie httpOnly, CSRF, Argon2 | — |
+| Auth | JWT access + refresh rotativo en cookie httpOnly (de sesión, o 30 días con "Recordarme"), CSRF, Argon2 | — |
 | Seguridad | `helmet`, rate limiting, `ValidationPipe` con whitelist estricta, RBAC | — |
 | Tests | Jest (unit · e2e · integration) | Vitest + Testing Library |
 | Calidad | ESLint, `tsc --noEmit`, coverage ≥ 68 % | oxlint, `tsc --noEmit` |
@@ -126,7 +126,8 @@ Validadas al arrancar con `class-validator` (`src/config/env.schema.ts`). Si fal
 | `NODE_ENV` | no | `development` · `test` · `production` |
 | `PORT` | no | default `3000` |
 | `CORS_ORIGIN` | no | origen del frontend |
-| `JWT_ACCESS_TTL`, `JWT_REFRESH_TTL`, `JWT_ISSUER` | no | |
+| `JWT_ACCESS_TTL`, `JWT_REFRESH_TTL`, `JWT_ISSUER` | no | defaults `15m`, `7d` |
+| `JWT_REMEMBER_TTL` | no | vida de la sesión con "Recordarme" (default `30d`) |
 | `REFRESH_COOKIE_NAME`, `CSRF_COOKIE_NAME` | no | |
 | `SWAGGER_ENABLED` | no | nunca se expone en `production` |
 | `DATABASE_SSL` | no | `false` para desactivar SSL en migraciones (CI / Postgres local) |
