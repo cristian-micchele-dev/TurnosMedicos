@@ -22,7 +22,6 @@
   margin-bottom: 2rem;
   gap: 1rem;
   opacity: 0;
-  animation: fadeSlideUp 0.5s ease 0.1s both;
 }
 
 .title {
@@ -44,7 +43,6 @@
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   opacity: 0;
-  animation: fadeSlideUp 0.5s ease 0.2s both;
 }
 
 .nameCell {

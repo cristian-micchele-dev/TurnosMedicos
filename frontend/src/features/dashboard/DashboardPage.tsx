@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Stethoscope, HeartPulse, Users, Zap, AlertTriangle, RefreshCw, Calendar, Clock, CheckCircle, ChevronRight } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { AlertTriangle, RefreshCw, ChevronRight, ArrowRight } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -19,8 +18,6 @@ import styles from './DashboardPage.module.css';
 interface StatCard {
   label: string;
   value: string | number;
-  icon: LucideIcon;
-  accent: 'blue' | 'green' | 'amber' | 'slate';
   /** Where the number drills down to (the list, pre-filtered). */
   to?: string;
 }
@@ -28,39 +25,50 @@ interface StatCard {
 interface QuickAction {
   label: string;
   to: string;
-  accent: 'blue' | 'green' | 'amber' | 'slate';
 }
 
 function buildAdminCards(stats: DashboardStats): StatCard[] {
   return [
-    { label: 'Doctores', value: stats.totalDoctors ?? '—', icon: Stethoscope, accent: 'blue', to: '/doctores' },
-    { label: 'Pacientes', value: stats.totalPatients ?? '—', icon: HeartPulse, accent: 'green', to: '/pacientes' },
-    { label: 'Usuarios', value: stats.totalUsers ?? '—', icon: Users, accent: 'amber', to: '/usuarios' },
-    { label: 'Activos', value: stats.activeUsers ?? '—', icon: Zap, accent: 'slate', to: '/usuarios' },
+    { label: 'Doctores', value: stats.totalDoctors ?? '—', to: '/doctores' },
+    { label: 'Pacientes', value: stats.totalPatients ?? '—', to: '/pacientes' },
+    { label: 'Usuarios', value: stats.totalUsers ?? '—', to: '/usuarios' },
+    { label: 'Activos', value: stats.activeUsers ?? '—', to: '/usuarios' },
   ];
 }
 
 function buildDoctorCards(todayCount: number, pendingCount: number, completedCount: number): StatCard[] {
   return [
-    { label: 'Turnos Hoy', value: todayCount, icon: Calendar, accent: 'blue', to: '/agenda' },
-    { label: 'Pendientes', value: pendingCount, icon: Clock, accent: 'amber', to: '/mis-turnos?status=PENDING' },
-    { label: 'Completados', value: completedCount, icon: CheckCircle, accent: 'green', to: '/mis-turnos?status=COMPLETED' },
+    { label: 'Turnos hoy', value: todayCount, to: '/agenda' },
+    { label: 'Pendientes', value: pendingCount, to: '/mis-turnos?status=PENDING' },
+    { label: 'Completados', value: completedCount, to: '/mis-turnos?status=COMPLETED' },
   ];
 }
 
 const QUICK_ACTIONS: Record<string, QuickAction[]> = {
   ADMIN: [
-    { label: 'Crear Doctor', to: '/doctores', accent: 'blue' },
-    { label: 'Crear Paciente', to: '/pacientes', accent: 'green' },
-    { label: 'Ver Turnos', to: '/turnos', accent: 'amber' },
-    { label: 'Gestionar Usuarios', to: '/usuarios', accent: 'slate' },
+    { label: 'Nuevo doctor', to: '/doctores' },
+    { label: 'Nuevo paciente', to: '/pacientes' },
+    { label: 'Ver turnos', to: '/turnos' },
+    { label: 'Usuarios', to: '/usuarios' },
   ],
   DOCTOR: [
-    { label: 'Nuevo Turno', to: '/nuevo-turno', accent: 'blue' },
-    { label: 'Registrar Paciente', to: '/pacientes', accent: 'amber' },
-    { label: 'Mi Disponibilidad', to: '/disponibilidad', accent: 'green' },
+    { label: 'Nuevo turno', to: '/nuevo-turno' },
+    { label: 'Registrar paciente', to: '/pacientes' },
+    { label: 'Mi disponibilidad', to: '/disponibilidad' },
   ],
 };
+
+// "Buenos días" until 13:00, "Buenas tardes" until 20:00, then "Buenas noches" — the clinic's own clock.
+function greetingFor(hour: number): string {
+  if (hour < 13) return 'Buenos días';
+  if (hour < 20) return 'Buenas tardes';
+  return 'Buenas noches';
+}
+
+function todayInWords(date: Date): string {
+  const words = date.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
 
 const STATUS_VARIANT: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'neutral'> = {
   PENDING: 'warning',
@@ -74,16 +82,6 @@ const STATUS_LABEL: Record<string, string> = {
   CONFIRMED: 'Confirmado',
   COMPLETED: 'Completado',
   CANCELLED: 'Cancelado',
-};
-
-const ROLE_LABELS: Record<string, string> = {
-  ADMIN: 'Administrador',
-  DOCTOR: 'Doctor',
-};
-
-const ROLE_ACCENT: Record<string, string> = {
-  ADMIN: styles.badgeAdmin,
-  DOCTOR: styles.badgeDoctor,
 };
 
 // Maps Spanish status labels to semantic chart colors
@@ -149,7 +147,8 @@ export function DashboardPage() {
 
   if (!user) return null;
 
-  const displayName = user.name || user.email.split('@')[0];
+  const firstName = (user.name || user.email.split('@')[0]).trim().split(/\s+/)[0];
+  const now = new Date();
   const cards: StatCard[] = stats
     ? user.role === 'ADMIN' ? buildAdminCards(stats) : roleCards
     : [];
@@ -158,17 +157,15 @@ export function DashboardPage() {
   if (loading) {
     return (
       <div className={styles.page}>
-        <div className={styles.meshBg} aria-hidden="true" />
         <div className={styles.inner}>
           <div className={styles.skeletonHeader}>
-            <Skeleton variant="text" width="280px" height="2rem" />
-            <Skeleton variant="text" width="180px" height="1rem" />
+            <Skeleton variant="text" width="180px" height="0.9rem" />
+            <Skeleton variant="text" width="320px" height="2.2rem" />
           </div>
-          <div className={styles.grid}>
-            <Skeleton variant="rectangular" height="80px" />
-            <Skeleton variant="rectangular" height="80px" />
-            <Skeleton variant="rectangular" height="80px" />
-            <Skeleton variant="rectangular" height="80px" />
+          <div className={styles.figuresSkeleton}>
+            <Skeleton variant="rectangular" height="64px" />
+            <Skeleton variant="rectangular" height="64px" />
+            <Skeleton variant="rectangular" height="64px" />
           </div>
           <div className={styles.skeletonSection}>
             <Skeleton variant="text" width="140px" height="0.75rem" />
@@ -186,7 +183,6 @@ export function DashboardPage() {
   if (error) {
     return (
       <div className={styles.page}>
-        <div className={styles.meshBg} aria-hidden="true" />
         <div className={styles.inner}>
           <div className={styles.errorState}>
             <AlertTriangle size={40} strokeWidth={1.5} />
@@ -203,69 +199,44 @@ export function DashboardPage() {
 
   return (
     <div className={styles.page}>
-      {/* ── Animated gradient mesh background ── */}
-      <div className={styles.meshBg} aria-hidden="true" />
       <div className={styles.inner}>
-        {/* ── Hero banner ── */}
-        <div className={styles.hero}>
-          <div className={styles.heroBg} aria-hidden="true" />
-          <div className={styles.heroOverlay} aria-hidden="true" />
-          <div className={styles.heroContent}>
-            <div>
-              <h1 className={styles.greeting}>
-                Bienvenido, <span className={styles.greetingAccent}>{displayName}</span>
-              </h1>
-              <p className={styles.subtext}>Resumen de tu actividad médica</p>
-            </div>
-            <span className={`${styles.badge} ${ROLE_ACCENT[user.role] ?? ''}`}>
-              {ROLE_LABELS[user.role] ?? user.role}
-            </span>
-          </div>
-        </div>
+        {/* The day's sheet: the date, a greeting in the clinic's voice, and the figures that matter. */}
+        <header className={styles.sheetHeader}>
+          <time className={styles.today} dateTime={todayLocal()}>{todayInWords(now)}</time>
+          <h1 className={styles.greeting}>{greetingFor(now.getHours())}, {firstName}.</h1>
+        </header>
 
-        {/* ── Stat cards ── */}
-        <div className={styles.grid} data-tour="stats">
+        <ul className={styles.figures} data-tour="stats">
           {cards.map((card) => {
-            const Icon = card.icon;
             const body = (
               <>
-                <div className={styles.cardIcon}>
-                  <Icon size={22} strokeWidth={1.8} />
-                </div>
-                <div className={styles.cardBody}>
-                  <span className={styles.cardValue}>{card.value}</span>
-                  <span className={styles.cardLabel}>{card.label}</span>
-                </div>
+                <span className={styles.figureValue}>{card.value}</span>
+                <span className={styles.figureLabel}>{card.label}</span>
               </>
             );
-            const className = `${styles.card} ${styles[card.accent]}`;
-            return card.to ? (
-              <Link key={card.label} to={card.to} className={`${className} ${styles.cardLink}`} aria-label={`${card.value} ${card.label} — ver detalle`}>
-                {body}
-                <ChevronRight size={18} className={styles.cardArrow} aria-hidden />
-              </Link>
-            ) : (
-              <div key={card.label} className={className}>{body}</div>
+            return (
+              <li key={card.label} className={styles.figure}>
+                {card.to ? (
+                  <Link to={card.to} className={styles.figureLink} aria-label={`${card.value} ${card.label} — ver detalle`}>
+                    {body}
+                    <ChevronRight size={16} className={styles.figureArrow} aria-hidden />
+                  </Link>
+                ) : (
+                  <span className={styles.figureLink}>{body}</span>
+                )}
+              </li>
             );
           })}
-        </div>
+        </ul>
 
-        {/* ── Quick actions ── */}
-        <section className={styles.section} data-tour="actions">
-          <h2 className={styles.sectionTitle}>Acciones rápidas</h2>
-          <div className={styles.actionsGrid}>
-            {actions.map((action) => (
-              <button
-                key={action.to}
-                className={`${styles.actionCard} ${styles[action.accent]}`}
-                onClick={() => navigate(action.to)}
-              >
-                <span className={styles.actionLabel}>{action.label}</span>
-                <span className={styles.actionArrow}>{'\u2192'}</span>
-              </button>
-            ))}
-          </div>
-        </section>
+        <nav className={styles.actions} aria-label="Atajos" data-tour="actions">
+          {actions.map((action) => (
+            <Link key={action.to} to={action.to} className={styles.action}>
+              {action.label}
+              <ArrowRight size={15} strokeWidth={2} aria-hidden />
+            </Link>
+          ))}
+        </nav>
 
         {/* ── Upcoming appointments ── */}
         <section className={styles.section} data-tour="appointments">

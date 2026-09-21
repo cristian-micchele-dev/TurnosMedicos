@@ -15,7 +15,6 @@
   max-width: 1000px;
   margin: 0 auto;
   opacity: 0;
-  animation: fadeSlideUp 0.5s ease 0.1s both;
 }
 
 /* ── Calendar header: nav + month title + today button ── */
@@ -210,7 +209,6 @@
 .dayDetail {
   margin-top: 1.5rem;
   opacity: 0;
-  animation: fadeSlideUp 0.3s ease 0s both;
 }
 
 .dayDetailTitle {

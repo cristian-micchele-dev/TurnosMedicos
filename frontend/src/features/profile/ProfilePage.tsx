@@ -142,7 +142,6 @@ export function ProfilePage() {
           </div>
 
           <div className={styles.heading}>
-            <span className={styles.eyebrow}>{isDoctor ? 'Ficha profesional' : 'Cuenta'}</span>
             <h1 className={styles.name}>{displayName}</h1>
             <div className={styles.tags}>
               <Badge variant={isDoctor ? 'success' : 'primary'}>{roleLabels[user.role] ?? user.role}</Badge>

@@ -25,7 +25,6 @@
   gap: 1rem;
   flex-wrap: wrap;
   opacity: 0;
-  animation: fadeSlideUp 0.5s ease 0.05s both;
 }
 
 .title {
@@ -54,7 +53,6 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   opacity: 0;
-  animation: fadeSlideUp 0.5s ease 0.1s both;
 }
 
 .navControls {
@@ -125,7 +123,6 @@
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   opacity: 0;
-  animation: fadeSlideUp 0.5s ease 0.2s both;
 }
 
 /* Time axis — left column */

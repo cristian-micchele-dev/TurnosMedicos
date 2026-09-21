@@ -14,10 +14,10 @@
 
 .code {
   font-size: clamp(6rem, 20vw, 9rem);
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
   color: var(--text-tertiary);
-  letter-spacing: -0.04em;
+  letter-spacing: -0.03em;
   margin-bottom: 1.5rem;
 }
 

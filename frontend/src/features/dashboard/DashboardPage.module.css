@@ -1,520 +1,217 @@
-/* ============================================================
-   DashboardPage — "Deep Vitals" dark command-center aesthetic
-   ============================================================ */
-
-/* ---------- Animations ---------- */
-@keyframes meshDrift {
-  0%, 100% { background-position: 0% 50%; }
-  25%      { background-position: 50% 0%; }
-  50%      { background-position: 100% 50%; }
-  75%      { background-position: 50% 100%; }
-}
-
-@keyframes fadeSlideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes widthReveal {
-  from { width: 0; }
-  to   { width: 100%; }
-}
-
-/* Respect user's motion preference (WCAG 2.1 §2.3) */
-@media (prefers-reduced-motion: reduce) {
-  .hero,
-  .heroBg,
-  .meshBg,
-  .card,
-  .actionCard,
-  .chartCard,
-  .section {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-    transition: none !important;
-  }
-}
-
-/* ---------- Page shell ---------- */
 .page {
-  position: relative;
-  min-height: 100vh;
-  padding: 0 0 3rem;
-  width: 100%;
+  padding: var(--space-8) var(--space-6) var(--space-12);
 }
 
 .inner {
-  position: relative;
-  z-index: 2;
-  max-width: 1400px;
+  max-width: 1080px;
   margin: 0 auto;
-}
-
-/* ── Gradient mesh — lives behind all content ── */
-.meshBg {
-  position: absolute;
-  top: -28px;
-  left: -32px;
-  right: -32px;
-  bottom: 0;
-  z-index: 0;
-  background:
-    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 80% at 85% 70%, rgba(79, 141, 245, 0.10) 0%, transparent 55%),
-    radial-gradient(ellipse 70% 50% at 50% 90%, rgba(52, 211, 153, 0.08) 0%, transparent 50%),
-    linear-gradient(160deg, var(--dark) 0%, var(--mid) 40%, var(--deep) 100%);
-  background-size: 200% 200%;
-  animation: meshDrift 25s ease infinite;
-  pointer-events: none;
-}
-
-/* ---------- Hero banner with medical team photo ---------- */
-.hero {
-  position: relative;
-  z-index: 2;
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  margin-bottom: 2.25rem;
-  min-height: 220px;
   display: flex;
-  align-items: center;
-  opacity: 0;
-  animation: fadeSlideUp 0.5s ease 0.1s both;
+  flex-direction: column;
+  gap: var(--space-8);
 }
 
-.heroBg {
-  position: absolute;
-  inset: 0;
-  background-image: url('/images/doctors-hero.webp');
-  background-size: cover;
-  background-position: center 30%;
-  transform: scale(1.03);
-  transition: transform 8s ease;
-}
-
-.hero:hover .heroBg {
-  transform: scale(1);
-}
-
-.heroOverlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    105deg,
-    rgba(7, 13, 26, 0.92) 0%,
-    rgba(11, 17, 32, 0.82) 40%,
-    rgba(15, 23, 41, 0.55) 70%,
-    rgba(15, 23, 41, 0.20) 100%
-  );
-}
-
-.heroContent {
-  position: relative;
-  z-index: 1;
-  padding: 2.5rem 2.75rem;
-  width: 100%;
+/* ── The day's sheet ───────────────────────────── */
+.sheetHeader {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
-/* ── Línea decorativa cian antes del título ── */
-.heroContent::before {
-  content: '';
-  position: absolute;
-  left: 2.75rem;
-  top: 0;
-  width: 48px;
-  height: 3px;
-  background: var(--primary);
-  border-radius: 2px;
-}
-
-/* ---------- Page header (fallback / fuera del hero) ---------- */
-.pageHeader {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 2.25rem;
-  padding-top: 0.5rem;
-  opacity: 0;
-  animation: fadeSlideUp 0.5s ease 0.2s both;
+.today {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
 }
 
 .greeting {
-  font-size: 2.125rem;
-  font-weight: 800;
-  color: #ffffff;
-  letter-spacing: -0.03em;
-  line-height: 1.15;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.40);
+  font-size: clamp(1.75rem, 1.2rem + 1.6vw, 2.5rem);
+  margin: 0;
 }
 
-.greetingAccent {
-  color: var(--primary);
-  font-weight: 800;
-}
-
-.subtext {
-  font-size: 0.9375rem;
-  color: rgba(255, 255, 255, 0.65);
-  margin-top: 0.5rem;
-  line-height: 1.4;
-}
-
-/* ---------- Role badge ---------- */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.4rem 1rem;
-  border-radius: 999px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
-  border: 1px solid var(--border);
-}
-
-.badgeAdmin {
-  background: var(--primary-light);
-  color: var(--primary);
-}
-
-.badgeDoctor {
-  background: var(--success-light);
-  color: var(--success-dark);
-}
-
-.badgePatient {
-  background: var(--warning-light);
-  color: var(--warning-dark);
-}
-
-/* ---------- Skeleton loading layout ---------- */
 .skeletonHeader {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
-  margin-bottom: 2.25rem;
-  padding-top: 0.5rem;
+  gap: var(--space-2);
 }
 
 .skeletonSection {
-  margin-top: 2.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.875rem;
+  gap: var(--space-3);
 }
 
 .skeletonRows {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
-/* ---------- Error state ---------- */
+.figuresSkeleton {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+
 .errorState {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 4rem 2rem;
+  gap: var(--space-3);
+  padding: var(--space-12) var(--space-4);
+  color: var(--danger);
   text-align: center;
-  color: var(--warning);
 }
 
 .errorText {
-  font-size: 0.9375rem;
   color: var(--text-secondary);
-  max-width: 360px;
+  max-width: 40ch;
 }
 
 .retryBtn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1.25rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--dark);
-  background: var(--primary);
-  border-radius: var(--radius-sm);
-  transition: background var(--transition), transform var(--transition);
-}
-
-.retryBtn:hover {
-  background: var(--primary-hover);
-  transform: translateY(-1px);
-}
-
-.retryBtn:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
-/* ---------- Stats grid ---------- */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  position: relative;
-  z-index: 2;
-}
-
-@media (max-width: 1024px) {
-  .grid { grid-template-columns: repeat(2, 1fr); }
-}
-
-@media (max-width: 560px) {
-  .grid { grid-template-columns: 1fr; }
-}
-
-/* ---------- Stat card ---------- */
-.card {
-  position: relative;
-  background: var(--slate);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  border-top: 2px solid transparent;
-  padding: 1.375rem 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  cursor: default;
-  box-shadow: var(--shadow-md);
-  transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
-  overflow: hidden;
-
-  /* Staggered entrance */
-  opacity: 0;
-  animation: fadeSlideUp 0.4s ease both;
-}
-
-.card:nth-child(1) { animation-delay: 0.25s; }
-.card:nth-child(2) { animation-delay: 0.35s; }
-.card:nth-child(3) { animation-delay: 0.45s; }
-.card:nth-child(4) { animation-delay: 0.55s; }
-
-.card:hover {
-  transform: translateY(-3px);
-  border-color: var(--border-hover);
-  box-shadow: var(--shadow-lg);
-}
-
-/* ── Accent top border per variant ── */
-.blue  { border-top-color: var(--primary); }
-.green { border-top-color: var(--success); }
-.amber { border-top-color: var(--warning); }
-.slate { border-top-color: var(--muted); }
-
-/* ── Subtle glow bottom edge (hover only) ── */
-.card::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 15%;
-  right: 15%;
-  height: 1px;
-  border-radius: 1px;
-  opacity: 0;
-  transition: opacity 250ms ease;
-}
-
-.card:hover::after { opacity: 1; }
-
-/* ---------- Card icon ---------- */
-.cardIcon {
-  flex-shrink: 0;
-  width: 48px;
-  height: 48px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border-input);
   border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: var(--text-primary);
+  font-weight: 600;
+  transition: border-color var(--transition), background var(--transition);
 }
 
-/* ---------- Card body ---------- */
-.cardBody {
+.retryBtn:hover { border-color: var(--border-hover); background: var(--ice); }
+
+.retryBtn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* ── Figures: a ruled strip, not a grid of cards ── */
+.figures {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.figure {
+  flex: 1 1 160px;
   min-width: 0;
 }
 
-.cardValue {
-  font-size: 1.875rem;
-  font-weight: 800;
+.figure + .figure .figureLink {
+  border-left: 1px solid var(--border);
+}
+
+.figureLink {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-5);
+  color: inherit;
+  transition: background var(--transition);
+}
+
+a.figureLink:hover,
+a.figureLink:focus-visible {
+  background: var(--ice);
+  outline: none;
+}
+
+.figureValue {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
   color: var(--text-primary);
-  line-height: 1.05;
-  letter-spacing: -0.04em;
 }
 
-.cardLabel {
-  font-size: 0.8125rem;
+.figureLabel {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+}
+
+.figureArrow {
+  margin-left: auto;
+  align-self: center;
   color: var(--text-tertiary);
-  font-weight: 400;
-}
-
-/* ============================================================
-   Accent variants — cyan / emerald / amber / slate
-   ============================================================ */
-
-/* --- Cyan (primary) --- */
-.blue .cardIcon {
-  background: rgba(56, 189, 248, 0.12);
-  color: var(--primary);
-}
-.blue::after  { background: linear-gradient(90deg, transparent, var(--primary), transparent); }
-.blue:hover   { box-shadow: 0 12px 32px -8px rgba(56, 189, 248, 0.25); }
-
-/* --- Emerald (success) --- */
-.green .cardIcon {
-  background: rgba(16, 185, 129, 0.12);
-  color: var(--success);
-}
-.green::after { background: linear-gradient(90deg, transparent, var(--success), transparent); }
-.green:hover  { box-shadow: 0 12px 32px -8px rgba(16, 185, 129, 0.25); }
-
-/* --- Amber (warning) --- */
-.amber .cardIcon {
-  background: rgba(245, 158, 11, 0.12);
-  color: var(--warning);
-}
-.amber::after { background: linear-gradient(90deg, transparent, var(--warning), transparent); }
-.amber:hover  { box-shadow: 0 12px 32px -8px rgba(245, 158, 11, 0.25); }
-
-/* --- Slate (neutral) --- */
-.slate .cardIcon {
-  background: rgba(107, 126, 159, 0.12);
-  color: var(--light);
-}
-.slate::after { background: linear-gradient(90deg, transparent, var(--muted), transparent); }
-.slate:hover  { box-shadow: 0 12px 32px -8px rgba(107, 126, 159, 0.20); }
-
-/* ---------- Sections ---------- */
-.section {
-  position: relative;
-  z-index: 2;
-  margin-top: 2.25rem;
   opacity: 0;
-  animation: fadeSlideUp 0.5s ease both;
+  transform: translateX(-4px);
+  transition: opacity var(--transition), transform var(--transition);
 }
 
-.section:nth-of-type(1) { animation-delay: 0.7s; }
-.section:nth-of-type(2) { animation-delay: 0.85s; }
-.section:nth-of-type(3) { animation-delay: 1s; }
+a.figureLink:hover .figureArrow,
+a.figureLink:focus-visible .figureArrow {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── Shortcuts: a line of plain links ── */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-full);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  transition: border-color var(--transition), background var(--transition), color var(--transition);
+}
+
+.action:hover,
+.action:focus-visible {
+  border-color: var(--primary);
+  color: var(--primary);
+  outline: none;
+}
+
+.action svg {
+  color: var(--text-tertiary);
+  transition: transform var(--transition), color var(--transition);
+}
+
+.action:hover svg { transform: translateX(2px); color: inherit; }
+
+/* ── Sections ── */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
 
 .sectionTitle {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  margin-bottom: 1rem;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.sectionTitle::before {
-  content: '';
-  display: inline-block;
-  width: 3px;
-  height: 14px;
-  background: var(--primary);
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
-/* ---------- Quick actions ---------- */
-.actionsGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
-}
-
-@media (max-width: 1024px) {
-  .actionsGrid { grid-template-columns: repeat(2, 1fr); }
-}
-
-@media (max-width: 560px) {
-  .actionsGrid { grid-template-columns: 1fr; }
-}
-
-.actionCard {
-  all: unset;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.125rem;
-  background: var(--slate);
-  border: 1px solid var(--border);
-  border-left: 3px solid transparent;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  transition: background 150ms ease, border-color 150ms ease,
-              box-shadow 150ms ease, transform 150ms ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.actionCard.blue  { border-left-color: var(--primary); }
-.actionCard.green { border-left-color: var(--success); }
-.actionCard.amber { border-left-color: var(--warning); }
-.actionCard.slate { border-left-color: var(--muted); }
-
-.actionCard:hover {
-  background: var(--cool);
-  border-color: var(--border-hover);
-  transform: translateX(3px);
-}
-
-.actionCard.blue:hover  { box-shadow: var(--shadow-md), 0 0 0 1px rgba(56,189,248,0.15); }
-.actionCard.green:hover { box-shadow: var(--shadow-md), 0 0 0 1px rgba(16,185,129,0.15); }
-.actionCard.amber:hover { box-shadow: var(--shadow-md), 0 0 0 1px rgba(245,158,11,0.15); }
-
-.actionCard:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
-.actionLabel {
-  font-size: 0.875rem;
+  font-size: 1.0625rem;
   font-weight: 600;
-  color: var(--text-secondary);
-  transition: color 150ms ease;
+  margin: 0;
 }
 
-.actionArrow {
-  color: var(--muted);
-  flex-shrink: 0;
-  transition: transform 150ms ease, color 150ms ease;
+.viewAllLink { cursor: pointer; }
+
+@media (max-width: 640px) {
+  .page { padding: var(--space-6) var(--space-4) var(--space-10); }
+  .figure { flex-basis: 100%; }
+  .figure + .figure .figureLink { border-left: none; border-top: 1px solid var(--border); }
+  .figuresSkeleton { grid-template-columns: 1fr; }
+  .figureValue { font-size: 1.875rem; }
 }
 
-.actionCard:hover .actionArrow {
-  transform: translateX(4px);
-  color: var(--primary);
+@media (prefers-reduced-motion: reduce) {
+  .figureArrow, .action svg { transition: none; }
 }
 
-.actionCard:hover .actionLabel {
-  color: var(--text-primary);
-}
-
-/* ---------- Appointments list ---------- */
 .appointmentsList {
   background: var(--slate);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
   overflow: hidden;
 }
 
@@ -630,15 +327,10 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 1.375rem 1.25rem 1rem;
-  box-shadow: var(--shadow-md);
   transition: border-color 200ms ease, box-shadow 200ms ease;
   opacity: 0;
-  animation: fadeSlideUp 0.45s ease both;
 }
 
-.chartCard:nth-child(1) { animation-delay: 1.05s; }
-.chartCard:nth-child(2) { animation-delay: 1.15s; }
-.chartCard:nth-child(3) { animation-delay: 1.25s; }
 
 .chartCard:hover {
   border-color: var(--border-hover);
@@ -661,32 +353,6 @@
   border-bottom: 1px solid var(--border);
 }
 
-/* ---------- Clickable stat card ---------- */
-.cardLink {
-  cursor: pointer;
-  color: inherit;
-  text-decoration: none;
-}
-
-.cardArrow {
-  margin-left: auto;
-  color: var(--text-tertiary);
-  opacity: 0;
-  transform: translateX(-6px);
-  transition: opacity 200ms ease, transform 200ms ease, color 200ms ease;
-}
-
-.cardLink:hover .cardArrow,
-.cardLink:focus-visible .cardArrow {
-  opacity: 1;
-  transform: translateX(0);
-  color: var(--primary);
-}
-
 @media (hover: none) {
-  .cardArrow { opacity: 0.6; transform: none; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cardArrow { transition: none; transform: none; }
+  .figureArrow { opacity: 0.6; transform: none; }
 }

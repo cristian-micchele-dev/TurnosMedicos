@@ -29,11 +29,12 @@ describe('DashboardPage — stat cards deep-link', () => {
     expect(screen.getByRole('link', { name: /completados/i })).toHaveAttribute('href', '/mis-turnos?status=COMPLETED');
   });
 
-  it('ADMIN: las cards de entidades llevan a su listado', async () => {
+  it('ADMIN: las cifras de entidades llevan a su listado (el atajo Usuarios es otro link)', async () => {
     auth.user.role = 'ADMIN';
     renderPage();
     expect(await screen.findByRole('link', { name: /doctores/i })).toHaveAttribute('href', '/doctores');
     expect(screen.getByRole('link', { name: /pacientes/i })).toHaveAttribute('href', '/pacientes');
-    expect(screen.getByRole('link', { name: /usuarios/i })).toHaveAttribute('href', '/usuarios');
+    expect(screen.getByRole('link', { name: /usuarios — ver detalle/i })).toHaveAttribute('href', '/usuarios');
+    expect(screen.getByRole('link', { name: /^usuarios$/i })).toHaveAttribute('href', '/usuarios');
   });
 });
