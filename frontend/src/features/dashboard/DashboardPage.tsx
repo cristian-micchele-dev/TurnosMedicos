@@ -14,6 +14,7 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { Badge } from '../../components/ui/Badge';
 
 import { todayLocal } from '../../utils/date';
+import { CellsBackground } from '../../components/ui/CellsBackground';
 import styles from './DashboardPage.module.css';
 
 interface StatCard {
@@ -203,8 +204,9 @@ export function DashboardPage() {
 
   return (
     <div className={styles.page}>
-      {/* ── Animated gradient mesh background ── */}
+      {/* ── Living background: brand-coloured cells drifting over a soft tint ── */}
       <div className={styles.meshBg} aria-hidden="true" />
+      <CellsBackground intensity="soft" className={styles.cells} />
       <div className={styles.inner}>
         {/* ── Hero banner ── */}
         <div className={styles.hero}>

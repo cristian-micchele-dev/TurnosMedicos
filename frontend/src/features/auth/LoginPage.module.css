@@ -5,6 +5,8 @@
 
 /* ---------- Page shell ---------- */
 .page {
+  position: relative;
+  overflow: hidden;
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -23,6 +25,8 @@
 
 /* ---------- Card ---------- */
 .card {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 440px;
   background: var(--surface);
