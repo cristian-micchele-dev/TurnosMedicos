@@ -43,6 +43,12 @@ export function DoctorsPage() {
   );
   const users = usersResult?.data ?? [];
 
+  const { data: allDoctorsResult } = useFetch<PaginatedResponse<Doctor>>(
+    ['doctors', 'all'],
+    () => doctorsApi.findAll(1, 100),
+  );
+  const allDoctors = allDoctorsResult?.data ?? [];
+
   const loading = loadingDoctors || loadingSpecialties || loadingUsers;
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -250,6 +256,7 @@ export function DoctorsPage() {
           doctor={selectedDoctor}
           specialties={specialties ?? []}
           users={users ?? []}
+          doctors={allDoctors}
           onSubmit={handleSubmit}
           onCancel={handleCloseModal}
         />

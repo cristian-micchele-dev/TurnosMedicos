@@ -12,6 +12,8 @@ interface DoctorFormProps {
   doctor?: Doctor;
   specialties: Specialty[];
   users: UserListItem[];
+  // Every doctor profile, so accounts that already own one are not offered twice.
+  doctors: Doctor[];
   onSubmit: (data: {
     userId: string;
     specialtyId: string;
@@ -30,7 +32,7 @@ interface FormErrors {
   licenseNumber?: string;
 }
 
-export function DoctorForm({ doctor, specialties, users, onSubmit, onCancel }: DoctorFormProps) {
+export function DoctorForm({ doctor, specialties, users, doctors, onSubmit, onCancel }: DoctorFormProps) {
   const isEditing = Boolean(doctor);
 
   const [mode, setMode] = useState<'existing' | 'new'>('new');
@@ -44,8 +46,11 @@ export function DoctorForm({ doctor, specialties, users, onSubmit, onCancel }: D
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
 
+  // Only DOCTOR accounts without a profile can become a doctor: the API rejects
+  // ADMINs' and duplicates anyway, so listing them would only invite a 409.
+  const takenUserIds = new Set(doctors.map((d) => d.userId));
   const userOptions = users
-    .filter((u) => u.active)
+    .filter((u) => u.active && u.role === 'DOCTOR' && !takenUserIds.has(u.id))
     .map((u) => ({ value: u.id, label: u.name ? `${u.name} (${u.email})` : u.email }));
 
   const specialtyOptions = specialties
@@ -160,6 +165,10 @@ export function DoctorForm({ doctor, specialties, users, onSubmit, onCancel }: D
                   required
                 />
               </>
+            ) : userOptions.length === 0 ? (
+              <p className={styles.emptyHint} role="status">
+                No hay cuentas de médico sin perfil. Usá <strong>Nuevo usuario</strong> para crear una.
+              </p>
             ) : (
               <Select
                 label="Usuario"
