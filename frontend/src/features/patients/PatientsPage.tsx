@@ -56,7 +56,7 @@ export function PatientsPage() {
     await refetchPatients();
   };
 
-  const isAdmin = user?.role === 'ADMIN';
+  const canManage = user?.role === 'ADMIN' || user?.role === 'DOCTOR';
 
   const filteredPatients = patients.filter((p) => {
     const term = search.toLowerCase();
@@ -113,7 +113,7 @@ export function PatientsPage() {
           <Badge variant="neutral">Inactivo</Badge>
         ),
     },
-    ...(isAdmin
+    ...(canManage
       ? [
           {
             key: 'actions',
@@ -146,9 +146,7 @@ export function PatientsPage() {
         <div>
           <h1 className={styles.title}>Pacientes</h1>
           <p className={styles.subtitle}>
-            {isAdmin
-              ? 'Gestioná los pacientes registrados en el sistema'
-              : 'Listado de pacientes'}
+            Registro general de pacientes del hospital
           </p>
         </div>
         <div className={styles.headerActions}>
@@ -159,7 +157,7 @@ export function PatientsPage() {
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           />
-          {isAdmin && (
+          {canManage && (
             <Button variant="primary" onClick={handleOpenCreate}>
               + Nuevo Paciente
             </Button>
@@ -179,14 +177,14 @@ export function PatientsPage() {
           empty={{
             title: 'Todavía no hay pacientes',
             description: 'El paciente es un registro del hospital: cargalo con nombre y datos de contacto.',
-            ...(isAdmin ? { action: { label: '+ Nuevo paciente', onClick: handleOpenCreate } } : {}),
+            ...(canManage ? { action: { label: '+ Nuevo paciente', onClick: handleOpenCreate } } : {}),
           }}
-          onRowClick={isAdmin ? handleOpenEdit : undefined}
+          onRowClick={canManage ? handleOpenEdit : undefined}
         />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
 
-      {isAdmin && (
+      {canManage && (
         <Modal
           isOpen={modalOpen}
           onClose={handleCloseModal}
@@ -194,7 +192,8 @@ export function PatientsPage() {
           size="md"
         >
           <PatientForm
-            patient={selectedPatient}            onSubmit={handleSubmit}
+            patient={selectedPatient}
+            onSubmit={handleSubmit}
             onCancel={handleCloseModal}
           />
         </Modal>

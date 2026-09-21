@@ -56,7 +56,8 @@ const QUICK_ACTIONS: Record<string, QuickAction[]> = {
     { label: 'Gestionar Usuarios', to: '/usuarios', accent: 'slate' },
   ],
   DOCTOR: [
-    { label: 'Mis Turnos', to: '/mis-turnos', accent: 'blue' },
+    { label: 'Nuevo Turno', to: '/nuevo-turno', accent: 'blue' },
+    { label: 'Registrar Paciente', to: '/pacientes', accent: 'amber' },
     { label: 'Mi Disponibilidad', to: '/disponibilidad', accent: 'green' },
   ],
 };

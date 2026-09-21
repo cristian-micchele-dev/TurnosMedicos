@@ -56,6 +56,10 @@ export function App() {
             <Route path="/especialidades" element={<SpecialtiesPage />} />
             <Route path="/doctores" element={<DoctorsPage />} />
             <Route path="/doctores/:id/availability" element={<AvailabilityPage />} />
+          </Route>
+
+          {/* Admin + Doctor: the patient registry is hospital-wide */}
+          <Route element={<ProtectedRoute roles={['ADMIN', 'DOCTOR']} />}>
             <Route path="/pacientes" element={<PatientsPage />} />
           </Route>
 

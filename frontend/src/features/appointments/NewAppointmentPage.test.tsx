@@ -9,7 +9,7 @@ const { navigate, toast, auth, doctorsApi, patientsApi, specialtiesApi, appointm
   toast: { success: vi.fn(), error: vi.fn() },
   auth: { user: { id: 'u1', email: 'x@y.com', name: 'X', role: 'DOCTOR' as 'DOCTOR' | 'ADMIN' } },
   doctorsApi: { me: vi.fn(), findAll: vi.fn(), getAvailability: vi.fn() },
-  patientsApi: { findAll: vi.fn() },
+  patientsApi: { findAll: vi.fn(), create: vi.fn() },
   specialtiesApi: { findAll: vi.fn() },
   appointmentsApi: { findAll: vi.fn(), create: vi.fn() },
 }));
@@ -44,6 +44,7 @@ beforeEach(() => {
   specialtiesApi.findAll.mockResolvedValue({ data: [{ id: 's1', name: 'Cardiología', description: null, active: true }], total: 1, page: 1, totalPages: 1 });
   appointmentsApi.findAll.mockResolvedValue({ data: [], total: 0, page: 1, totalPages: 1 });
   appointmentsApi.create.mockResolvedValue({ id: 'appt-1' });
+  patientsApi.create.mockResolvedValue({ ...patient, id: 'p-new', name: 'Nuevo Walk-in', email: null });
 });
 
 const renderPage = () => render(<MemoryRouter><NewAppointmentPage /></MemoryRouter>);
@@ -123,5 +124,17 @@ describe('NewAppointmentPage', () => {
     const booked = await screen.findByRole('button', { name: /09:00/ });
     expect(booked).toBeDisabled();
     expect(screen.getByRole('button', { name: '09:30' })).toBeEnabled();
+  });
+
+  it('DOCTOR puede registrar un paciente nuevo sin salir del flujo y queda seleccionado', async () => {
+    auth.user.role = 'DOCTOR';
+    renderPage();
+    await screen.findByText('Ana Pérez');
+    await userEvent.click(screen.getByRole('button', { name: /nuevo paciente/i }));
+    await userEvent.type(await screen.findByLabelText(/nombre completo/i), 'Nuevo Walk-in');
+    await userEvent.click(screen.getByRole('button', { name: /crear paciente/i }));
+    await waitFor(() => expect(patientsApi.create).toHaveBeenCalledWith(expect.objectContaining({ name: 'Nuevo Walk-in' })));
+    expect(await screen.findByText('Nuevo Walk-in')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /siguiente/i })).toBeEnabled();
   });
 });

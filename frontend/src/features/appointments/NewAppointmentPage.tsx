@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { specialtiesApi, type Specialty } from '../../api/specialties';
 import { doctorsApi, type Doctor, type Availability } from '../../api/doctors';
 import { appointmentsApi } from '../../api/appointments';
-import { patientsApi, type Patient } from '../../api/patients';
+import { patientsApi, type Patient, type PatientInput } from '../../api/patients';
 import { useToast } from '../../hooks/useToast';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
+import { Modal } from '../../components/ui/Modal';
+import { PatientForm } from '../patients/PatientForm';
 import { addDaysLocal, localDateTimeToIso, todayLocal } from '../../utils/date';
 import styles from './NewAppointmentPage.module.css';
 
@@ -74,6 +76,20 @@ export function NewAppointmentPage() {
   const [patients, setPatients]               = useState<Patient[]>([]);
   const [patientsLoading, setPatientsLoading] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [creatingPatient, setCreatingPatient] = useState(false);
+
+  // Walk-in: register the patient here and continue booking without leaving the wizard.
+  const handleCreatePatient = async (data: PatientInput) => {
+    try {
+      const created = await patientsApi.create(data);
+      setPatients((prev) => [created, ...prev]);
+      setSelectedPatient(created);
+      setCreatingPatient(false);
+      toast.success(`Paciente ${created.name} registrado`);
+    } catch {
+      toast.error('No se pudo registrar el paciente');
+    }
+  };
 
   // Specialty (ADMIN only)
   const [specialties, setSpecialties]                   = useState<Specialty[]>([]);
@@ -263,11 +279,16 @@ export function NewAppointmentPage() {
         {/* ── PATIENT SELECTION ── */}
         {currentKind === 'patient' && (
           <div className={styles.stepContent}>
-            <h2 className={styles.stepTitle}>Seleccioná el paciente</h2>
+            <div className={styles.stepHeader}>
+              <h2 className={styles.stepTitle}>Seleccioná el paciente</h2>
+              <Button variant="secondary" size="sm" onClick={() => setCreatingPatient(true)}>
+                + Nuevo paciente
+              </Button>
+            </div>
             {patientsLoading ? (
               <div className={styles.centered}><Spinner /></div>
             ) : patients.length === 0 ? (
-              <p className={styles.emptyMsg}>No hay pacientes registrados.</p>
+              <p className={styles.emptyMsg}>Todavía no hay pacientes registrados — creá el primero con el botón de arriba.</p>
             ) : (
               <div className={styles.cardGrid}>
                 {patients.map(p => (
@@ -297,6 +318,10 @@ export function NewAppointmentPage() {
                 Siguiente →
               </Button>
             </div>
+
+            <Modal isOpen={creatingPatient} onClose={() => setCreatingPatient(false)} title="Registrar paciente" size="md">
+              <PatientForm onSubmit={handleCreatePatient} onCancel={() => setCreatingPatient(false)} />
+            </Modal>
           </div>
         )}
 
