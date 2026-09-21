@@ -9,16 +9,17 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, helperText, leftElement, className = '', id, ...props }, ref) => {
+  ({ label, error, helperText, leftElement, className = '', id, required, ...props }, ref) => {
     const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
     const hasError = Boolean(error);
 
     return (
       <div className={styles.wrapper}>
         {label && (
-          <label htmlFor={inputId} className={styles.label}>
-            {label}
-          </label>
+          <div className={styles.labelRow}>
+            <label htmlFor={inputId} className={styles.label}>{label}</label>
+            {required && <span className={styles.required} aria-hidden="true">*</span>}
+          </div>
         )}
 
         <div className={styles.inputWrapper}>
@@ -36,6 +37,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ]
               .filter(Boolean)
               .join(' ')}
+            required={required}
             aria-invalid={hasError}
             aria-describedby={
               hasError

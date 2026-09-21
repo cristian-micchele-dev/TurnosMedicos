@@ -5,6 +5,7 @@ import { specialtiesApi, type Specialty } from '../../api/specialties';
 import { usersApi, type UserListItem, type PaginatedResponse } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
 import { useFetch } from '../../hooks/useFetch';
+import { useConfirm } from '../../hooks/useConfirm';
 import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -16,6 +17,8 @@ import styles from './DoctorsPage.module.css';
 export function DoctorsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { confirm, dialogProps, ConfirmDialog } = useConfirm();
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -81,17 +84,23 @@ export function DoctorsPage() {
 
   const handleDelete = async (doctor: Doctor) => {
     const name = doctor.user?.name ?? `Doctor ${doctor.licenseNumber}`;
-    const confirmed = window.confirm(
-      `¿Confirmar eliminación de "${name}"? Esta acción no se puede deshacer.`,
-    );
-    if (!confirmed) return;
+    const ok = await confirm({
+      title: 'Desactivar médico',
+      message: `${name} deja de aparecer para nuevos turnos. Sus turnos existentes se mantienen.`,
+      confirmLabel: 'Desactivar',
+      variant: 'danger',
+    });
+    if (!ok) return;
 
+    setPendingId(doctor.id);
     try {
       await doctorsApi.update(doctor.id, { active: false });
-      toast.success('Doctor desactivado correctamente');
+      toast.success(`${name} desactivado`);
       await refetchDoctors();
     } catch {
-      toast.error('Error al desactivar el doctor');
+      toast.error(`No se pudo desactivar a ${name}`);
+    } finally {
+      setPendingId(null);
     }
   };
 
@@ -178,6 +187,7 @@ export function DoctorsPage() {
             variant="ghost"
             size="sm"
             className={styles.deleteBtn}
+            isLoading={pendingId === d.id}
             onClick={(e) => {
               e.stopPropagation();
               handleDelete(d);
@@ -243,6 +253,8 @@ export function DoctorsPage() {
           onCancel={handleCloseModal}
         />
       </Modal>
+
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

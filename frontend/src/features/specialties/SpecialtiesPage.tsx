@@ -3,6 +3,7 @@ import { specialtiesApi, type Specialty } from '../../api/specialties';
 import type { PaginatedResponse } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
 import { useFetch } from '../../hooks/useFetch';
+import { useConfirm } from '../../hooks/useConfirm';
 import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -13,6 +14,8 @@ import styles from './SpecialtiesPage.module.css';
 
 export function SpecialtiesPage() {
   const { toast } = useToast();
+  const { confirm, dialogProps, ConfirmDialog } = useConfirm();
+  const [pendingId, setPendingId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const { data: result, loading, refetch } = useFetch<PaginatedResponse<Specialty>>(
@@ -47,27 +50,33 @@ export function SpecialtiesPage() {
   const handleSubmit = async (data: { name: string; description?: string }) => {
     if (selectedSpecialty) {
       await specialtiesApi.update(selectedSpecialty.id, data);
-      toast.success('Especialidad actualizada correctamente');
+      toast.success(`Especialidad "${data.name}" actualizada`);
     } else {
       await specialtiesApi.create(data);
-      toast.success('Especialidad creada correctamente');
+      toast.success(`Especialidad "${data.name}" creada`);
     }
     handleCloseModal();
     await refetch();
   };
 
   const handleDelete = async (specialty: Specialty) => {
-    const confirmed = window.confirm(
-      `¿Confirmar eliminación de "${specialty.name}"? Esta acción no se puede deshacer.`,
-    );
-    if (!confirmed) return;
+    const ok = await confirm({
+      title: 'Eliminar especialidad',
+      message: `¿Eliminar "${specialty.name}"? Los médicos asociados quedan sin especialidad. Esta acción no se puede deshacer.`,
+      confirmLabel: 'Eliminar',
+      variant: 'danger',
+    });
+    if (!ok) return;
 
+    setPendingId(specialty.id);
     try {
       await specialtiesApi.remove(specialty.id);
-      toast.success('Especialidad eliminada');
+      toast.success(`Especialidad "${specialty.name}" eliminada`);
       await refetch();
     } catch {
-      toast.error('Error al eliminar la especialidad');
+      toast.error(`No se pudo eliminar "${specialty.name}"`);
+    } finally {
+      setPendingId(null);
     }
   };
 
@@ -118,6 +127,7 @@ export function SpecialtiesPage() {
             variant="ghost"
             size="sm"
             className={styles.deleteBtn}
+            isLoading={pendingId === s.id}
             onClick={(e) => {
               e.stopPropagation();
               handleDelete(s);
@@ -181,6 +191,8 @@ export function SpecialtiesPage() {
           onCancel={handleCloseModal}
         />
       </Modal>
+
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

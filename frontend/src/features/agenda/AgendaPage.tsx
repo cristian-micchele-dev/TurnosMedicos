@@ -179,18 +179,18 @@ export function AgendaPage() {
     try {
       if (action === 'confirm') {
         await appointmentsApi.confirm(appointment.id);
-        toast.success('Turno confirmado');
+        toast.success(`Turno ${appointment.code} confirmado`);
       } else if (action === 'cancel') {
         await appointmentsApi.cancel(appointment.id, reason);
-        toast.success('Turno cancelado');
+        toast.success(`Turno ${appointment.code} cancelado`);
       } else {
         await appointmentsApi.complete(appointment.id, completeData);
-        toast.success('Turno completado');
+        toast.success(`Turno ${appointment.code} completado`);
       }
       setSelectedAppointment(null);
       await refetch();
     } catch {
-      toast.error('Error al actualizar el turno');
+      toast.error(`No se pudo actualizar el turno ${appointment.code}`);
     }
   }
 

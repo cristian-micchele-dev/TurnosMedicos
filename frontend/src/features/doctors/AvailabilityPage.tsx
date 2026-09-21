@@ -332,6 +332,7 @@ export function AvailabilityPage() {
           <div className={styles.formGrid}>
             <Select
               label="Día"
+              required
               options={DAY_OPTIONS}
               value={form.dayOfWeek}
               onChange={(val) => {

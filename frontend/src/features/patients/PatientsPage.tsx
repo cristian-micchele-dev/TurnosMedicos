@@ -47,10 +47,10 @@ export function PatientsPage() {
   const handleSubmit = async (data: PatientInput) => {
     if (selectedPatient) {
       await patientsApi.update(selectedPatient.id, data);
-      toast.success('Paciente actualizado correctamente');
+      toast.success(`Paciente ${data.name} actualizado`);
     } else {
       await patientsApi.create(data);
-      toast.success('Paciente creado correctamente');
+      toast.success(`Paciente ${data.name} creado`);
     }
     handleCloseModal();
     await refetchPatients();

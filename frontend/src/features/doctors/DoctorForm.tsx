@@ -163,6 +163,7 @@ export function DoctorForm({ doctor, specialties, users, onSubmit, onCancel }: D
             ) : (
               <Select
                 label="Usuario"
+                required
                 options={userOptions}
                 value={userId}
                 onChange={(val) => {
@@ -191,6 +192,7 @@ export function DoctorForm({ doctor, specialties, users, onSubmit, onCancel }: D
 
         <Select
           label="Especialidad"
+          required
           options={specialtyOptions}
           value={specialtyId}
           onChange={(val) => {

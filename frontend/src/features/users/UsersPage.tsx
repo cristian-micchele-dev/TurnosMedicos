@@ -132,7 +132,7 @@ export function UsersPage() {
   const handleUserCreated = (newUser: UserListItem) => {
     setUsers((prev) => [newUser, ...prev]);
     setShowCreateModal(false);
-    toast.success('Usuario creado correctamente');
+    toast.success(`Usuario ${newUser.email} creado`);
   };
 
   const filteredUsers = users.filter((u) => {
@@ -432,6 +432,7 @@ function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
 
       <Select
         label="Rol"
+        required
         id="new-user-role"
         value={role}
         onChange={(value) => setRole(value as 'ADMIN' | 'DOCTOR')}

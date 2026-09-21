@@ -14,12 +14,13 @@ interface SelectProps {
   placeholder?: string;
   error?: string;
   disabled?: boolean;
+  required?: boolean;
   id?: string;
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   (
-    { label, options, value, onChange, placeholder, error, disabled, id },
+    { label, options, value, onChange, placeholder, error, disabled, required, id },
     ref,
   ) => {
     const selectId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
@@ -28,15 +29,17 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className={styles.wrapper}>
         {label && (
-          <label htmlFor={selectId} className={styles.label}>
-            {label}
-          </label>
+          <div className={styles.labelRow}>
+            <label htmlFor={selectId} className={styles.label}>{label}</label>
+            {required && <span className={styles.required} aria-hidden="true">*</span>}
+          </div>
         )}
 
         <div className={styles.selectWrapper}>
           <select
             ref={ref}
             id={selectId}
+            required={required}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}

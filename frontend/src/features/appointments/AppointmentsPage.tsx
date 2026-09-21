@@ -54,6 +54,7 @@ export function AppointmentsPage() {
   const navigate = useNavigate();
 
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
   // Filters
   const [searchText, setSearchText] = useState('');
@@ -112,21 +113,24 @@ export function AppointmentsPage() {
     reason?: string,
     completeData?: { diagnosis?: string; notes?: string },
   ) => {
+    setPendingId(appointment.id);
     try {
       if (action === 'confirm') {
         await appointmentsApi.confirm(appointment.id);
-        toast.success('Turno confirmado');
+        toast.success(`Turno ${appointment.code} confirmado`);
       } else if (action === 'cancel') {
         await appointmentsApi.cancel(appointment.id, reason);
-        toast.success('Turno cancelado');
+        toast.success(`Turno ${appointment.code} cancelado`);
       } else {
         await appointmentsApi.complete(appointment.id, completeData);
-        toast.success('Turno completado');
+        toast.success(`Turno ${appointment.code} completado`);
       }
       setSelectedAppointment(null);
       await refetchAppointments();
     } catch {
-      toast.error('Error al actualizar el turno');
+      toast.error(`No se pudo actualizar el turno ${appointment.code}`);
+    } finally {
+      setPendingId(null);
     }
   };
 
@@ -135,6 +139,7 @@ export function AppointmentsPage() {
 
   const renderActions = (appt: Appointment) => {
     const { status } = appt;
+    const busy = pendingId === appt.id;
     const buttons: React.ReactNode[] = [];
 
     if (role === 'ADMIN') {
@@ -144,6 +149,7 @@ export function AppointmentsPage() {
             key="confirm"
             variant="ghost"
             size="sm"
+            isLoading={busy}
             onClick={(e) => {
               e.stopPropagation();
               handleAction('confirm', appt);
@@ -160,6 +166,7 @@ export function AppointmentsPage() {
             variant="ghost"
             size="sm"
             className={styles.dangerBtn}
+            disabled={busy}
             onClick={(e) => {
               e.stopPropagation();
               setSelectedAppointment(appt);
@@ -175,6 +182,7 @@ export function AppointmentsPage() {
             key="complete"
             variant="ghost"
             size="sm"
+            isLoading={busy}
             onClick={(e) => {
               e.stopPropagation();
               handleAction('complete', appt);
@@ -191,6 +199,7 @@ export function AppointmentsPage() {
             key="confirm"
             variant="ghost"
             size="sm"
+            isLoading={busy}
             onClick={(e) => {
               e.stopPropagation();
               handleAction('confirm', appt);
@@ -206,6 +215,7 @@ export function AppointmentsPage() {
             key="complete"
             variant="ghost"
             size="sm"
+            isLoading={busy}
             onClick={(e) => {
               e.stopPropagation();
               handleAction('complete', appt);

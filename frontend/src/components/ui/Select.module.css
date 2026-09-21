@@ -100,3 +100,15 @@
   color: var(--text-tertiary);
   line-height: 1.4;
 }
+
+.required {
+  color: var(--danger);
+  margin-left: 3px;
+  font-weight: 700;
+}
+
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
