@@ -76,4 +76,13 @@ describe('AppointmentsPage — filtros en la URL', () => {
     await waitFor(() => expect(appointmentsApi.findAll).toHaveBeenCalled());
     expect(screen.queryByRole('link', { name: /^lista$/i })).not.toBeInTheDocument();
   });
+
+  it('el filtro de especialidad solo existe para ADMIN (un médico tiene una sola)', async () => {
+    auth.user.role = 'DOCTOR';
+    renderAt('/mis-turnos');
+    await waitFor(() => expect(appointmentsApi.findAll).toHaveBeenCalled());
+    expect(screen.queryByLabelText(/especialidad/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/estado/i)).toBeInTheDocument();
+    auth.user.role = 'ADMIN';
+  });
 });

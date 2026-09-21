@@ -352,7 +352,7 @@ export function AppointmentsPage() {
             <input
               className={styles.searchInput}
               type="text"
-              placeholder="Buscar por código, paciente o doctor..."
+              placeholder={role === 'DOCTOR' ? 'Buscar por código o paciente…' : 'Buscar por código, paciente o doctor…'}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
             />
@@ -360,32 +360,42 @@ export function AppointmentsPage() {
         </div>
 
         <div className={styles.filtersRow}>
-          <Select
-            label="Estado"
-            options={STATUS_OPTIONS}
-            value={statusFilter}
-            onChange={setStatusFilter}
-            placeholder="Todos los estados"
-          />
-          <Select
-            label="Especialidad"
-            options={specialtyOptions}
-            value={specialtyFilter}
-            onChange={(v) => setSpecialtyFilter(v)}
-            placeholder="Todas las especialidades"
-          />
-          <Input
-            label="Desde"
-            type="date"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-          />
-          <Input
-            label="Hasta"
-            type="date"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-          />
+          <div className={styles.filterField}>
+            <Select
+              label="Estado"
+              options={STATUS_OPTIONS}
+              value={statusFilter}
+              onChange={setStatusFilter}
+              placeholder="Todos los estados"
+            />
+          </div>
+          {role === 'ADMIN' && (
+            <div className={styles.filterField}>
+              <Select
+                label="Especialidad"
+                options={specialtyOptions}
+                value={specialtyFilter}
+                onChange={(v) => setSpecialtyFilter(v)}
+                placeholder="Todas las especialidades"
+              />
+            </div>
+          )}
+          <div className={styles.filterFieldDate}>
+            <Input
+              label="Desde"
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+            />
+          </div>
+          <div className={styles.filterFieldDate}>
+            <Input
+              label="Hasta"
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+            />
+          </div>
           {(searchText || statusFilter || specialtyFilter || fromDate || toDate) && (
             <div className={styles.clearFilter}>
               <Button
