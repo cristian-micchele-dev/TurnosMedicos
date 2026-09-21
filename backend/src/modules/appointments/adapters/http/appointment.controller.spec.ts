@@ -4,6 +4,7 @@ describe('AppointmentController', () => {
   const service: any = {
     create: jest.fn().mockResolvedValue({ id: 'a1' }),
     findAll: jest.fn().mockResolvedValue([]),
+    summary: jest.fn().mockResolvedValue([]),
     findOne: jest.fn().mockResolvedValue({ id: 'a1', patientId: 'p1' }),
     confirm: jest.fn().mockResolvedValue({ id: 'a1', status: 'CONFIRMED' }),
     cancel: jest.fn().mockResolvedValue({ id: 'a1', status: 'CANCELLED' }),
@@ -22,6 +23,11 @@ describe('AppointmentController', () => {
     const dto = { doctorId: 'd1', patientId: 'p1', dateTime: '2026-09-07T10:00:00Z' };
     await controller.create(dto, patientReq);
     expect(service.create).toHaveBeenCalledWith(dto, patient);
+  });
+
+  it('summary pasa el rango y el user context al service', async () => {
+    await controller.summary({ from: '2026-09-01', to: '2026-09-30' }, patientReq);
+    expect(service.summary).toHaveBeenCalledWith({ from: '2026-09-01', to: '2026-09-30' }, 'u2', 'DOCTOR');
   });
 
   it('findAll pasa user context del request', async () => {

@@ -23,6 +23,11 @@ export class RescheduleAppointmentDto {
   @IsDateString() dateTime!: string;
 }
 
+export class SummaryAppointmentsDto {
+  @IsDateString() from!: string;
+  @IsDateString() to!: string;
+}
+
 export class QueryAppointmentsDto {
   @IsOptional() @IsUUID() doctorId?: string;
   @IsOptional() @IsUUID() patientId?: string;

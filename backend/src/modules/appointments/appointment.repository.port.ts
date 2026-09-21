@@ -12,8 +12,12 @@ export interface AppointmentFilters {
   take?: number;
 }
 
+export interface DaySummaryRow { date: string; status: AppointmentStatus; count: number }
+
 export interface AppointmentRepository {
   findById(id: string): Promise<Appointment | undefined>;
+  /** Appointments per clinic-local calendar day and status within [from, to]. */
+  countByDayAndStatus(filters: { doctorId?: string; from: Date; to: Date }): Promise<DaySummaryRow[]>;
   findAll(filters: AppointmentFilters): Promise<[Appointment[], number]>;
   findByDoctorAndDateTime(doctorId: string, dateTime: Date): Promise<Appointment[]>;
   findByPatientSpecialtyAndDateRange(patientId: string, specialtyId: string, from: Date, to: Date): Promise<Appointment[]>;

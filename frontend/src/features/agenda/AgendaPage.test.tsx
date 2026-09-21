@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AgendaPage } from './AgendaPage';
 import { todayLocal, localDateTimeToIso, addDaysLocal } from '../../utils/date';
@@ -19,9 +19,15 @@ const appt = (id: string, dateTime: string, name: string) => ({
   patient: { id: 'p1', name, email: null },
 });
 
-const renderPage = () => {
+const renderPage = (url = '/agenda') => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return render(<QueryClientProvider client={client}><MemoryRouter><AgendaPage /></MemoryRouter></QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={client}>
+      <MemoryRouter initialEntries={[url]}>
+        <Routes><Route path="/agenda" element={<AgendaPage />} /></Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
 };
 
 beforeEach(() => {
@@ -75,5 +81,17 @@ describe('AgendaPage', () => {
     expect(screen.getByText('21:00')).toBeInTheDocument();
     expect(screen.queryByText('06:00')).not.toBeInTheDocument();
     expect(screen.queryByText('22:00')).not.toBeInTheDocument();
+  });
+
+  it('abre el día que viene en ?date= (deep link desde el calendario)', async () => {
+    renderPage('/agenda?date=2026-10-05');
+    await waitFor(() => expect(appointmentsApi.findAll).toHaveBeenCalled());
+    expect(appointmentsApi.findAll.mock.calls[0][0]).toMatchObject({ from: '2026-10-05', to: '2026-10-05' });
+    expect(screen.getByText(/lunes 5 de octubre, 2026/i)).toBeInTheDocument();
+  });
+
+  it('ofrece volver a la vista de mes', async () => {
+    renderPage();
+    expect(await screen.findByRole('link', { name: /ver mes/i })).toHaveAttribute('href', '/calendario');
   });
 });

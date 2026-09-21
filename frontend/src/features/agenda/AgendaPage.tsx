@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { appointmentsApi, type Appointment, type AppointmentStatus } from '../../api/appointments';
 import { doctorsApi, type Availability } from '../../api/doctors';
 import type { PaginatedResponse } from '../../api/users';
@@ -93,11 +94,20 @@ function isSameDay(isoA: Date, isoB: Date): boolean {
 export function AgendaPage() {
   const { toast } = useToast();
 
-  const [currentDate, setCurrentDate] = useState<Date>(() => {
-    const d = new Date();
+  // ?date=YYYY-MM-DD lets the month calendar (and any link) open a specific day.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentDate = useMemo(() => {
+    const param = searchParams.get('date');
+    const m = param?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date();
     d.setHours(0, 0, 0, 0);
     return d;
-  });
+  }, [searchParams]);
+  const setCurrentDate = (next: Date | ((prev: Date) => Date)) => {
+    const value = typeof next === 'function' ? next(currentDate) : next;
+    const iso = toLocalDateString(value);
+    setSearchParams(iso === toLocalDateString(new Date()) ? {} : { date: iso }, { replace: true });
+  };
 
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
 
@@ -218,11 +228,14 @@ export function AgendaPage() {
             &#8250;
           </button>
         </div>
-        {!isToday && (
-          <button className={styles.todayBtn} onClick={goToToday}>
-            Hoy
-          </button>
-        )}
+        <div className={styles.navRight}>
+          {!isToday && (
+            <button className={styles.todayBtn} onClick={goToToday}>
+              Hoy
+            </button>
+          )}
+          <Link to="/calendario" className={styles.monthLink}>Ver mes</Link>
+        </div>
       </div>
 
       {/* ── Summary bar ── */}

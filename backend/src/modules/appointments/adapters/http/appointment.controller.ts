@@ -4,7 +4,7 @@ import { JwtAuthGuard, Roles, RolesGuard } from '../../../auth/adapters/http/aut
 import { Role } from '../../../users/domain/user';
 import { Actor } from '../../../users/domain/actor';
 import { AppointmentService } from '../../application/appointment.service';
-import { CreateAppointmentDto, CancelAppointmentDto, CompleteAppointmentDto, QueryAppointmentsDto, RescheduleAppointmentDto } from '../../application/dto/appointment.dto';
+import { CreateAppointmentDto, CancelAppointmentDto, CompleteAppointmentDto, QueryAppointmentsDto, RescheduleAppointmentDto, SummaryAppointmentsDto } from '../../application/dto/appointment.dto';
 
 const actorOf = (req: Request): Actor => (req as Request & { user: Actor }).user;
 
@@ -22,6 +22,12 @@ export class AppointmentController {
   findAll(@Query() query: QueryAppointmentsDto, @Req() req: Request) {
     const user = actorOf(req);
     return this.service.findAll(query, user.sub, user.role);
+  }
+
+  @Get('summary')
+  summary(@Query() query: SummaryAppointmentsDto, @Req() req: Request) {
+    const user = actorOf(req);
+    return this.service.summary(query, user.sub, user.role);
   }
 
   @Get(':id')

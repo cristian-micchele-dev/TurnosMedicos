@@ -57,7 +57,7 @@ describe('Appointment (domain)', () => {
 
 describe('AppointmentService', () => {
   const now = new Date('2026-09-06T12:00:00Z');
-  const appointments: any = { findById: jest.fn(), findAll: jest.fn(), findByDoctorAndDateTime: jest.fn(), findByPatientSpecialtyAndDateRange: jest.fn(), save: jest.fn(), update: jest.fn(), findLastCode: jest.fn() };
+  const appointments: any = { findById: jest.fn(), findAll: jest.fn(), countByDayAndStatus: jest.fn(), findByDoctorAndDateTime: jest.fn(), findByPatientSpecialtyAndDateRange: jest.fn(), save: jest.fn(), update: jest.fn(), findLastCode: jest.fn() };
   const doctors: any = { findById: jest.fn(), findByUserId: jest.fn(), findByIds: jest.fn() };
   const availabilities: any = { findByDoctorAndDay: jest.fn() };
   const scheduleBlocks: any = { findOverlapping: jest.fn() };
@@ -71,6 +71,7 @@ describe('AppointmentService', () => {
     jest.clearAllMocks();
     appointments.findById.mockResolvedValue(undefined);
     appointments.findAll.mockResolvedValue([[], 0]);
+    appointments.countByDayAndStatus.mockResolvedValue([]);
     appointments.findByDoctorAndDateTime.mockResolvedValue([]);
     appointments.findByPatientSpecialtyAndDateRange.mockResolvedValue([]);
     appointments.findLastCode.mockResolvedValue(null);
@@ -133,6 +134,28 @@ describe('AppointmentService', () => {
       appointments.findByPatientSpecialtyAndDateRange.mockResolvedValue([existing]);
       await expect(service().create({ doctorId: 'd1', patientId: 'p1', dateTime: '2026-09-07T13:00:00Z' }, admin))
         .rejects.toMatchObject({ status: 409, code: 'DUPLICATE_SPECIALTY_BOOKING' });
+    });
+  });
+
+  describe('summary (calendario)', () => {
+    it('ADMIN: agrega todos los turnos del rango en días completos del hospital', async () => {
+      appointments.countByDayAndStatus.mockResolvedValue([{ date: '2026-09-21', status: AppointmentStatus.PENDING, count: 3 }]);
+      const result = await service().summary({ from: '2026-09-01', to: '2026-09-30' }, 'admin-id', Role.ADMIN);
+      expect(result).toEqual([{ date: '2026-09-21', status: 'PENDING', count: 3 }]);
+      const call = appointments.countByDayAndStatus.mock.calls[0][0];
+      expect(call.doctorId).toBeUndefined();
+      expect(call.from.toISOString()).toBe('2026-09-01T03:00:00.000Z');
+      expect(call.to.toISOString()).toBe('2026-10-01T02:59:59.999Z');
+    });
+
+    it('DOCTOR: solo cuenta los turnos de su propia agenda', async () => {
+      doctors.findByUserId.mockResolvedValue(new Doctor('d1', 'u1', 's1', 'MP-1'));
+      await service().summary({ from: '2026-09-01', to: '2026-09-30' }, 'u1', Role.DOCTOR);
+      expect(appointments.countByDayAndStatus).toHaveBeenCalledWith(expect.objectContaining({ doctorId: 'd1' }));
+    });
+
+    it('DOCTOR sin perfil recibe 404', async () => {
+      await expect(service().summary({ from: '2026-09-01', to: '2026-09-30' }, 'ghost', Role.DOCTOR)).rejects.toMatchObject({ status: 404 });
     });
   });
 

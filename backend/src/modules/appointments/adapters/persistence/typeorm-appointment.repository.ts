@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, In, MoreThanOrEqual, LessThan, And, Repository } from 'typeorm';
 import { AppointmentStatus } from '../../domain/appointment-status.enum';
-import { AppointmentRepository, AppointmentFilters } from '../../appointment.repository.port';
+import { AppointmentRepository, AppointmentFilters, DaySummaryRow } from '../../appointment.repository.port';
+import { APP_TIME_ZONE } from '../../../../shared/infra/time/format';
 import { Appointment } from '../../domain/appointment';
 import { AppointmentOrmEntity } from './appointment.entity';
 
@@ -32,6 +33,22 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
     if (filters.take !== undefined) qb.take(filters.take);
     const [entities, total] = await qb.getManyAndCount();
     return [entities.map(e => this.map(e)), total];
+  }
+
+  // Grouped in the clinic's time zone so a 22:00 appointment lands on the right calendar day.
+  async countByDayAndStatus(filters: { doctorId?: string; from: Date; to: Date }): Promise<DaySummaryRow[]> {
+    // '::int' would be read by TypeORM as a named parameter, hence CAST.
+    const day = `to_char(a.date_time AT TIME ZONE :tz, 'YYYY-MM-DD')`;
+    const qb = this.repo.createQueryBuilder('a')
+      .select(day, 'date')
+      .addSelect('a.status', 'status')
+      .addSelect('CAST(COUNT(*) AS int)', 'count')
+      .where('a.date_time >= :from AND a.date_time <= :to', { from: filters.from, to: filters.to })
+      .setParameter('tz', APP_TIME_ZONE)
+      .groupBy(day).addGroupBy('a.status')
+      .orderBy(day, 'ASC');
+    if (filters.doctorId) qb.andWhere('a.doctor_id = :doctorId', { doctorId: filters.doctorId });
+    return qb.getRawMany<DaySummaryRow>();
   }
 
   async findByDoctorAndDateTime(doctorId: string, dateTime: Date) {

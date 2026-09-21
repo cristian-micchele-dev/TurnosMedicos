@@ -28,7 +28,14 @@ export interface AppointmentFilters {
   code?: string;
 }
 
+export interface DaySummary {
+  date: string; // YYYY-MM-DD on the clinic clock
+  status: AppointmentStatus;
+  count: number;
+}
+
 export const appointmentsApi = {
+  summary: (from: string, to: string) => api.get<DaySummary[]>(`/appointments/summary?from=${from}&to=${to}`),
   findAll: (filters?: AppointmentFilters, page = 1, limit = 20) => {
     const params = new URLSearchParams();
     params.append('page', String(page));

@@ -1,5 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { appointmentsApi, type Appointment, type AppointmentStatus } from '../../api/appointments';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { appointmentsApi, type AppointmentStatus, type DaySummary } from '../../api/appointments';
+import { useAuth } from '../../context/AuthContext';
+import { useFetch } from '../../hooks/useFetch';
 import { toLocalDateString } from '../../utils/date';
 import styles from './CalendarPage.module.css';
 
@@ -19,6 +22,10 @@ const STATUS_LABELS: Record<AppointmentStatus, string> = {
   CANCELLED: 'Cancelado',
 };
 
+// Fixed display order so a day's dots always read the same way.
+const STATUS_ORDER: AppointmentStatus[] = ['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
+const MAX_DOTS = 4;
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /** Returns Monday-anchored weekday index: Mon=0 … Sun=6 */
@@ -26,54 +33,19 @@ function mondayIndex(date: Date): number {
   return (date.getDay() + 6) % 7;
 }
 
-function toDateKey(date: Date): string {
-  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-}
-
-const isoDateString = toLocalDateString;
-
-function formatTime(dateTimeStr: string): string {
-  const date = new Date(dateTimeStr);
-  const h = date.getHours().toString().padStart(2, '0');
-  const m = date.getMinutes().toString().padStart(2, '0');
-  return `${h}:${m}`;
-}
-
-function formatFullDate(date: Date): string {
-  const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-  return `${dayNames[date.getDay()]} ${date.getDate()} de ${MONTH_NAMES[date.getMonth()]}`;
-}
-
-/** Build the grid cells for a given month. Returns an array of Date | null,
- *  where null fills the leading/trailing slots (previous/next month days). */
+/** Build the grid cells for a given month, padded with the surrounding days (grayed out). */
 function buildGridDays(year: number, month: number): Array<{ date: Date; outside: boolean }> {
   const firstOfMonth = new Date(year, month, 1);
   const lastOfMonth  = new Date(year, month + 1, 0);
-
-  const leadingBlanks = mondayIndex(firstOfMonth);
-  const trailingBlanks = 6 - mondayIndex(lastOfMonth);
-
   const cells: Array<{ date: Date; outside: boolean }> = [];
 
-  // Days from previous month (grayed out)
-  for (let i = leadingBlanks; i > 0; i--) {
-    cells.push({ date: new Date(year, month, 1 - i), outside: true });
-  }
-
-  // Days of the current month
-  for (let d = 1; d <= lastOfMonth.getDate(); d++) {
-    cells.push({ date: new Date(year, month, d), outside: false });
-  }
-
-  // Days from next month (grayed out)
-  for (let i = 1; i <= trailingBlanks; i++) {
-    cells.push({ date: new Date(year, month + 1, i), outside: true });
-  }
+  for (let i = mondayIndex(firstOfMonth); i > 0; i--) cells.push({ date: new Date(year, month, 1 - i), outside: true });
+  for (let d = 1; d <= lastOfMonth.getDate(); d++) cells.push({ date: new Date(year, month, d), outside: false });
+  const trailing = (7 - (cells.length % 7)) % 7;
+  for (let i = 1; i <= trailing; i++) cells.push({ date: new Date(year, month + 1, i), outside: true });
 
   return cells;
 }
-
-// ── Status helpers ────────────────────────────────────────────────────────────
 
 function dotClass(status: AppointmentStatus): string {
   switch (status) {
@@ -84,221 +56,118 @@ function dotClass(status: AppointmentStatus): string {
   }
 }
 
-function statusClass(status: AppointmentStatus): string {
-  switch (status) {
-    case 'PENDING':   return styles.statusPending;
-    case 'CONFIRMED': return styles.statusConfirmed;
-    case 'COMPLETED': return styles.statusCompleted;
-    case 'CANCELLED': return styles.statusCancelled;
-  }
-}
+type DayCounts = Partial<Record<AppointmentStatus, number>> & { total: number };
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function CalendarPage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const today = new Date();
 
-  const [currentMonth, setCurrentMonth] = useState<Date>(
-    new Date(today.getFullYear(), today.getMonth(), 1),
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date(today.getFullYear(), today.getMonth(), 1));
+
+  const from = toLocalDateString(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1));
+  const to   = toLocalDateString(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0));
+
+  // One aggregated request per month — counts, not rows — so it never hits the page limit.
+  const { data: summary, loading, error } = useFetch<DaySummary[]>(
+    ['appointments', 'summary', from, to],
+    () => appointmentsApi.summary(from, to),
   );
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError]   = useState<string | null>(null);
 
-  // ── Fetch ────────────────────────────────────────────────────────────────
-
-  const fetchMonthAppointments = useCallback(async (monthStart: Date) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const year  = monthStart.getFullYear();
-      const month = monthStart.getMonth();
-      const from  = isoDateString(new Date(year, month, 1));
-      const to    = isoDateString(new Date(year, month + 1, 0));
-
-      const response = await appointmentsApi.findAll({ from, to }, 1, 100);
-      setAppointments(response.data ?? []);
-    } catch {
-      setError('No se pudieron cargar los turnos.');
-      setAppointments([]);
-    } finally {
-      setLoading(false);
+  const countsByDay = useMemo(() => {
+    const map: Record<string, DayCounts> = {};
+    for (const row of summary ?? []) {
+      const day = (map[row.date] ??= { total: 0 });
+      day[row.status] = (day[row.status] ?? 0) + row.count;
+      day.total += row.count;
     }
-  }, []);
+    return map;
+  }, [summary]);
 
-  useEffect(() => {
-    fetchMonthAppointments(currentMonth);
-    setSelectedDate(null);
-  }, [currentMonth, fetchMonthAppointments]);
+  const prevMonth = () => setCurrentMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+  const nextMonth = () => setCurrentMonth(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
+  const goToToday = () => setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
 
-  // ── Navigation ───────────────────────────────────────────────────────────
-
-  function prevMonth() {
-    setCurrentMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
-  }
-
-  function nextMonth() {
-    setCurrentMonth(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
-  }
-
-  function goToToday() {
-    setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
-  }
-
-  // ── Appointment index by day ─────────────────────────────────────────────
-
-  const appointmentsByDay = appointments.reduce<Record<string, Appointment[]>>((acc, appt) => {
-    const d = new Date(appt.dateTime);
-    const key = toDateKey(d);
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(appt);
-    return acc;
-  }, {});
-
-  // ── Grid ────────────────────────────────────────────────────────────────
+  // The calendar navigates; the day itself is handled by the view that owns it.
+  const openDay = (date: Date) => {
+    const iso = toLocalDateString(date);
+    navigate(user?.role === 'DOCTOR' ? `/agenda?date=${iso}` : `/turnos?from=${iso}&to=${iso}`);
+  };
 
   const gridDays = buildGridDays(currentMonth.getFullYear(), currentMonth.getMonth());
-
-  const todayKey    = toDateKey(today);
-  const selectedKey = selectedDate ? toDateKey(selectedDate) : null;
-
-  function handleDayClick(cell: { date: Date; outside: boolean }) {
-    if (cell.outside) return;
-    setSelectedDate(prev =>
-      prev && toDateKey(prev) === toDateKey(cell.date) ? null : cell.date,
-    );
-  }
-
-  // ── Selected day appointments ────────────────────────────────────────────
-
-  const selectedDayAppointments = selectedDate
-    ? (appointmentsByDay[toDateKey(selectedDate)] ?? []).sort(
-        (a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime(),
-      )
-    : [];
-
-  // ── Render ───────────────────────────────────────────────────────────────
+  const todayIso = toLocalDateString(today);
 
   return (
     <div className={styles.page}>
-      {/* Header */}
       <div className={styles.calendarHeader}>
         <div className={styles.monthNav}>
-          <button className={styles.navBtn} onClick={prevMonth} aria-label="Mes anterior">
-            &#8249;
-          </button>
+          <button className={styles.navBtn} onClick={prevMonth} aria-label="Mes anterior">&#8249;</button>
           <span className={styles.monthTitle}>
             {MONTH_NAMES[currentMonth.getMonth()]} {currentMonth.getFullYear()}
           </span>
-          <button className={styles.navBtn} onClick={nextMonth} aria-label="Mes siguiente">
-            &#8250;
-          </button>
+          <button className={styles.navBtn} onClick={nextMonth} aria-label="Mes siguiente">&#8250;</button>
         </div>
-
-        <button className={styles.todayBtn} onClick={goToToday}>
-          Hoy
-        </button>
+        <button className={styles.todayBtn} onClick={goToToday}>Hoy</button>
       </div>
 
-      {/* Loading / error */}
-      {loading && <p className={styles.loadingState}>Cargando turnos...</p>}
-      {error   && <p className={styles.errorState}>{error}</p>}
+      {error && <p className={styles.errorState}>No se pudieron cargar los turnos del mes.</p>}
 
-      {/* Grid */}
-      {!loading && (
-        <div className={styles.grid}>
-          {/* Day-of-week headers */}
-          {DAY_HEADERS.map(day => (
-            <div key={day} className={styles.dayHeader}>{day}</div>
-          ))}
+      <div className={styles.grid} aria-busy={loading || undefined}>
+        {DAY_HEADERS.map(day => (
+          <div key={day} className={styles.dayHeader}>{day}</div>
+        ))}
 
-          {/* Day cells */}
-          {gridDays.map((cell, idx) => {
-            const key      = toDateKey(cell.date);
-            const isToday  = key === todayKey && !cell.outside;
-            const isSelected = key === selectedKey && !cell.outside;
-            const dayAppts = cell.outside ? [] : (appointmentsByDay[key] ?? []);
+        {gridDays.map((cell, idx) => {
+          const iso = toLocalDateString(cell.date);
+          const isToday = iso === todayIso && !cell.outside;
+          const counts = cell.outside ? undefined : countsByDay[iso];
+          const total = counts?.total ?? 0;
 
-            const cellClass = [
-              styles.dayCell,
-              cell.outside   ? styles.dayCellOutside  : '',
-              isToday        ? styles.dayCellToday    : '',
-              isSelected     ? styles.dayCellSelected : '',
-            ].filter(Boolean).join(' ');
+          const dots = counts
+            ? STATUS_ORDER.flatMap(status => Array.from({ length: Math.min(counts[status] ?? 0, MAX_DOTS) }, (_, i) => ({ status, key: `${status}-${i}` }))).slice(0, MAX_DOTS)
+            : [];
 
-            return (
-              <div
-                key={idx}
-                className={cellClass}
-                onClick={() => handleDayClick(cell)}
-                role={cell.outside ? undefined : 'button'}
-                tabIndex={cell.outside ? -1 : 0}
-                aria-label={
-                  cell.outside
-                    ? undefined
-                    : `${cell.date.getDate()} de ${MONTH_NAMES[cell.date.getMonth()]}, ${dayAppts.length} turno(s)`
-                }
-                onKeyDown={e => {
-                  if (!cell.outside && (e.key === 'Enter' || e.key === ' ')) {
-                    e.preventDefault();
-                    handleDayClick(cell);
-                  }
-                }}
-              >
-                <span className={`${styles.dayNumber} ${isToday ? styles.dayNumberToday : ''}`}>
-                  {cell.date.getDate()}
-                </span>
+          const cellClass = [
+            styles.dayCell,
+            cell.outside ? styles.dayCellOutside : '',
+            isToday ? styles.dayCellToday : '',
+            total > 0 ? styles.dayCellBusy : '',
+          ].filter(Boolean).join(' ');
 
-                {dayAppts.length > 0 && (
+          return (
+            <div
+              key={idx}
+              className={cellClass}
+              onClick={() => !cell.outside && openDay(cell.date)}
+              role={cell.outside ? undefined : 'button'}
+              tabIndex={cell.outside ? -1 : 0}
+              aria-label={cell.outside ? undefined : `${cell.date.getDate()} de ${MONTH_NAMES[cell.date.getMonth()]}, ${total} turno(s)`}
+              onKeyDown={e => {
+                if (!cell.outside && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openDay(cell.date); }
+              }}
+            >
+              <span className={`${styles.dayNumber} ${isToday ? styles.dayNumberToday : ''}`}>
+                {cell.date.getDate()}
+              </span>
+
+              {total > 0 && (
+                <div className={styles.dayMeta}>
                   <div className={styles.dayDots}>
-                    {dayAppts.map(appt => (
-                      <span
-                        key={appt.id}
-                        className={`${styles.dot} ${dotClass(appt.status)}`}
-                        title={STATUS_LABELS[appt.status]}
-                      />
+                    {dots.map(d => (
+                      <span key={d.key} className={`${styles.dot} ${dotClass(d.status)}`} title={STATUS_LABELS[d.status]} />
                     ))}
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Day detail panel */}
-      {selectedDate && !loading && (
-        <div className={styles.dayDetail}>
-          <p className={styles.dayDetailTitle}>
-            Turnos del {formatFullDate(selectedDate)}
-          </p>
-
-          {selectedDayAppointments.length === 0 ? (
-            <div className={styles.emptyDay}>Sin turnos para este día.</div>
-          ) : (
-            selectedDayAppointments.map(appt => {
-              const doctorName   = appt.doctor?.user?.name ?? 'Doctor';
-              const specialtyName = appt.doctor?.specialty?.name ?? '';
-
-              return (
-                <div key={appt.id} className={styles.appointmentCard}>
-                  <div className={styles.cardLeft}>
-                    <span className={styles.cardTime}>{formatTime(appt.dateTime)}</span>
-                    <span className={styles.cardDoctor}>Dr. {doctorName}</span>
-                    {specialtyName && (
-                      <span className={styles.cardSpecialty}>{specialtyName}</span>
-                    )}
-                  </div>
-                  <span className={`${styles.statusBadge} ${statusClass(appt.status)}`}>
-                    {STATUS_LABELS[appt.status]}
-                  </span>
+                  <span className={styles.dayCount}>{total}</span>
                 </div>
-              );
-            })
-          )}
-        </div>
-      )}
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <p className={styles.hint}>Hacé clic en un día para ver sus turnos.</p>
     </div>
   );
 }

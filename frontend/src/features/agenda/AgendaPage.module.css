@@ -388,3 +388,25 @@
   font-size: 0.875rem;
   color: var(--text-secondary);
 }
+
+.navRight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.monthLink {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  transition: color var(--transition), border-color var(--transition), background var(--transition);
+}
+
+.monthLink:hover {
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+  background: var(--ice);
+}

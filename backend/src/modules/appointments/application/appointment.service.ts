@@ -14,7 +14,7 @@ import { DoctorRepository, AvailabilityRepository, ScheduleBlockRepository, DOCT
 import { PatientRepository, PATIENT_REPOSITORY } from '../../patients/patient.repository.port';
 import { DoctorNotFoundError } from '../../doctors/domain/doctor-not-found.exception';
 import { PatientNotFoundError } from '../../patients/domain/patient-not-found.exception';
-import { CreateAppointmentDto, CancelAppointmentDto, CompleteAppointmentDto, QueryAppointmentsDto, RescheduleAppointmentDto } from './dto/appointment.dto';
+import { CreateAppointmentDto, CancelAppointmentDto, CompleteAppointmentDto, QueryAppointmentsDto, RescheduleAppointmentDto, SummaryAppointmentsDto } from './dto/appointment.dto';
 import { Role } from '../../users/domain/user';
 import { Actor } from '../../users/domain/actor';
 import { ForbiddenError } from '../../../shared/domain/errors';
@@ -112,6 +112,17 @@ export class AppointmentService {
     const doctorById = new Map(doctors.map(d => [d.id, { id: d.id, licenseNumber: d.licenseNumber, user: d.user, specialty: d.specialty }]));
     const patientById = new Map(patients.map(p => [p.id, { id: p.id, name: p.name, email: p.email }]));
     return list.map(a => ({ ...a.toPublic(), doctor: doctorById.get(a.doctorId), patient: patientById.get(a.patientId) }));
+  }
+
+  // Calendar feed: counts per day/status instead of rows, so a month never hits the page limit.
+  async summary(query: SummaryAppointmentsDto, userId: string, role: Role) {
+    const filters: { doctorId?: string; from: Date; to: Date } = { from: parseRangeBound(query.from, 'start'), to: parseRangeBound(query.to, 'end') };
+    if (role === Role.DOCTOR) {
+      const doctor = await this.doctors.findByUserId(userId);
+      if (!doctor) throw new DoctorNotFoundError(userId);
+      filters.doctorId = doctor.id;
+    }
+    return this.appointments.countByDayAndStatus(filters);
   }
 
   async findAll(query: QueryAppointmentsDto, userId: string, role: Role): Promise<PaginatedResult<EnrichedAppointment>> {
