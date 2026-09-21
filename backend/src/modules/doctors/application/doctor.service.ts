@@ -1,11 +1,15 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { mkdirSync } from 'fs';
+import { unlink, writeFile } from 'fs/promises';
+import { join } from 'path';
 import { ConflictError, ForbiddenError } from '../../../shared/domain/errors';
 import { Actor } from '../../users/domain/actor';
 import { Doctor } from '../domain/doctor';
 import { Availability } from '../domain/availability';
 import { ScheduleBlock } from '../domain/schedule-block';
 import { DoctorNotFoundError } from '../domain/doctor-not-found.exception';
+import { AvatarNotFoundError, UnsupportedImageError } from '../domain/avatar.errors';
 import { DoctorRepository, AvailabilityRepository, ScheduleBlockRepository, DOCTOR_REPOSITORY, AVAILABILITY_REPOSITORY, SCHEDULE_BLOCK_REPOSITORY } from '../doctor.repository.port';
 import { SpecialtyRepository, SPECIALTY_REPOSITORY } from '../../specialties/specialty.repository.port';
 import { SpecialtyNotFoundError } from '../../specialties/domain/specialty-not-found.exception';
@@ -13,6 +17,12 @@ import { UserRepository } from '../../users/user.repository.port';
 import { Role } from '../../users/domain/user';
 import { CreateDoctorDto, UpdateDoctorDto, SetAvailabilityDto, CreateScheduleBlockDto } from './dto/doctor.dto';
 import { PaginationDto, PaginatedResult } from '../../../shared/application/pagination';
+
+const AVATARS_DIR = join(process.cwd(), 'uploads', 'avatars');
+const IMAGE_EXT: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+const MIME_BY_EXT: Record<string, string> = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+
+export type UploadedImage = Pick<Express.Multer.File, 'mimetype' | 'buffer'>;
 
 @Injectable()
 export class DoctorService {
@@ -22,7 +32,9 @@ export class DoctorService {
     @Inject(SCHEDULE_BLOCK_REPOSITORY) private readonly scheduleBlocks: ScheduleBlockRepository,
     @Inject(SPECIALTY_REPOSITORY) private readonly specialties: SpecialtyRepository,
     @Inject('USER_REPOSITORY') private readonly users: UserRepository,
-  ) {}
+  ) {
+    mkdirSync(AVATARS_DIR, { recursive: true });
+  }
 
   async create(dto: CreateDoctorDto) {
     const user = await this.users.findById(dto.userId);
@@ -79,6 +91,44 @@ export class DoctorService {
     if (dto.active !== undefined) d.active = dto.active;
     await this.doctors.update(d);
     return d.toPublic();
+  }
+
+  // Same disk convention as medical reports: bytes on disk, name in the row. The
+  // previous file is removed so a doctor who changes photo twice leaves no orphans.
+  async setAvatar(id: string, file: UploadedImage, actor: Actor) {
+    await this.assertOwnsProfile(id, actor);
+    const d = await this.doctors.findById(id);
+    if (!d) throw new DoctorNotFoundError(id);
+    const ext = IMAGE_EXT[file.mimetype];
+    if (!ext) throw new UnsupportedImageError();
+    const fileName = `${randomUUID()}.${ext}`;
+    await writeFile(join(AVATARS_DIR, fileName), file.buffer);
+    await this.discardAvatarFile(d.avatarFile);
+    d.avatarFile = fileName;
+    await this.doctors.update(d);
+    return d.toPublic();
+  }
+
+  async getAvatar(id: string): Promise<{ path: string; mimeType: string }> {
+    const d = await this.doctors.findById(id);
+    if (!d) throw new DoctorNotFoundError(id);
+    if (!d.avatarFile) throw new AvatarNotFoundError(id);
+    const ext = d.avatarFile.split('.').pop() ?? '';
+    return { path: join(AVATARS_DIR, d.avatarFile), mimeType: MIME_BY_EXT[ext] ?? 'application/octet-stream' };
+  }
+
+  async removeAvatar(id: string, actor: Actor) {
+    await this.assertOwnsProfile(id, actor);
+    const d = await this.doctors.findById(id);
+    if (!d) throw new DoctorNotFoundError(id);
+    await this.discardAvatarFile(d.avatarFile);
+    d.avatarFile = null;
+    await this.doctors.update(d);
+  }
+
+  private async discardAvatarFile(fileName: string | null) {
+    if (!fileName) return;
+    try { await unlink(join(AVATARS_DIR, fileName)); } catch { /* already gone; the row is what matters */ }
   }
 
   async setAvailability(doctorId: string, dto: SetAvailabilityDto, actor: Actor) {

@@ -10,6 +10,7 @@ export class DoctorOrmEntity {
   @Index({ unique: true }) @Column('varchar', { length: 50, name: 'license_number' }) licenseNumber!: string;
   @Column('varchar', { length: 30, nullable: true }) phone!: string | null;
   @Column('boolean', { default: true }) active!: boolean;
+  @Column('varchar', { length: 80, name: 'avatar_file', nullable: true }) avatarFile!: string | null;
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' }) createdAt!: Date;
 
   @ManyToOne(() => UserOrmEntity, { eager: false })

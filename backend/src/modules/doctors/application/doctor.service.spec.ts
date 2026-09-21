@@ -1,3 +1,6 @@
+jest.mock('fs/promises', () => ({ writeFile: jest.fn().mockResolvedValue(undefined), unlink: jest.fn().mockResolvedValue(undefined) }));
+jest.mock('fs', () => ({ mkdirSync: jest.fn() }));
+import { writeFile, unlink } from 'fs/promises';
 import { DoctorService } from './doctor.service';
 import { Doctor } from '../domain/doctor';
 import { Availability } from '../domain/availability';
@@ -90,6 +93,58 @@ describe('DoctorService', () => {
     it('busca por userId', async () => {
       doctors.findByUserId.mockResolvedValue(new Doctor('d1', 'u1', 's1', 'MP-1'));
       await expect(service().findByUserId('u1')).resolves.toMatchObject({ userId: 'u1' });
+    });
+  });
+
+  describe('avatar', () => {
+    const doctorActor = { sub: 'u1', role: Role.DOCTOR };
+    const png = { mimetype: 'image/png', originalname: 'yo.png', buffer: Buffer.from('img'), size: 3 } as any;
+
+    it('guarda la foto propia en disco y persiste el nombre de archivo', async () => {
+      const d = new Doctor('d1', 'u1', 's1', 'MP-1');
+      doctors.findById.mockResolvedValue(d);
+      doctors.findByUserId.mockResolvedValue(d);
+      const result = await service().setAvatar('d1', png, doctorActor);
+      expect(result.avatarFile).toMatch(/^[0-9a-f-]{36}.png$/);
+      expect(writeFile).toHaveBeenCalledWith(expect.stringContaining(result.avatarFile as string), png.buffer);
+      expect(doctors.update).toHaveBeenCalledWith(expect.objectContaining({ avatarFile: result.avatarFile }));
+    });
+
+    it('al reemplazar la foto borra el archivo anterior', async () => {
+      const d = new Doctor('d1', 'u1', 's1', 'MP-1', null, true, new Date(), 'vieja.png');
+      doctors.findById.mockResolvedValue(d);
+      await service().setAvatar('d1', png, admin);
+      expect(unlink).toHaveBeenCalledWith(expect.stringContaining('vieja.png'));
+    });
+
+    it('rechaza archivos que no son imagen', async () => {
+      doctors.findById.mockResolvedValue(new Doctor('d1', 'u1', 's1', 'MP-1'));
+      await expect(service().setAvatar('d1', { ...png, mimetype: 'application/pdf' }, admin)).rejects.toMatchObject({ status: 400, code: 'UNSUPPORTED_IMAGE' });
+      expect(writeFile).not.toHaveBeenCalled();
+    });
+
+    it('un médico no puede cambiar la foto de otro', async () => {
+      doctors.findById.mockResolvedValue(new Doctor('d2', 'u2', 's1', 'MP-2'));
+      doctors.findByUserId.mockResolvedValue(new Doctor('d1', 'u1', 's1', 'MP-1'));
+      await expect(service().setAvatar('d2', png, doctorActor)).rejects.toMatchObject({ status: 403 });
+    });
+
+    it('getAvatar devuelve ruta y mime, o 404 si no hay foto', async () => {
+      doctors.findById.mockResolvedValue(new Doctor('d1', 'u1', 's1', 'MP-1', null, true, new Date(), 'abc.webp'));
+      const file = await service().getAvatar('d1');
+      expect(file.path).toContain('abc.webp');
+      expect(file.mimeType).toBe('image/webp');
+      doctors.findById.mockResolvedValue(new Doctor('d1', 'u1', 's1', 'MP-1'));
+      await expect(service().getAvatar('d1')).rejects.toMatchObject({ status: 404, code: 'AVATAR_NOT_FOUND' });
+    });
+
+    it('removeAvatar borra el archivo y limpia el campo', async () => {
+      const d = new Doctor('d1', 'u1', 's1', 'MP-1', null, true, new Date(), 'abc.jpg');
+      doctors.findById.mockResolvedValue(d);
+      doctors.findByUserId.mockResolvedValue(d);
+      await service().removeAvatar('d1', doctorActor);
+      expect(unlink).toHaveBeenCalledWith(expect.stringContaining('abc.jpg'));
+      expect(doctors.update).toHaveBeenCalledWith(expect.objectContaining({ avatarFile: null }));
     });
   });
 

@@ -12,7 +12,7 @@ export class TypeOrmDoctorRepository implements DoctorRepository {
   constructor(@InjectRepository(DoctorOrmEntity) private readonly repo: Repository<DoctorOrmEntity>) {}
 
   private map(e: DoctorOrmEntity): Doctor {
-    const d = new Doctor(e.id, e.userId, e.specialtyId, e.licenseNumber, e.phone, e.active, e.createdAt);
+    const d = new Doctor(e.id, e.userId, e.specialtyId, e.licenseNumber, e.phone, e.active, e.createdAt, e.avatarFile);
     if (e.user) d.user = { id: e.user.id, email: e.user.email, name: e.user.name };
     if (e.specialty) d.specialty = { id: e.specialty.id, name: e.specialty.name };
     return d;
@@ -52,13 +52,13 @@ export class TypeOrmDoctorRepository implements DoctorRepository {
 
   async save(d: Doctor) {
     const e = await this.repo.save(Object.assign(new DoctorOrmEntity(), {
-      id: d.id, userId: d.userId, specialtyId: d.specialtyId, licenseNumber: d.licenseNumber, phone: d.phone, active: d.active,
+      id: d.id, userId: d.userId, specialtyId: d.specialtyId, licenseNumber: d.licenseNumber, phone: d.phone, active: d.active, avatarFile: d.avatarFile,
     }));
     return this.map(e);
   }
 
   async update(d: Doctor) {
-    await this.repo.update(d.id, { specialtyId: d.specialtyId, licenseNumber: d.licenseNumber, phone: d.phone, active: d.active });
+    await this.repo.update(d.id, { specialtyId: d.specialtyId, licenseNumber: d.licenseNumber, phone: d.phone, active: d.active, avatarFile: d.avatarFile });
   }
 }
 
