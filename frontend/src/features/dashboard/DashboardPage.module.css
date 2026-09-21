@@ -67,9 +67,9 @@
   pointer-events: none;
 }
 
-/* The cells roam the whole viewport, under the header and sidebar (z 50 / 100) and under
+/* The mesh spans the whole viewport, under the header and sidebar (z 50 / 100) and under
    the page content (.inner, z 2). The extra specificity beats the component's own inset. */
-.page .cells {
+.page .backdrop {
   position: fixed;
   inset: 0;
   z-index: 0;

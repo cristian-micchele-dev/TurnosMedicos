@@ -14,7 +14,7 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { Badge } from '../../components/ui/Badge';
 
 import { todayLocal } from '../../utils/date';
-import { CellsBackground } from '../../components/ui/CellsBackground';
+import { NeuralBackground } from '../../components/ui/NeuralBackground';
 import styles from './DashboardPage.module.css';
 
 interface StatCard {
@@ -204,9 +204,9 @@ export function DashboardPage() {
 
   return (
     <div className={styles.page}>
-      {/* ── Living background: brand-coloured cells drifting over a soft tint ── */}
+      {/* ── Living background: a resting neural mesh, signals travelling between somas ── */}
       <div className={styles.meshBg} aria-hidden="true" />
-      <CellsBackground intensity="soft" className={styles.cells} />
+      <NeuralBackground className={styles.backdrop} />
       <div className={styles.inner}>
         {/* ── Hero banner ── */}
         <div className={styles.hero}>
