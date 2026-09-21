@@ -48,19 +48,26 @@
 | `--state-completed-bg` | Índigo Claro | `#EEF2FF` | Fondo badge completado (modo claro) |
 | `--state-completed-bg-dark` | Índigo Oscuro BG | `#312E81` | Fondo badge completado (modo oscuro) |
 
-### 2.3 Escala de Neutros — Modo Claro (Sitio Público)
+### 2.3 Escala de Neutros — Modo Claro ("papel clínico")
 
-| Token | HEX | Uso |
+**Principio:** modo claro no es modo blanco. Ninguna superficie es `#FFFFFF` — el blanco puro cansa la vista en sesiones largas de trabajo. Tres capas de papel con tinte frío, cada una un paso más clara que la anterior: página → card → input hundido. La tinta es azul oscuro, nunca negro. El **marco** (sidebar + header) se mantiene oscuro a propósito: encuadra la hoja y reduce la superficie clara total. Un lavado radial con el azul de marca en la esquina superior izquierda da atmósfera sin ruido.
+
+| Token (`globals.css`) | HEX | Uso |
 |-------|-----|-----|
-| `--neutral-0` | `#FFFFFF` | Fondo de cards, formularios |
-| `--neutral-50` | `#F8FAFC` | Fondo de página |
-| `--neutral-100` | `#F1F5F9` | Fondo de secciones alternadas |
-| `--neutral-200` | `#E2E8F0` | Bordes, divisores |
-| `--neutral-300` | `#CBD5E1` | Bordes de inputs |
-| `--neutral-400` | `#94A3B8` | Placeholder text |
-| `--neutral-500` | `#64748B` | Texto secundario, captions |
-| `--neutral-700` | `#334155` | Texto de cuerpo |
-| `--neutral-900` | `#0F172A` | Texto de títulos |
+| `--bg` | `#E4EAF2` | Fondo de página — bone azulado |
+| `--slate` | `#F5F7FA` | Cards, tablas, modales — hueso frío |
+| `--dark` | `#EAEFF5` | Inputs y selects — hundidos en la card |
+| `--deep` | `#DDE4ED` | Secciones alternadas, hover |
+| `--mid` | `#D3DCE8` | Divisores |
+| `--border` | `rgba(43,66,105,.13)` | Bordes de cards |
+| `--border-input` | `#B9C7D9` | Bordes de inputs |
+| `--text-primary` | `#1B2740` | Títulos y cuerpo — tinta azul |
+| `--text-secondary` | `#4A5872` | Subtítulos |
+| `--text-tertiary` | `#6F7D95` | Captions, labels de tabla |
+| `--header-bg` | `rgba(21,30,50,.94)` | Barra superior (marco oscuro) |
+| `--page-wash` | radial azul + teal | Atmósfera de fondo, solo en claro |
+
+Sombras: azuladas (`rgba(43,66,105,…)`) y difusas — la elevación se lee por profundidad, no por borde.
 
 ### 2.4 Escala de Neutros — Modo Oscuro (Panel Admin)
 

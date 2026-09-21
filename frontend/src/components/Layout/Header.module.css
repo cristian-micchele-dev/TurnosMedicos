@@ -7,10 +7,10 @@
   justify-content: space-between;
   height: var(--header-height);
   padding: 0 32px;
-  background: rgba(10, 15, 30, 0.85);
+  background: var(--header-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   flex-shrink: 0;
 }
 
@@ -24,7 +24,7 @@
 .pageTitle {
   font-size: 17px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--header-text);
   letter-spacing: -0.025em;
 }
 
@@ -45,7 +45,7 @@
 .userName {
   font-size: 13.5px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--header-text);
   line-height: 1.25;
   letter-spacing: -0.01em;
 }
@@ -53,7 +53,7 @@
 .userEmail {
   font-size: 12px;
   font-weight: 500;
-  color: var(--text-tertiary);
+  color: var(--header-text-muted);
   line-height: 1.25;
 }
 
@@ -113,13 +113,13 @@
   width: 36px;
   height: 36px;
   border-radius: var(--radius-sm);
-  color: var(--text-secondary);
+  color: var(--header-text-muted);
   transition: background var(--transition), color var(--transition);
 }
 
 .themeToggle:hover {
-  background: var(--ice);
-  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--header-text);
 }
 
 /* ── Hamburger button (hidden on desktop) ── */
@@ -148,7 +148,7 @@
   width: 100%;
   height: 2px;
   border-radius: 2px;
-  background: var(--text-primary);
+  background: var(--header-text);
   transition: background var(--transition);
 }
 
@@ -161,14 +161,14 @@
   width: 36px;
   height: 36px;
   border-radius: var(--radius-sm);
-  color: var(--text-secondary);
+  color: var(--header-text-muted);
   transition: background var(--transition), color var(--transition);
   flex-shrink: 0;
 }
 
 .notifBell:hover {
-  background: var(--ice);
-  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--header-text);
 }
 
 .notifBadge {
