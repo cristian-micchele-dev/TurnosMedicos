@@ -3,7 +3,7 @@ import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { randomBytes } from 'crypto';
 import { AuthService } from '../../application/auth.service';
-import { ForgotPasswordDto, LoginDto, ResetPasswordDto } from '../../../users/application/dto/auth.dto';
+import { ChangePasswordDto, ForgotPasswordDto, LoginDto, ResetPasswordDto } from '../../../users/application/dto/auth.dto';
 import { JwtAuthGuard } from './auth.guards';
 
 @Controller('auth')
@@ -23,6 +23,7 @@ export class AuthController {
   }
   @Post('logout') async logout(@Req() request: Request, @Res({ passthrough: true }) response: Response) { await this.service.logout(request.cookies?.[process.env.REFRESH_COOKIE_NAME ?? 'refresh_token']); const options = { path: '/api/v1/auth' }; response.clearCookie(process.env.REFRESH_COOKIE_NAME ?? 'refresh_token', options); response.clearCookie(process.env.CSRF_COOKIE_NAME ?? 'csrf_token', options); return { message: 'Sesión cerrada' }; }
   @UseGuards(JwtAuthGuard) @Get('me') me(@Req() request: Request) { return this.service.me((request as any).user.sub); }
+  @UseGuards(JwtAuthGuard) @Post('change-password') async changePassword(@Req() request: Request, @Body() dto: ChangePasswordDto, @Res({ passthrough: true }) response: Response) { const result = await this.service.changePassword((request as any).user.sub, dto); this.cookie(response, result.refreshToken); return { accessToken: result.accessToken }; }
   @Throttle({ default: { ttl: 60000, limit: 3 } }) @Post('forgot-password') forgot(@Body() dto: ForgotPasswordDto) { return this.service.forgot(dto.email); }
   @Throttle({ default: { ttl: 60000, limit: 5 } }) @Post('reset-password') reset(@Body() dto: ResetPasswordDto) { return this.service.reset(dto); }
 }

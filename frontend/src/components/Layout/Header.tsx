@@ -23,6 +23,7 @@ const pageTitles: Record<string, string> = {
   '/disponibilidad': 'Disponibilidad',
   '/nuevo-turno':    'Nuevo Turno',
   '/calendario':     'Calendario',
+  '/cambiar-contrasena': 'Cambiar contraseña',
   '/agenda':         'Mi Agenda',
 };
 

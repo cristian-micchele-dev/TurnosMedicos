@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import styles from './Sidebar.module.css';
 import layoutStyles from './Layout.module.css';
@@ -78,6 +78,9 @@ export function Sidebar({ isOpen, onClose, onRestartTour }: SidebarProps) {
               Ver tutorial
             </button>
           )}
+          <Link to="/cambiar-contrasena" className={styles.tourLink} onClick={onClose}>
+            Cambiar contraseña
+          </Link>
           <button className={styles.logoutBtn} onClick={logout}>
             <span>Cerrar sesión</span>
           </button>

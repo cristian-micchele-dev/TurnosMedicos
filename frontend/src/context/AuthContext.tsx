@@ -112,10 +112,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [setUser]);
 
+  // The backend revokes every session and issues a fresh pair, so we swap tokens in place.
+  const changePassword = useCallback(
+    async (currentPassword: string, newPassword: string): Promise<void> => {
+      const { accessToken } = await authApi.changePassword({ currentPassword, newPassword });
+      localStorage.setItem('access_token', accessToken);
+      const csrf = getCsrfFromCookie();
+      if (csrf) localStorage.setItem('csrf_token', csrf);
+      setUser(await authApi.me());
+    },
+    [setUser],
+  );
+
   const value: AuthContextValue = {
     ...state,
     login,
     logout,
+    changePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

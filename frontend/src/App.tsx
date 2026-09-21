@@ -30,6 +30,7 @@ const NewAppointmentPage = lazy(() => import('./features/appointments/NewAppoint
 const UsersPage = lazy(() => import('./features/users/UsersPage').then((m) => ({ default: m.UsersPage })));
 const CalendarPage  = lazy(() => import('./features/calendar/CalendarPage').then((m) => ({ default: m.CalendarPage })));
 const AgendaPage    = lazy(() => import('./features/agenda/AgendaPage').then((m) => ({ default: m.AgendaPage })));
+const ChangePasswordPage = lazy(() => import('./features/auth/ChangePasswordPage').then((m) => ({ default: m.ChangePasswordPage })));
 const NotFoundPage = lazy(() => import('./features/not-found/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 
 export function App() {
@@ -47,6 +48,7 @@ export function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/cambiar-contrasena" element={<ChangePasswordPage />} />
 
           {/* Admin */}
           <Route element={<ProtectedRoute roles={['ADMIN']} />}>

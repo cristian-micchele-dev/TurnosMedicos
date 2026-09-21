@@ -61,6 +61,37 @@ describe('AuthService', () => {
     await expect(service().me('u1')).resolves.toMatchObject({ id: 'u1', email: 'x@y.com' });
   });
 
+  describe('changePassword (usuario autenticado)', () => {
+    it('verifica la actual, guarda la nueva, limpia mustChangePassword, revoca sesiones y emite tokens nuevos', async () => {
+      const u = new User('u1', 'x@y.com', '', 'hash:temp', Role.DOCTOR);
+      u.mustChangePassword = true;
+      users.findById.mockResolvedValue(u);
+
+      const result = await service().changePassword('u1', { currentPassword: 'temp', newPassword: 'mi-clave-definitiva' });
+
+      expect(u.passwordHash).toBe('hash:mi-clave-definitiva');
+      expect(u.mustChangePassword).toBe(false);
+      expect(users.update).toHaveBeenCalledWith(u);
+      expect(sessions.revokeAllForUser).toHaveBeenCalledWith('u1');
+      expect(result).toMatchObject({ accessToken: 'access', refreshToken: 'refresh' });
+    });
+
+    it('rechaza si la contraseña actual no coincide', async () => {
+      users.findById.mockResolvedValue(new User('u1', 'x@y.com', '', 'hash:temp', Role.DOCTOR));
+      await expect(service().changePassword('u1', { currentPassword: 'wrong', newPassword: 'mi-clave-definitiva' })).rejects.toMatchObject({ status: 401 });
+      expect(users.update).not.toHaveBeenCalled();
+    });
+
+    it('rechaza reutilizar la misma contraseña', async () => {
+      users.findById.mockResolvedValue(new User('u1', 'x@y.com', '', 'hash:same', Role.DOCTOR));
+      await expect(service().changePassword('u1', { currentPassword: 'same', newPassword: 'same' })).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('rechaza usuario inexistente', async () => {
+      await expect(service().changePassword('ghost', { currentPassword: 'a', newPassword: 'bbbbbbbb' })).rejects.toMatchObject({ status: 401 });
+    });
+  });
+
   it('consume reset una sola vez, cambia password e invalida sesiones', async () => {
     resets.consume.mockResolvedValue({ userId: 'u1' });
     users.findById.mockResolvedValue(user);

@@ -21,5 +21,6 @@ import { AuthSessionOrmEntity, ResetTokenOrmEntity } from '../users/adapters/per
     { provide: RESET_REPOSITORY, useExisting: TypeOrmResetRepository },
     { provide: MAILER, useExisting: NoopMailer },
   ],
+  exports: [SESSION_REPOSITORY, TypeOrmSessionRepository],
 })
 export class AuthModule {}

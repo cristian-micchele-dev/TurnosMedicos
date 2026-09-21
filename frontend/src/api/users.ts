@@ -29,4 +29,5 @@ export const usersApi = {
   create: (data: CreateUserRequest) => api.post<UserListItem>('/users', data),
   updateRole: (id: string, role: string) => api.patch<UserListItem>(`/users/${id}/role`, { role }),
   toggleActive: (id: string) => api.patch<UserListItem>(`/users/${id}/toggle-active`),
+  resetPassword: (id: string) => api.post<{ temporaryPassword: string }>(`/users/${id}/reset-password`),
 };

@@ -113,6 +113,8 @@ ADMIN_EMAIL=admin@hospital.com ADMIN_PASSWORD='una-clave-larga' ADMIN_NAME='Admi
 
 Desde ahí, todo (médicos, pacientes, otros admins) se gestiona por el panel.
 
+**Contraseñas olvidadas** — no hay email saliente, así que el ADMIN resetea desde Usuarios → "Resetear clave": el sistema genera una clave temporal (se muestra una sola vez), cierra las sesiones del usuario y lo obliga a elegir una contraseña propia en el próximo ingreso.
+
 ### Variables de entorno (backend)
 
 Validadas al arrancar con `class-validator` (`src/config/env.schema.ts`). Si falta una, el proceso no levanta.
@@ -163,6 +165,8 @@ Convención: cada cambio de comportamiento arranca con un test en rojo.
 | Confirmar / completar turno | ✅ | solo los propios |
 | Cancelar turno | ✅ | — |
 | Configurar disponibilidad | de cualquier médico | la propia |
+| Resetear la contraseña de otro usuario | ✅ (genera clave temporal) | — |
+| Cambiar la propia contraseña | ✅ | ✅ |
 | Subir informes / recetas | — | de pacientes que atendió |
 
 ---

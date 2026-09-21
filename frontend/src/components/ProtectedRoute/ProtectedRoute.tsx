@@ -1,6 +1,8 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import type { UserProfile } from '../../api/auth';
+
+export const CHANGE_PASSWORD_PATH = '/cambiar-contrasena';
 
 interface ProtectedRouteProps {
   roles?: UserProfile['role'][];
@@ -34,6 +36,7 @@ function Spinner() {
 
 export function ProtectedRoute({ roles }: ProtectedRouteProps) {
   const { isLoading, isAuthenticated, user } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return <Spinner />;
@@ -41,6 +44,11 @@ export function ProtectedRoute({ roles }: ProtectedRouteProps) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // A temporary password only unlocks the page where it gets replaced.
+  if (user?.mustChangePassword && location.pathname !== CHANGE_PASSWORD_PATH) {
+    return <Navigate to={CHANGE_PASSWORD_PATH} replace />;
   }
 
   if (roles && user && !roles.includes(user.role)) {

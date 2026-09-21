@@ -20,16 +20,18 @@ function makeAuth(overrides: Partial<AuthContextValue>): AuthContextValue {
     isAuthenticated: false,
     login: vi.fn(),
     logout: vi.fn(),
+    changePassword: vi.fn(),
     ...overrides,
   };
 }
 
-function renderRoute(props?: { roles?: ('ADMIN' | 'DOCTOR')[] }) {
+function renderRoute(props?: { roles?: ('ADMIN' | 'DOCTOR')[]; initialPath?: string }) {
   return render(
-    <MemoryRouter initialEntries={['/protected']}>
+    <MemoryRouter initialEntries={[props?.initialPath ?? '/protected']}>
       <Routes>
         <Route element={<ProtectedRoute roles={props?.roles} />}>
           <Route path="/protected" element={<div>Protected content</div>} />
+          <Route path="/cambiar-contrasena" element={<div>Change password page</div>} />
         </Route>
         <Route path="/login" element={<div>Login page</div>} />
         <Route path="/dashboard" element={<div>Dashboard page</div>} />
@@ -50,7 +52,7 @@ describe('ProtectedRoute', () => {
     mockUseAuth.mockReturnValue(
       makeAuth({
         isAuthenticated: true,
-        user: { id: '1', email: 'a@b.com', name: 'Alice', role: 'ADMIN' },
+        user: { id: '1', email: 'a@b.com', name: 'Alice', role: 'ADMIN', mustChangePassword: false },
       }),
     );
     renderRoute();
@@ -61,7 +63,7 @@ describe('ProtectedRoute', () => {
     mockUseAuth.mockReturnValue(
       makeAuth({
         isAuthenticated: true,
-        user: { id: '2', email: 'doc@b.com', name: 'Bob', role: 'DOCTOR' },
+        user: { id: '2', email: 'doc@b.com', name: 'Bob', role: 'DOCTOR', mustChangePassword: false },
       }),
     );
     renderRoute({ roles: ['ADMIN'] });
@@ -73,11 +75,34 @@ describe('ProtectedRoute', () => {
     mockUseAuth.mockReturnValue(
       makeAuth({
         isAuthenticated: true,
-        user: { id: '3', email: 'p@b.com', name: 'Carol', role: 'DOCTOR' },
+        user: { id: '3', email: 'p@b.com', name: 'Carol', role: 'DOCTOR', mustChangePassword: false },
       }),
     );
     renderRoute({ roles: ['DOCTOR', 'ADMIN'] });
     expect(screen.getByText('Protected content')).toBeInTheDocument();
+  });
+
+  it('forces a user with mustChangePassword to the change-password page', () => {
+    mockUseAuth.mockReturnValue(
+      makeAuth({
+        isAuthenticated: true,
+        user: { id: '4', email: 'd@b.com', name: 'Dan', role: 'DOCTOR', mustChangePassword: true },
+      }),
+    );
+    renderRoute();
+    expect(screen.getByText('Change password page')).toBeInTheDocument();
+    expect(screen.queryByText('Protected content')).not.toBeInTheDocument();
+  });
+
+  it('lets a user with mustChangePassword reach the change-password page itself', () => {
+    mockUseAuth.mockReturnValue(
+      makeAuth({
+        isAuthenticated: true,
+        user: { id: '4', email: 'd@b.com', name: 'Dan', role: 'DOCTOR', mustChangePassword: true },
+      }),
+    );
+    renderRoute({ initialPath: '/cambiar-contrasena' });
+    expect(screen.getByText('Change password page')).toBeInTheDocument();
   });
 
   it('shows spinner during loading state', () => {

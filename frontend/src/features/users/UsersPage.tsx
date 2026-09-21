@@ -10,6 +10,8 @@ import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Modal } from '../../components/ui/Modal';
 import { Pagination } from '../../components/ui/Pagination';
+import { useAuth } from '../../context/AuthContext';
+import { Copy, KeyRound } from 'lucide-react';
 import styles from './UsersPage.module.css';
 
 const ROLE_LABELS: Record<UserListItem['role'], string> = {
@@ -90,6 +92,40 @@ export function UsersPage() {
       toast.error('Error al cambiar el estado del usuario');
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const { user: me } = useAuth();
+  const [tempCredential, setTempCredential] = useState<{ email: string; password: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleResetPassword = async (target: UserListItem) => {
+    const ok = await confirm({
+      title: 'Resetear contraseña',
+      message: `Se va a generar una clave temporal para ${target.email}. Sus sesiones activas se cierran y va a tener que elegir una contraseña nueva al entrar.`,
+      confirmLabel: 'Generar clave temporal',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    setUpdatingId(target.id);
+    try {
+      const { temporaryPassword } = await usersApi.resetPassword(target.id);
+      setCopied(false);
+      setTempCredential({ email: target.email, password: temporaryPassword });
+    } catch {
+      toast.error('No se pudo resetear la contraseña');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const copyTemp = async () => {
+    if (!tempCredential) return;
+    try {
+      await navigator.clipboard.writeText(tempCredential.password);
+      setCopied(true);
+    } catch {
+      toast.error('No se pudo copiar. Seleccioná el texto manualmente.');
     }
   };
 
@@ -200,6 +236,24 @@ export function UsersPage() {
         </span>
       ),
     },
+    {
+      key: 'actions',
+      header: 'Acciones',
+      width: '170px',
+      align: 'right' as const,
+      hideUntilHover: true,
+      render: (u: UserListItem) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={updatingId === u.id || u.id === me?.id}
+          title={u.id === me?.id ? 'Cambiá tu propia contraseña desde el menú lateral' : undefined}
+          onClick={(ev) => { ev.stopPropagation(); handleResetPassword(u); }}
+        >
+          <KeyRound size={14} aria-hidden /> Resetear clave
+        </Button>
+      ),
+    },
   ];
 
   return (
@@ -264,6 +318,31 @@ export function UsersPage() {
           onSuccess={handleUserCreated}
           onCancel={() => setShowCreateModal(false)}
         />
+      </Modal>
+
+      <Modal
+        isOpen={tempCredential !== null}
+        onClose={() => setTempCredential(null)}
+        title="Clave temporal generada"
+        size="sm"
+      >
+        {tempCredential && (
+          <div className={styles.tempBox}>
+            <p className={styles.tempIntro}>
+              Entregásela a <strong>{tempCredential.email}</strong> por un canal seguro. Al entrar va a tener que reemplazarla.
+            </p>
+            <div className={styles.tempRow}>
+              <code className={styles.tempCode}>{tempCredential.password}</code>
+              <Button variant="secondary" size="sm" onClick={copyTemp}>
+                <Copy size={14} aria-hidden /> {copied ? 'Copiada' : 'Copiar'}
+              </Button>
+            </div>
+            <p className={styles.tempWarning}>Se muestra una sola vez. Si la perdés, generá otra.</p>
+            <div className={styles.tempFooter}>
+              <Button variant="primary" onClick={() => setTempCredential(null)}>Listo</Button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       <ConfirmDialog {...dialogProps} />

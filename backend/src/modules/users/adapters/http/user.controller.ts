@@ -31,4 +31,9 @@ export class UserController {
   toggleActive(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.toggleActive(id);
   }
+
+  @Post(':id/reset-password')
+  resetPassword(@Param('id', ParseUUIDPipe) id: string) {
+    return this.service.resetPassword(id);
+  }
 }
