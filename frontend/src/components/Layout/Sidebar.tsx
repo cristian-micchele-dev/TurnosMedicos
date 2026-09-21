@@ -29,7 +29,6 @@ const adminItems: NavItem[] = [
 
 const doctorItems: NavItem[] = [
   { to: '/agenda', label: 'Mi Agenda' },
-  { to: '/mis-turnos', label: 'Mis Turnos' },
   { to: '/pacientes', label: 'Pacientes' },
   { to: '/disponibilidad', label: 'Mi Disponibilidad' },
 ];

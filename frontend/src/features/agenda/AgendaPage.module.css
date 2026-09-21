@@ -410,3 +410,10 @@
   border-color: var(--border-hover);
   background: var(--ice);
 }
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}

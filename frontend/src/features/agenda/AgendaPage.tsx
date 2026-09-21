@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { AgendaViewSwitch } from './AgendaViewSwitch';
 import { appointmentsApi, type Appointment, type AppointmentStatus } from '../../api/appointments';
 import { doctorsApi, type Availability } from '../../api/doctors';
 import type { PaginatedResponse } from '../../api/users';
@@ -213,7 +214,11 @@ export function AgendaPage() {
       <header className={styles.pageHeader}>
         <div>
           <h1 className={styles.title}>Mi Agenda</h1>
-          <p className={styles.subtitle}>Vista diaria de tus turnos</p>
+          <p className={styles.subtitle}>Tu día, hora por hora</p>
+        </div>
+        <div className={styles.headerActions}>
+          <AgendaViewSwitch />
+          <Link to="/disponibilidad" className={styles.monthLink}>Editar horario</Link>
         </div>
       </header>
 

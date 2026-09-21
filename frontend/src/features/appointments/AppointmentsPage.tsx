@@ -18,6 +18,7 @@ import { Select } from '../../components/ui/Select';
 import { Input } from '../../components/ui/Input';
 import { Pagination } from '../../components/ui/Pagination';
 import { AppointmentDetailModal } from './AppointmentDetailModal';
+import { AgendaViewSwitch } from '../agenda/AgendaViewSwitch';
 import styles from './AppointmentsPage.module.css';
 
 function formatDateTime(iso: string): string {
@@ -317,16 +318,19 @@ export function AppointmentsPage() {
     <div className={styles.page}>
       <header className={styles.pageHeader}>
         <div>
-          <h1 className={styles.title}>Turnos</h1>
+          <h1 className={styles.title}>{role === 'DOCTOR' ? 'Mi Agenda' : 'Turnos'}</h1>
           <p className={styles.subtitle}>
-            {role === 'DOCTOR' ? 'Tus turnos' : 'Gestión de turnos'}
+            {role === 'DOCTOR' ? 'Todos tus turnos, para buscar y filtrar' : 'Gestión de turnos'}
           </p>
         </div>
-        {canCreate && (
-          <Button variant="primary" onClick={() => navigate('/nuevo-turno')}>
-            + Nuevo Turno
-          </Button>
-        )}
+        <div className={styles.headerActions}>
+          {role === 'DOCTOR' && <AgendaViewSwitch />}
+          {canCreate && (
+            <Button variant="primary" onClick={() => navigate('/nuevo-turno')}>
+              + Nuevo Turno
+            </Button>
+          )}
+        </div>
       </header>
 
       <div className={styles.filtersBar}>

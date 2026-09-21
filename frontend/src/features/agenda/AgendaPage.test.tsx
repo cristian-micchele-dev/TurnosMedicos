@@ -94,4 +94,12 @@ describe('AgendaPage', () => {
     renderPage();
     expect(await screen.findByRole('link', { name: /ver mes/i })).toHaveAttribute('href', '/calendario');
   });
+
+  it('tiene el switch Día | Lista con Día activo, y acceso a editar el horario', async () => {
+    renderPage();
+    const dia = await screen.findByRole('link', { name: /^día$/i });
+    expect(dia).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: /^lista$/i })).toHaveAttribute('href', '/mis-turnos');
+    expect(screen.getByRole('link', { name: /editar horario/i })).toHaveAttribute('href', '/disponibilidad');
+  });
 });

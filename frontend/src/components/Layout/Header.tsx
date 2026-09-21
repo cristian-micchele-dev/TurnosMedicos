@@ -18,7 +18,7 @@ const pageTitles: Record<string, string> = {
   '/pacientes':      'Pacientes',
   '/especialidades': 'Especialidades',
   '/turnos':         'Turnos',
-  '/mis-turnos':     'Turnos',
+  '/mis-turnos':     'Mi Agenda',
   '/usuarios':       'Usuarios',
   '/disponibilidad': 'Disponibilidad',
   '/nuevo-turno':    'Nuevo Turno',
