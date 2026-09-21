@@ -40,7 +40,13 @@ beforeEach(() => {
   doctorsApi.me.mockResolvedValue(doctor);
   doctorsApi.findAll.mockResolvedValue({ data: [doctor], total: 1, page: 1, totalPages: 1 });
   doctorsApi.getAvailability.mockResolvedValue([{ id: 'a1', doctorId: 'd1', dayOfWeek: 1, startTime: '09:00', endTime: '10:00', slotDuration: 30 }]);
-  patientsApi.findAll.mockResolvedValue({ data: [patient, { ...patient, id: 'p2', name: 'Bruno Díaz', email: 'bruno@test.com', insuranceNumber: 'OSDE 77' }], total: 2, page: 1, totalPages: 1 });
+  // Behaves like the API: `q` filters server-side (accent-insensitive, any field).
+  const registry = [patient, { ...patient, id: 'p2', name: 'Bruno Díaz', email: 'bruno@test.com', insuranceNumber: 'OSDE 77' }];
+  const fold = (v: string | null) => (v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  patientsApi.findAll.mockImplementation(async (_page: number, _limit: number, q?: string) => {
+    const data = q ? registry.filter((p) => [p.name, p.email, p.insuranceNumber].some((f) => fold(f).includes(fold(q)))) : registry;
+    return { data, total: data.length, page: 1, totalPages: 1 };
+  });
   specialtiesApi.findAll.mockResolvedValue({ data: [{ id: 's1', name: 'Cardiología', description: null, active: true }], total: 1, page: 1, totalPages: 1 });
   appointmentsApi.findAll.mockResolvedValue({ data: [], total: 0, page: 1, totalPages: 1 });
   appointmentsApi.create.mockResolvedValue({ id: 'appt-1' });
@@ -139,18 +145,21 @@ describe('NewAppointmentPage', () => {
   });
 
   describe('búsqueda de pacientes existentes', () => {
-    it('filtra por nombre, email u obra social sin distinguir acentos', async () => {
+    it('busca en el servidor con el término escrito, una sola vez por pausa', async () => {
       auth.user.role = 'DOCTOR';
       renderPage();
       await screen.findByText('Ana Pérez');
       const search = screen.getByRole('searchbox', { name: /buscar paciente/i });
       await userEvent.type(search, 'osde');
-      expect(screen.getByText('Bruno Díaz')).toBeInTheDocument();
+      await waitFor(() => expect(patientsApi.findAll).toHaveBeenLastCalledWith(1, expect.any(Number), 'osde'));
+      expect(await screen.findByText('Bruno Díaz')).toBeInTheDocument();
       expect(screen.queryByText('Ana Pérez')).not.toBeInTheDocument();
+      // 'o','os','osd' never hit the API: only the settled value does.
+      expect(patientsApi.findAll.mock.calls.map((c) => c[2])).not.toContain('os');
       await userEvent.clear(search);
       await userEvent.type(search, 'perez');
-      expect(screen.getByText('Ana Pérez')).toBeInTheDocument();
-      expect(screen.queryByText('Bruno Díaz')).not.toBeInTheDocument();
+      expect(await screen.findByText('Ana Pérez')).toBeInTheDocument();
+      await waitFor(() => expect(screen.queryByText('Bruno Díaz')).not.toBeInTheDocument());
     });
 
     it('si no encuentra a nadie ofrece registrarlo con el nombre ya cargado', async () => {
@@ -158,7 +167,7 @@ describe('NewAppointmentPage', () => {
       renderPage();
       await screen.findByText('Ana Pérez');
       await userEvent.type(screen.getByRole('searchbox', { name: /buscar paciente/i }), 'Zoe Nueva');
-      expect(screen.getByText(/no encontramos a/i)).toBeInTheDocument();
+      expect(await screen.findByText(/no encontramos a/i)).toBeInTheDocument();
       await userEvent.click(screen.getByRole('button', { name: /registrar a zoe nueva/i }));
       expect(await screen.findByLabelText(/nombre completo/i)).toHaveValue('Zoe Nueva');
     });

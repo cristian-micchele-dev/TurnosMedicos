@@ -3,6 +3,7 @@ import { patientsApi, type Patient, type PatientInput } from '../../api/patients
 import type { PaginatedResponse } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
 import { useFetch } from '../../hooks/useFetch';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useAuth } from '../../context/AuthContext';
 import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
@@ -18,10 +19,12 @@ export function PatientsPage() {
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  // The server searches the whole registry; the browser asks once per pause in typing.
+  const query = useDebouncedValue(search.trim(), 300);
 
   const { data: result, loading, refetch: refetchPatients } = useFetch<PaginatedResponse<Patient>>(
-    ['patients', page],
-    () => patientsApi.findAll(page),
+    ['patients', page, query],
+    () => patientsApi.findAll(page, 20, query || undefined),
   );
   const patients = result?.data ?? [];
   const totalPages = result?.totalPages ?? 1;
@@ -57,13 +60,6 @@ export function PatientsPage() {
   };
 
   const canManage = user?.role === 'ADMIN' || user?.role === 'DOCTOR';
-
-  const filteredPatients = patients.filter((p) => {
-    const term = search.toLowerCase();
-    const name = p.name.toLowerCase();
-    const email = p.email?.toLowerCase() ?? '';
-    return name.includes(term) || email.includes(term);
-  });
 
   const columns = [
     {
@@ -153,7 +149,7 @@ export function PatientsPage() {
           <input
             className={styles.searchBar}
             type="search"
-            placeholder="Buscar por nombre o email..."
+            placeholder="Nombre, email, obra social o teléfono…"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           />
@@ -168,10 +164,10 @@ export function PatientsPage() {
       <div className={styles.tableContainer}>
         <Table
           columns={columns}
-          data={filteredPatients}
+          data={patients}
           keyExtractor={(p) => p.id}
           loading={loading}
-          filtered={search.trim().length > 0}
+          filtered={query.length > 0}
           total={result?.total}
           page={page}
           empty={{

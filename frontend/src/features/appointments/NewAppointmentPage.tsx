@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { specialtiesApi, type Specialty } from '../../api/specialties';
 import { doctorsApi, type Doctor, type Availability } from '../../api/doctors';
 import { appointmentsApi } from '../../api/appointments';
 import type { ApiError } from '../../api/client';
 import { patientsApi, type Patient, type PatientInput } from '../../api/patients';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useToast } from '../../hooks/useToast';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
@@ -85,26 +86,23 @@ export function NewAppointmentPage() {
   const [patientsLoading, setPatientsLoading] = useState(false);
   const [patientsError, setPatientsError] = useState(false);
 
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [creatingPatient, setCreatingPatient] = useState(false);
+  const [patientQuery, setPatientQuery] = useState('');
+  // The registry can hold thousands of patients: the server searches, the browser only
+  // asks — once per pause in typing, never per keystroke.
+  const debouncedQuery = useDebouncedValue(patientQuery.trim(), 300);
+
   // The API caps limit at 100; asking for more is a 400, not a bigger page.
-  const loadPatients = () => {
+  const loadPatients = (q: string = debouncedQuery) => {
     setPatientsLoading(true);
     setPatientsError(false);
-    patientsApi.findAll(1, 100)
+    patientsApi.findAll(1, 50, q || undefined)
       .then(res => setPatients(res.data.filter(p => p.active)))
       .catch(() => setPatientsError(true))
       .finally(() => setPatientsLoading(false));
   };
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [creatingPatient, setCreatingPatient] = useState(false);
-  const [patientQuery, setPatientQuery] = useState('');
-
-  // Accent-insensitive match on name, email and insurance so "perez" finds "Pérez".
-  const fold = (v: string | null | undefined) => (v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  const visiblePatients = useMemo(() => {
-    const q = fold(patientQuery.trim());
-    if (!q) return patients;
-    return patients.filter((p) => fold(p.name).includes(q) || fold(p.email).includes(q) || fold(p.insuranceNumber).includes(q));
-  }, [patients, patientQuery]);
+  const visiblePatients = patients;
 
   // Walk-in: register the patient here and continue booking without leaving the wizard.
   const handleCreatePatient = async (data: PatientInput) => {
@@ -150,7 +148,7 @@ export function NewAppointmentPage() {
 
   // Load data when entering each step
   useEffect(() => {
-    if (currentKind === 'patient' && patients.length === 0 && !patientsError) loadPatients();
+    if (currentKind === 'patient') loadPatients(debouncedQuery);
 
     if (currentKind === 'specialty' && specialties.length === 0) {
       setSpecialtiesLoading(true);
@@ -172,7 +170,7 @@ export function NewAppointmentPage() {
       const doctorId = selectedDoctor?.id;
       if (doctorId) loadSlots(doctorId, selectedDate);
     }
-  }, [step]);
+  }, [step, debouncedQuery]);
 
   // Reload slots when date changes (only when on datetime step)
   useEffect(() => {
@@ -323,9 +321,9 @@ export function NewAppointmentPage() {
             ) : patientsError ? (
               <div className={styles.notFound}>
                 <p>No pudimos cargar los pacientes.</p>
-                <Button variant="secondary" size="sm" onClick={loadPatients}>Reintentar</Button>
+                <Button variant="secondary" size="sm" onClick={() => loadPatients()}>Reintentar</Button>
               </div>
-            ) : patients.length === 0 ? (
+            ) : patients.length === 0 && !debouncedQuery ? (
               <p className={styles.emptyMsg}>Todavía no hay pacientes registrados — creá el primero con el botón de arriba.</p>
             ) : visiblePatients.length === 0 ? (
               <div className={styles.notFound}>

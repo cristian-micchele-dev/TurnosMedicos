@@ -24,7 +24,9 @@ export interface PatientInput {
 }
 
 export const patientsApi = {
-  findAll: (page = 1, limit = 20) => api.get<PaginatedResponse<Patient>>(`/patients?page=${page}&limit=${limit}`),
+  // `q` is a server-side search over name, email, insurance and phone (accent-insensitive).
+  findAll: (page = 1, limit = 20, q?: string) =>
+    api.get<PaginatedResponse<Patient>>(`/patients?page=${page}&limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ''}`),
   findOne: (id: string) => api.get<Patient>(`/patients/${id}`),
   create: (data: PatientInput) => api.post<Patient>('/patients', data),
   update: (id: string, data: Partial<PatientInput> & { active?: boolean }) => api.patch<Patient>(`/patients/${id}`, data),
