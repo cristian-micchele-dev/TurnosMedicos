@@ -22,6 +22,26 @@ describe('ConstellationBackground', () => {
     expect(() => render(<ConstellationBackground />)).not.toThrow();
   });
 
+  it('draws nothing on the light theme — a night sky has no place on paper — and wakes up when the theme turns dark', () => {
+    const ctx = fakeContext();
+    const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx as unknown as CanvasRenderingContext2D);
+    const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 1);
+    globalThis.ResizeObserver = class { observe() {} disconnect() {} unobserve() {} } as unknown as typeof ResizeObserver;
+    document.documentElement.setAttribute('data-theme', 'light');
+
+    render(<ConstellationBackground />);
+    expect(raf).not.toHaveBeenCalled();
+    expect(ctx.arc).not.toHaveBeenCalled();
+
+    document.documentElement.setAttribute('data-theme', 'dark');
+    return new Promise<void>((resolve) => setTimeout(resolve, 0)).then(() => {
+      expect(raf).toHaveBeenCalled();
+      document.documentElement.removeAttribute('data-theme');
+      raf.mockRestore();
+      getContext.mockRestore();
+    });
+  });
+
   it('honours prefers-reduced-motion: one still frame, no animation frames', () => {
     const ctx = fakeContext();
     const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx as unknown as CanvasRenderingContext2D);

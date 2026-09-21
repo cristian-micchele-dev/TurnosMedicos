@@ -26,9 +26,9 @@ interface Star {
   phase: number;
 }
 
-// A cyan so faint it reads as a memory of the brand, not a highlight.
+// A cyan so faint it reads as a memory of the brand, not a highlight. There is no light
+// palette on purpose: a night sky on paper reads as specks, so the light theme draws nothing.
 const DARK: Palette = { star: [125, 211, 252], line: [125, 211, 252], alpha: 1 };
-const LIGHT: Palette = { star: [46, 78, 128], line: [46, 78, 128], alpha: 0.8 };
 
 // One sky, two intensities: the same look reads as one product across screens.
 const SETTINGS = {
@@ -120,7 +120,7 @@ export function ConstellationBackground({ intensity = 'soft', className }: Const
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
-    let palette = isLightTheme() ? LIGHT : DARK;
+    const palette = DARK;
     let stars: Star[] = [];
     let width = 0;
     let height = 0;
@@ -155,7 +155,7 @@ export function ConstellationBackground({ intensity = 'soft', className }: Const
     };
 
     const start = () => {
-      if (running || still) return;
+      if (running || still || isLightTheme()) return;
       running = true;
       frame = requestAnimationFrame(step);
     };
@@ -165,16 +165,24 @@ export function ConstellationBackground({ intensity = 'soft', className }: Const
       cancelAnimationFrame(frame);
     };
 
-    const onVisibility = () => (document.hidden ? stop() : start());
+    const onVisibility = () => (document.hidden ? stop() : start()); // start() is a no-op on light
 
-    const themeWatcher = new MutationObserver(() => {
-      palette = isLightTheme() ? LIGHT : DARK;
-      if (still) paint(ctx, stars, width, height, 0, palette, intensity);
-    });
+    // Paper by day, sky by night: the theme switch turns the sky on and off without a reload.
+    const paintStill = () => paint(ctx, stars, width, height, 0, palette, intensity);
+    const sync = () => {
+      if (isLightTheme()) {
+        stop();
+        ctx.clearRect(0, 0, width, height);
+      } else if (still) {
+        paintStill();
+      } else {
+        start();
+      }
+    };
+    const themeWatcher = new MutationObserver(sync);
 
     resize();
-    if (still) paint(ctx, stars, width, height, 0, palette, intensity);
-    else start();
+    sync();
 
     const observer = new ResizeObserver(resize);
     observer.observe(canvas);
