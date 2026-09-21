@@ -11,8 +11,9 @@ interface Cell {
   x: number;
   y: number;
   r: number;
-  vx: number;
-  vy: number;
+  heading: number;
+  speed: number;
+  wander: number;
   phase: number;
   spin: number;
   color: [number, number, number];
@@ -22,9 +23,11 @@ interface Cell {
 const DARK_PALETTE: [number, number, number][] = [[56, 189, 248], [45, 212, 191], [107, 155, 209]];
 const LIGHT_PALETTE: [number, number, number][] = [[74, 111, 165], [13, 148, 136], [46, 78, 128]];
 
+// speed is px per frame at 60 fps: a cell crosses a 1400px screen in roughly 40–60 s,
+// slow enough to feel alive, fast enough that every cell visibly travels the whole screen.
 const SETTINGS = {
-  soft: { count: 14, alpha: 0.55, minR: 28, maxR: 70, speed: 0.12 },
-  strong: { count: 26, alpha: 1, minR: 34, maxR: 110, speed: 0.18 },
+  soft: { count: 14, alpha: 0.55, minR: 28, maxR: 70, speed: 0.5 },
+  strong: { count: 26, alpha: 1, minR: 34, maxR: 110, speed: 0.65 },
 };
 
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
@@ -40,14 +43,15 @@ function prefersReducedMotion(): boolean {
 function seed(width: number, height: number, intensity: 'soft' | 'strong', palette: [number, number, number][]): Cell[] {
   const s = SETTINGS[intensity];
   return Array.from({ length: s.count }, () => {
-    const angle = rand(0, Math.PI * 2);
-    const speed = rand(0.4, 1) * s.speed;
+    const r = rand(s.minR, s.maxR);
     return {
       x: rand(0, width),
       y: rand(0, height),
-      r: rand(s.minR, s.maxR),
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
+      r,
+      heading: rand(0, Math.PI * 2),
+      // Small cells are nimble, big ones lumber: speed scales inversely with size.
+      speed: rand(0.6, 1.1) * s.speed * (s.maxR / r) ** 0.35,
+      wander: rand(0.5, 1.5),
       phase: rand(0, Math.PI * 2),
       spin: rand(-0.004, 0.004),
       color: palette[Math.floor(Math.random() * palette.length)],
@@ -123,6 +127,7 @@ export function CellsBackground({ intensity = 'soft', className }: CellsBackgrou
     let height = 0;
     let frame = 0;
     let running = false;
+    let last = 0;
     const still = prefersReducedMotion();
 
     const resize = () => {
@@ -142,9 +147,14 @@ export function CellsBackground({ intensity = 'soft', className }: CellsBackgrou
     };
 
     const step = (t: number) => {
+      // Frame-rate independent: 1 = one 60 fps frame; capped so a background tab does not teleport cells.
+      const dt = last ? Math.min((t - last) / 16.67, 3) : 1;
+      last = t;
       for (const c of cells) {
-        c.x += c.vx;
-        c.y += c.vy;
+        // Meander: the heading swings slowly so paths curve instead of running straight.
+        c.heading += Math.sin(t * 0.0004 * c.wander + c.phase) * 0.012 * dt;
+        c.x += Math.cos(c.heading) * c.speed * dt;
+        c.y += Math.sin(c.heading) * c.speed * dt;
         // Wrap around with a margin so a cell never pops in at the edge.
         const m = c.r * 1.2;
         if (c.x < -m) c.x = width + m;
@@ -163,6 +173,7 @@ export function CellsBackground({ intensity = 'soft', className }: CellsBackgrou
     };
     const stop = () => {
       running = false;
+      last = 0;
       cancelAnimationFrame(frame);
     };
 

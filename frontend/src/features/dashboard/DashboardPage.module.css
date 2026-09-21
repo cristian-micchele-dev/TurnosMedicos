@@ -67,12 +67,12 @@
   pointer-events: none;
 }
 
-/* Same bleed as the tint underneath; the extra specificity beats the component's own inset. */
+/* The cells roam the whole viewport, under the header and sidebar (z 50 / 100) and under
+   the page content (.inner, z 2). The extra specificity beats the component's own inset. */
 .page .cells {
-  inset: -28px -32px 0;
-  width: auto;
-  height: auto;
-  z-index: 1;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
 }
 
 /* ---------- Hero banner with medical team photo ---------- */
