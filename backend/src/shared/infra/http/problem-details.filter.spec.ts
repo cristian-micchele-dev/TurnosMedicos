@@ -45,4 +45,16 @@ describe('ProblemDetailsFilter', () => {
     filter.catch(new Error('test'), host);
     expect(json).toHaveBeenCalledWith(expect.objectContaining({ requestId: expect.any(String) }));
   });
+  it('mapea 429 del throttler a TOO_MANY_REQUESTS con un detalle útil', () => {
+    const { host, status, json } = mockHost();
+    filter.catch(new HttpException('ThrottlerException: Too Many Requests', HttpStatus.TOO_MANY_REQUESTS), host);
+    expect(status).toHaveBeenCalledWith(429);
+    expect(json).toHaveBeenCalledWith(expect.objectContaining({ code: 'TOO_MANY_REQUESTS', detail: 'Demasiados intentos. Esperá un minuto y volvé a probar.' }));
+  });
+
+  it('mapea 404 de ruta inexistente a NOT_FOUND', () => {
+    const { host, json } = mockHost();
+    filter.catch(new HttpException({ message: 'Cannot GET /nope' }, HttpStatus.NOT_FOUND), host);
+    expect(json).toHaveBeenCalledWith(expect.objectContaining({ code: 'NOT_FOUND', status: 404 }));
+  });
 });
