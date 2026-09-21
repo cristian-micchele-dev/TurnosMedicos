@@ -50,6 +50,13 @@ describe('MedicalReportService', () => {
       const result = await service.uploadForPatient('user-doc-1', 'p1', dto, file);
       expect(result.doctorId).toBe('doc-1');
     });
+
+    it('exige la misma relación de tratamiento que la lectura: sin turno con el paciente, 403 y no escribe', async () => {
+      access.assertCanRead.mockRejectedValueOnce(new ForbiddenError());
+      await expect(service.uploadForPatient('user-doc-1', 'p9', dto, file)).rejects.toBeInstanceOf(ForbiddenError);
+      expect(access.assertCanRead).toHaveBeenCalledWith({ sub: 'user-doc-1', role: Role.DOCTOR }, 'p9');
+      expect(reports.save).not.toHaveBeenCalled();
+    });
   });
 
   describe('lecturas pasan por la política de acceso a historia clínica', () => {

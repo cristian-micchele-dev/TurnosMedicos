@@ -19,6 +19,7 @@ import { DoctorRepository, DOCTOR_REPOSITORY } from '../../doctors/doctor.reposi
 import { DoctorNotFoundError } from '../../doctors/domain/doctor-not-found.exception';
 import { MedicalRecordAccessPolicy } from '../../appointments/application/medical-record-access.policy';
 import { Actor } from '../../users/domain/actor';
+import { Role } from '../../users/domain/user';
 
 const UPLOADS_DIR = join(process.cwd(), 'uploads', 'reports');
 
@@ -86,6 +87,9 @@ export class MedicalReportService {
     const doctorId = await this.resolveDoctorId(doctorUserId);
     const patient = await this.patients.findById(patientId);
     if (!patient) throw new PatientNotFoundError(patientId);
+    // Writing into a chart needs the same treating relationship as reading it;
+    // otherwise a doctor could file a report they are not even allowed to see.
+    await this.access.assertCanRead({ sub: doctorUserId, role: Role.DOCTOR }, patientId);
 
     const ext = file.originalname.split('.').pop() ?? 'bin';
     const fileName = `${randomUUID()}.${ext}`;
