@@ -20,6 +20,7 @@ describe('CellsBackground', () => {
     const ctx = {
       setTransform: vi.fn(), clearRect: vi.fn(), save: vi.fn(), restore: vi.fn(), translate: vi.fn(), rotate: vi.fn(),
       scale: vi.fn(), beginPath: vi.fn(), arc: vi.fn(), fill: vi.fn(), stroke: vi.fn(),
+      moveTo: vi.fn(), lineTo: vi.fn(), closePath: vi.fn(), clip: vi.fn(), drawImage: vi.fn(), filter: 'none',
       createRadialGradient: vi.fn(() => gradient), fillStyle: '', strokeStyle: '', lineWidth: 0,
     };
     const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx as unknown as CanvasRenderingContext2D);
@@ -34,7 +35,7 @@ describe('CellsBackground', () => {
 
     expect(raf).not.toHaveBeenCalled();
     expect(ctx.clearRect).toHaveBeenCalledTimes(1);
-    expect(ctx.arc).toHaveBeenCalled();
+    expect(ctx.drawImage).toHaveBeenCalled();
 
     raf.mockRestore();
     getContext.mockRestore();

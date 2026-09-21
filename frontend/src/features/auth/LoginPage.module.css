@@ -23,6 +23,15 @@
     radial-gradient(ellipse 50% 40% at 105% 100%, rgba(56, 189, 248, 0.04) 0%, transparent 60%);
 }
 
+/* Dark theme: the deep-blue field of a micrograph, brighter where the light comes in. */
+:global([data-theme='dark']) .page,
+:global(:root:not([data-theme='light'])) .page {
+  background-image:
+    radial-gradient(ellipse 80% 70% at 20% 10%, rgba(37, 99, 235, 0.45) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 60% at 85% 90%, rgba(14, 116, 200, 0.35) 0%, transparent 60%),
+    linear-gradient(160deg, #0a1f4d 0%, #0b1120 55%, #061a3a 100%);
+}
+
 /* ---------- Card ---------- */
 .card {
   position: relative;
