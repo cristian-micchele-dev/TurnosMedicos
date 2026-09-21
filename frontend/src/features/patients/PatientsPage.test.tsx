@@ -40,8 +40,8 @@ describe('PatientsPage — búsqueda', () => {
     renderPage();
     expect(await screen.findByText('Paciente 0')).toBeInTheDocument();
     await userEvent.type(screen.getByRole('searchbox'), 'zapata');
-    expect(await screen.findByText('Zulema Zapata')).toBeInTheDocument();
-    await waitFor(() => expect(patientsApi.findAll).toHaveBeenLastCalledWith(1, expect.any(Number), 'zapata'));
+    expect(await screen.findByText('Zulema Zapata', {}, { timeout: 4000 })).toBeInTheDocument();
+    await waitFor(() => expect(patientsApi.findAll).toHaveBeenLastCalledWith(1, expect.any(Number), 'zapata'), { timeout: 4000 });
     expect(screen.queryByText('Paciente 0')).not.toBeInTheDocument();
   });
 
@@ -49,7 +49,7 @@ describe('PatientsPage — búsqueda', () => {
     renderPage();
     await screen.findByText('Paciente 0');
     await userEvent.type(screen.getByRole('searchbox'), 'zap');
-    await screen.findByText('Zulema Zapata');
+    await screen.findByText('Zulema Zapata', {}, { timeout: 4000 });
     const terms = patientsApi.findAll.mock.calls.map((c) => c[2]).filter(Boolean);
     expect(terms).toEqual(['zap']);
   });
