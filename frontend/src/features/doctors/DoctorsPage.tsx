@@ -107,6 +107,8 @@ export function DoctorsPage() {
     {
       key: 'name',
       header: 'Nombre',
+      sortable: true,
+      sortValue: (d: Doctor) => d.user?.name ?? '',
       render: (d: Doctor) => (
         <span className={styles.nameCell}>{d.user?.name ?? '—'}</span>
       ),
@@ -147,6 +149,8 @@ export function DoctorsPage() {
     {
       key: 'actions',
       header: 'Acciones',
+      hideUntilHover: true,
+      align: 'right' as const,
       width: '200px',
       render: (d: Doctor) => (
         <div className={styles.actions}>
@@ -213,7 +217,14 @@ export function DoctorsPage() {
           data={filteredDoctors}
           keyExtractor={(d) => d.id}
           loading={loading}
-          emptyMessage="No hay doctores registrados"
+          filtered={search.trim().length > 0}
+          total={result?.total}
+          page={page}
+          empty={{
+            title: 'Todavía no hay médicos',
+            description: 'Creá el primer médico y configurá su disponibilidad para empezar a dar turnos.',
+            action: { label: '+ Nuevo médico', onClick: handleOpenCreate },
+          }}
         />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>

@@ -7,12 +7,13 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  background: var(--surface);
+  background: var(--slate);
 }
 
 .table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 14px;
 }
 
@@ -25,50 +26,92 @@
 }
 
 .th {
-  padding: 11px 18px;
+  padding: 0 18px;
+  height: 42px;
   text-align: left;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-tertiary);
-  background: var(--snow);
+  background: var(--slate);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 
-.th:first-child {
-  border-radius: var(--radius-lg) 0 0 0;
+.th:first-child { border-radius: var(--radius-lg) 0 0 0; }
+.th:last-child  { border-radius: 0 var(--radius-lg) 0 0; }
+
+.sortBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 100%;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: color var(--transition);
 }
 
-.th:last-child {
-  border-radius: 0 var(--radius-lg) 0 0;
-}
+.sortBtn:hover,
+.sortActive { color: var(--text-primary); }
+
+.sortIdle { opacity: 0; transition: opacity var(--transition); }
+.sortBtn:hover .sortIdle,
+.sortBtn:focus-visible .sortIdle { opacity: 0.6; }
+
+.sortActive svg { color: var(--primary); }
 
 /* ── Body ── */
 
-.tr {
-  transition: background-color var(--transition);
-}
+.tr { transition: background-color var(--transition); }
 
-.tr:last-child .td {
-  border-bottom: none;
-}
+.tr:hover .td,
+.tr:focus-within .td { background-color: var(--ice); }
 
-.trClickable {
-  cursor: pointer;
-}
+.tr:last-child .td { border-bottom: none; }
 
-.trClickable:hover {
-  background-color: var(--primary-light);
-}
+.trClickable { cursor: pointer; }
+
+.trClickable:hover .td,
+.trClickable:focus-within .td { background-color: var(--primary-light); }
 
 .td {
-  padding: 13px 18px;
+  padding: 12px 18px;
   color: var(--text-primary);
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
   line-height: 1.45;
+  transition: background-color var(--transition);
+}
+
+.align-center { text-align: center; }
+.align-right  { text-align: right; }
+
+/* Row actions: revealed on hover / keyboard focus; always visible where hover doesn't exist. */
+.tdHover > * {
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.tr:hover .tdHover > *,
+.tr:focus-within .tdHover > * { opacity: 1; }
+
+@media (hover: none) {
+  .tdHover > * { opacity: 1; }
+}
+
+/* ── Summary ── */
+
+.summary {
+  padding: 10px 18px;
+  font-size: 12.5px;
+  color: var(--text-tertiary);
+  border-top: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── Empty state ── */
@@ -82,40 +125,60 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  text-align: center;
+  gap: 6px;
 }
 
 .emptyIcon {
-  font-size: 34px;
-  opacity: 0.25;
-  line-height: 1;
   color: var(--text-tertiary);
+  opacity: 0.45;
+  margin-bottom: 6px;
 }
 
-.emptyMessage {
-  font-size: 14px;
-  color: var(--text-tertiary);
+.emptyTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.emptyDescription {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  max-width: 360px;
+  line-height: 1.55;
   margin: 0;
 }
 
+.emptyAction {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font);
+  color: #0a0f1e;
+  background: var(--primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+}
+
+.emptyAction:hover { background: var(--primary-hover); }
+.emptyAction:active { transform: translateY(1px); }
+
 /* ── Skeleton loading ── */
 
-.skeletonRow .td {
-  padding: 15px 18px;
-}
+.skeletonRow .td { padding: 15px 18px; }
 
 .skeletonBar {
   display: block;
   height: 13px;
   border-radius: var(--radius-xs);
-  background: linear-gradient(
-    90deg,
-    var(--snow)    0%,
-    var(--border)  40%,
-    var(--ice)     55%,
-    var(--border)  70%,
-    var(--snow)    100%
-  );
+  background: linear-gradient(90deg, var(--snow) 0%, var(--border) 40%, var(--ice) 55%, var(--border) 70%, var(--snow) 100%);
   background-size: 300% 100%;
   animation: shimmer 1.6s ease-in-out infinite;
   width: 68%;
@@ -129,4 +192,9 @@
 @keyframes shimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeletonBar { animation: none; }
+  .tdHover > * { opacity: 1; }
 }

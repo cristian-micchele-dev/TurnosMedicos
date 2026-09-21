@@ -3,7 +3,7 @@ import { patientsApi, type Patient, type PatientInput } from '../../api/patients
 import type { PaginatedResponse } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
 import { useFetch } from '../../hooks/useFetch';
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -69,6 +69,7 @@ export function PatientsPage() {
     {
       key: 'name',
       header: 'Nombre',
+      sortable: true,
       render: (p: Patient) => (
         <span className={styles.nameCell}>{p.name}</span>
       ),
@@ -117,6 +118,8 @@ export function PatientsPage() {
           {
             key: 'actions',
             header: 'Acciones',
+            hideUntilHover: true,
+            align: 'right' as const,
             width: '120px',
             render: (p: Patient) => (
               <div className={styles.actions}>
@@ -170,7 +173,14 @@ export function PatientsPage() {
           data={filteredPatients}
           keyExtractor={(p) => p.id}
           loading={loading}
-          emptyMessage="No hay pacientes registrados"
+          filtered={search.trim().length > 0}
+          total={result?.total}
+          page={page}
+          empty={{
+            title: 'Todavía no hay pacientes',
+            description: 'El paciente es un registro del hospital: cargalo con nombre y datos de contacto.',
+            ...(isAdmin ? { action: { label: '+ Nuevo paciente', onClick: handleOpenCreate } } : {}),
+          }}
           onRowClick={isAdmin ? handleOpenEdit : undefined}
         />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />

@@ -75,6 +75,7 @@ export function SpecialtiesPage() {
     {
       key: 'name',
       header: 'Nombre',
+      sortable: true,
       render: (s: Specialty) => <span className={styles.nameCell}>{s.name}</span>,
     },
     {
@@ -98,6 +99,8 @@ export function SpecialtiesPage() {
     {
       key: 'actions',
       header: 'Acciones',
+      hideUntilHover: true,
+      align: 'right' as const,
       width: '140px',
       render: (s: Specialty) => (
         <div className={styles.actions}>
@@ -154,7 +157,14 @@ export function SpecialtiesPage() {
           data={filteredSpecialties}
           keyExtractor={(s) => s.id}
           loading={loading}
-          emptyMessage="No hay especialidades registradas"
+          filtered={search.trim().length > 0}
+          total={result?.total}
+          page={page}
+          empty={{
+            title: 'Todavía no hay especialidades',
+            description: 'Las especialidades agrupan a los médicos y guían al paciente al sacar turno.',
+            action: { label: '+ Nueva especialidad', onClick: handleOpenCreate },
+          }}
         />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>

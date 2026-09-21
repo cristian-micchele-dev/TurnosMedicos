@@ -10,7 +10,7 @@ import { specialtiesApi } from '../../api/specialties';
 import type { PaginatedResponse } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
 import { useFetch } from '../../hooks/useFetch';
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -224,6 +224,7 @@ export function AppointmentsPage() {
     {
       key: 'code',
       header: 'Código',
+      sortable: true,
       width: '110px',
       render: (a: Appointment) => (
         <span className={styles.codeCell}>{a.code}</span>
@@ -232,6 +233,7 @@ export function AppointmentsPage() {
     {
       key: 'dateTime',
       header: 'Fecha / Hora',
+      sortable: true,
       render: (a: Appointment) => (
         <span className={styles.dateCell}>{formatDateTime(a.dateTime)}</span>
       ),
@@ -277,6 +279,8 @@ export function AppointmentsPage() {
     {
       key: 'actions',
       header: 'Acciones',
+      hideUntilHover: true,
+      align: 'right' as const,
       width: '200px',
       render: renderActions,
     },
@@ -378,7 +382,14 @@ export function AppointmentsPage() {
           data={appointments}
           keyExtractor={(a) => a.id}
           loading={loading}
-          emptyMessage="No hay turnos que coincidan con los filtros"
+          filtered={Boolean(searchText.trim() || statusFilter || specialtyFilter || fromDate || toDate)}
+          total={result?.total}
+          page={page}
+          empty={{
+            title: 'Todavía no hay turnos',
+            description: 'Cuando crees el primero va a aparecer acá con su estado.',
+            ...(canCreate ? { action: { label: '+ Nuevo turno', onClick: () => navigate('/nuevo-turno') } } : {}),
+          }}
           onRowClick={(a) => setSelectedAppointment(a)}
         />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />

@@ -112,6 +112,7 @@ export function UsersPage() {
     {
       key: 'email',
       header: 'Email',
+      sortable: true,
       render: (u: UserListItem) => (
         <span className={styles.emailCell}>{u.email}</span>
       ),
@@ -119,6 +120,7 @@ export function UsersPage() {
     {
       key: 'name',
       header: 'Nombre',
+      sortable: true,
       render: (u: UserListItem) => (
         <span className={styles.emailCell}>{u.name || '—'}</span>
       ),
@@ -186,6 +188,7 @@ export function UsersPage() {
     {
       key: 'createdAt',
       header: 'Fecha de registro',
+      sortable: true,
       width: '160px',
       render: (u: UserListItem) => (
         <span className={styles.dateCell}>
@@ -239,7 +242,14 @@ export function UsersPage() {
           data={filteredUsers}
           keyExtractor={(u) => u.id}
           loading={loading}
-          emptyMessage="No hay usuarios registrados"
+          filtered={search.trim().length > 0 || roleFilter !== ''}
+          total={fetchedResult?.total}
+          page={page}
+          empty={{
+            title: 'Todavía no hay usuarios',
+            description: 'Solo el personal tiene cuenta: administradores y médicos.',
+            action: { label: '+ Nuevo usuario', onClick: () => setShowCreateModal(true) },
+          }}
         />
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
