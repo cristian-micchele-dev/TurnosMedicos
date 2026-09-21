@@ -81,7 +81,9 @@ jobs:
         run: npx tsc --noEmit -p tsconfig.app.json
       - name: Lint
         run: npm run lint
-      - name: Unit tests
+      - name: Unit tests (TZ=UTC, like production runners)
         run: npm test
+        env:
+          TZ: UTC
       - name: Production build
         run: npm run build

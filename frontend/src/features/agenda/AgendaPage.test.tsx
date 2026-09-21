@@ -50,7 +50,8 @@ describe('AgendaPage', () => {
       total: 2, page: 1, totalPages: 1,
     });
     renderPage();
-    expect(await screen.findByText('Ana Hoy')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /turno de ana hoy/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /turno de bruno mañana/i })).not.toBeInTheDocument();
     expect(screen.queryByText('Bruno Mañana')).not.toBeInTheDocument();
   });
 
