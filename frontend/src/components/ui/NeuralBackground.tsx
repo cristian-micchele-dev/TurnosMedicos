@@ -11,7 +11,7 @@ interface Palette {
   fibres: RGB[];
   /** The flash when a signal reaches a soma: warm white on dark, deep blue on paper. */
   flash: RGB;
-  /** Overall strength; the dashboard has data on top, so it stays well under 1. */
+  /** Overall strength; the content sits on a wash above it, so the dark theme can afford full strength. */
   alpha: number;
 }
 
@@ -44,16 +44,16 @@ interface Pulse {
 const DARK: Palette = {
   fibres: [[56, 189, 248], [45, 212, 191], [107, 155, 209]],
   flash: [255, 244, 214],
-  alpha: 0.75,
+  alpha: 1,
 };
 const LIGHT: Palette = {
   fibres: [[46, 110, 180], [13, 148, 136], [74, 111, 165]],
   flash: [30, 64, 140],
-  alpha: 0.55,
+  alpha: 0.7,
 };
 
-const NODES_PER_MEGAPIXEL = 26;
-const MAX_PULSES = 18;
+const NODES_PER_MEGAPIXEL = 40;
+const MAX_PULSES = 36;
 
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 const rgba = ([r, g, b]: RGB, a: number) => `rgba(${r}, ${g}, ${b}, ${a})`;
@@ -75,7 +75,7 @@ function bezier(f: Fibre, t: number) {
   };
 }
 
-// Somas scattered with a little breathing room, each wired to its two or three nearest
+// Somas scattered with a little breathing room, each wired to its three or four nearest
 // neighbours by a fibre that bows sideways so the mesh reads as tissue, not a graph.
 function buildNetwork(width: number, height: number, palette: Palette): { nodes: Node[]; fibres: Fibre[] } {
   const count = Math.max(10, Math.round((width * height) / 1_000_000 * NODES_PER_MEGAPIXEL));
@@ -86,9 +86,9 @@ function buildNetwork(width: number, height: number, palette: Palette): { nodes:
     for (let tries = 0; tries < 12 && !ok; tries++) {
       x = rand(-margin, width + margin);
       y = rand(-margin, height + margin);
-      ok = nodes.every((n) => Math.hypot(n.x - x, n.y - y) > 90);
+      ok = nodes.every((n) => Math.hypot(n.x - x, n.y - y) > 72);
     }
-    nodes.push({ x, y, r: rand(2.2, 4.5), glow: 0, phase: rand(0, Math.PI * 2) });
+    nodes.push({ x, y, r: rand(2.6, 5.5), glow: 0, phase: rand(0, Math.PI * 2) });
   }
 
   const fibres: Fibre[] = [];
@@ -98,7 +98,7 @@ function buildNetwork(width: number, height: number, palette: Palette): { nodes:
       .filter((m) => m !== n)
       .map((m) => ({ m, d: Math.hypot(m.x - n.x, m.y - n.y) }))
       .sort((a, b) => a.d - b.d)
-      .slice(0, 2 + (Math.random() < 0.4 ? 1 : 0));
+      .slice(0, 3 + (Math.random() < 0.4 ? 1 : 0));
     for (const { m, d } of near) {
       const key = [nodes.indexOf(n), nodes.indexOf(m)].sort((a, b) => a - b).join('-');
       if (linked.has(key)) continue;
@@ -114,7 +114,7 @@ function buildNetwork(width: number, height: number, palette: Palette): { nodes:
         c1: { x: n.x + dx * 0.3 + nx * bow * side, y: n.y + dy * 0.3 + ny * bow * side },
         c2: { x: n.x + dx * 0.7 - nx * bow * side * 0.6, y: n.y + dy * 0.7 - ny * bow * side * 0.6 },
         color: palette.fibres[Math.floor(Math.random() * palette.fibres.length)],
-        width: rand(0.7, 1.6),
+        width: rand(0.9, 2),
         length: d,
       });
     }
@@ -133,7 +133,7 @@ function renderFibreLayer(width: number, height: number, dpr: number, fibres: Fi
   ctx.lineCap = 'round';
   for (const f of fibres) {
     // Glow by layering: a wide faint stroke, a mid one, and the bright core.
-    for (const [w, a] of [[f.width * 7, 0.05], [f.width * 3, 0.14], [f.width, 0.6]] as const) {
+    for (const [w, a] of [[f.width * 10, 0.06], [f.width * 4, 0.18], [f.width * 1.4, 0.75]] as const) {
       ctx.lineWidth = w;
       ctx.strokeStyle = rgba(f.color, a * palette.alpha);
       ctx.beginPath();
@@ -149,7 +149,7 @@ function drawNodes(ctx: CanvasRenderingContext2D, nodes: Node[], t: number, pale
   for (const n of nodes) {
     const breathe = 0.85 + Math.sin(t * 0.0012 + n.phase) * 0.15;
     const r = n.r * breathe;
-    const halo = r * (3 + n.glow * 6);
+    const halo = r * (4 + n.glow * 8);
     const color = n.glow > 0.05 ? palette.flash : palette.fibres[0];
     const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, halo);
     g.addColorStop(0, rgba(color, (0.55 + n.glow * 0.45) * palette.alpha));
@@ -163,18 +163,18 @@ function drawNodes(ctx: CanvasRenderingContext2D, nodes: Node[], t: number, pale
     ctx.beginPath();
     ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
     ctx.fill();
-    n.glow *= 0.94;
+    n.glow *= 0.955;
   }
 }
 
 function drawPulse(ctx: CanvasRenderingContext2D, p: Pulse, palette: Palette) {
   // A bright head with a comet tail of fading beads behind it.
-  for (let k = 0; k < 7; k++) {
-    const tt = p.t - k * 0.012;
+  for (let k = 0; k < 10; k++) {
+    const tt = p.t - k * 0.014;
     if (tt < 0) break;
     const { x, y } = bezier(p.fibre, tt);
-    const a = (1 - k / 7) * palette.alpha;
-    const r = 2.6 - k * 0.3;
+    const a = (1 - k / 10) * palette.alpha;
+    const r = 3.4 - k * 0.28;
     const g = ctx.createRadialGradient(x, y, 0, x, y, r * 4);
     g.addColorStop(0, rgba(palette.flash, 0.9 * a));
     g.addColorStop(0.3, rgba(p.color, 0.5 * a));
@@ -238,7 +238,7 @@ export function NeuralBackground({ className }: NeuralBackgroundProps) {
         fibre: forward ? fibre : { ...fibre, from: fibre.to, to: fibre.from, c1: fibre.c2, c2: fibre.c1 },
         t: 0,
         // Longer fibres take longer to cross: roughly constant px per second.
-        speed: (90 / fibre.length) * rand(0.8, 1.3) / 60,
+        speed: (130 / fibre.length) * rand(0.8, 1.3) / 60,
         color: fibre.color,
       });
     };
@@ -258,7 +258,7 @@ export function NeuralBackground({ className }: NeuralBackgroundProps) {
     const step = (t: number) => {
       const dt = last ? Math.min((t - last) / 16.67, 3) : 1;
       last = t;
-      if (Math.random() < 0.06 * dt) spawnPulse();
+      if (Math.random() < 0.14 * dt) spawnPulse();
       for (const p of pulses) p.t += p.speed * dt;
       // A pulse that reaches its soma lights it up and is spent.
       for (const p of pulses) if (p.t >= 1) p.fibre.to.glow = 1;
