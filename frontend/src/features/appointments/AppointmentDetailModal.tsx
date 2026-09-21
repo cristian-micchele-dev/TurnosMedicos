@@ -12,6 +12,7 @@ import { useToast } from '../../hooks/useToast';
 import { generateAppointmentPdf } from '../../utils/generateAppointmentPdf';
 import { generatePrescriptionPdf } from '../../utils/generatePrescriptionPdf';
 import styles from './AppointmentDetailModal.module.css';
+import { apiErrorMessage } from '../../api/client';
 
 function formatDateTime(iso: string): string {
   const date = new Date(iso);
@@ -125,8 +126,8 @@ export function AppointmentDetailModal({
       setUploadFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
       toast.success('Informe subido correctamente');
-    } catch {
-      toast.error('Error al subir el informe');
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Error al subir el informe'));
     } finally {
       setUploading(false);
     }
@@ -135,8 +136,8 @@ export function AppointmentDetailModal({
   const handleDownload = async (report: MedicalReport) => {
     try {
       await reportsApi.download(report);
-    } catch {
-      toast.error('Error al descargar el informe');
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Error al descargar el informe'));
     }
   };
 
@@ -145,8 +146,8 @@ export function AppointmentDetailModal({
       await reportsApi.delete(reportId);
       setReports((prev) => prev.filter((r) => r.id !== reportId));
       toast.success('Informe eliminado');
-    } catch {
-      toast.error('Error al eliminar el informe');
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Error al eliminar el informe'));
     }
   };
 
@@ -180,8 +181,8 @@ export function AppointmentDetailModal({
       setRxMedications([{ name: '', dosage: '', frequency: '', duration: '' }]);
       setRxInstructions('');
       toast.success('Receta creada correctamente');
-    } catch {
-      toast.error('Error al crear la receta');
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Error al crear la receta'));
     } finally {
       setRxSubmitting(false);
     }
@@ -231,8 +232,8 @@ export function AppointmentDetailModal({
       setRescheduling(false);
       setNewDateTime('');
       onClose();
-    } catch {
-      toast.error('Error al reprogramar el turno');
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Error al reprogramar el turno'));
     } finally {
       setSubmitting(false);
     }

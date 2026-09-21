@@ -20,6 +20,7 @@ import { Pagination } from '../../components/ui/Pagination';
 import { AppointmentDetailModal } from './AppointmentDetailModal';
 import { AgendaViewSwitch } from '../agenda/AgendaViewSwitch';
 import styles from './AppointmentsPage.module.css';
+import { apiErrorMessage } from '../../api/client';
 
 function formatDateTime(iso: string): string {
   const date = new Date(iso);
@@ -145,8 +146,8 @@ export function AppointmentsPage() {
       }
       setSelectedAppointment(null);
       await refetchAppointments();
-    } catch {
-      toast.error(`No se pudo actualizar el turno ${appointment.code}`);
+    } catch (err) {
+      toast.error(apiErrorMessage(err, `No se pudo actualizar el turno ${appointment.code}`));
     } finally {
       setPendingId(null);
     }

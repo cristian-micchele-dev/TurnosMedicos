@@ -1,4 +1,4 @@
-import { clinicDayRange, clinicLocalToUtc, toClinicClock } from './format';
+import { clinicDayRange, clinicLocalToUtc, toClinicClock, toClinicDate } from './format';
 
 describe('clinic clock helpers (America/Argentina/Buenos_Aires, UTC-3)', () => {
   it('toClinicClock proyecta un instante UTC al reloj del hospital', () => {
@@ -18,5 +18,10 @@ describe('clinic clock helpers (America/Argentina/Buenos_Aires, UTC-3)', () => {
     const { start, end } = clinicDayRange('2026-09-21');
     expect(start.toISOString()).toBe('2026-09-21T03:00:00.000Z');
     expect(end.toISOString()).toBe('2026-09-22T02:59:59.999Z');
+  });
+
+  it('toClinicDate devuelve la fecha del hospital, no la UTC', () => {
+    expect(toClinicDate(new Date('2026-09-22T01:00:00Z'))).toBe('2026-09-21');
+    expect(toClinicDate(new Date('2026-09-21T12:00:00Z'))).toBe('2026-09-21');
   });
 });

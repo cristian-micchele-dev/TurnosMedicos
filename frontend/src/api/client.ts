@@ -190,4 +190,10 @@ class HttpClient {
   }
 }
 
+// Business-rule rejections carry a Spanish `detail`; prefer it over a generic fallback.
+export function apiErrorMessage(err: unknown, fallback: string): string {
+  const detail = (err as Partial<ApiError> | undefined)?.detail;
+  return typeof detail === 'string' && detail.trim() ? detail : fallback;
+}
+
 export const api = new HttpClient(API_URL);

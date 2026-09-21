@@ -28,4 +28,13 @@ describe('NoSameDaySpecialtyRule', () => {
     const repo: any = { findByPatientSpecialtyAndDateRange: jest.fn().mockResolvedValue([existing]) };
     await expect(rule.validate('p1', 's1', dt, repo, 'a1')).resolves.toBeUndefined();
   });
+
+  it('consulta el día completo del hospital (UTC-3), no el día UTC', async () => {
+    const repo: any = { findByPatientSpecialtyAndDateRange: jest.fn().mockResolvedValue([]) };
+    // lunes 21/09 22:00 en Buenos Aires = 2026-09-22T01:00:00Z: el día del hospital sigue siendo el 21
+    await rule.validate('p1', 's1', new Date('2026-09-22T01:00:00Z'), repo);
+    const [, , from, to] = repo.findByPatientSpecialtyAndDateRange.mock.calls[0];
+    expect(from.toISOString()).toBe('2026-09-21T03:00:00.000Z');
+    expect(to.toISOString()).toBe('2026-09-22T02:59:59.999Z');
+  });
 });

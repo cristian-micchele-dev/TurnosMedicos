@@ -13,6 +13,7 @@ import { Pagination } from '../../components/ui/Pagination';
 import { useAuth } from '../../context/AuthContext';
 import { Copy, KeyRound } from 'lucide-react';
 import styles from './UsersPage.module.css';
+import { apiErrorMessage } from '../../api/client';
 
 const ROLE_LABELS: Record<UserListItem['role'], string> = {
   ADMIN: 'Admin',
@@ -63,8 +64,8 @@ export function UsersPage() {
       const updated = await usersApi.updateRole(user.id, newRole);
       setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
       toast.success(`Rol actualizado a ${ROLE_LABELS[updated.role]}`);
-    } catch {
-      toast.error('Error al actualizar el rol');
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Error al actualizar el rol'));
     } finally {
       setUpdatingId(null);
     }
@@ -88,8 +89,8 @@ export function UsersPage() {
       setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
       const label = updated.active ? 'activado' : 'desactivado';
       toast.success(`Usuario ${label} correctamente`);
-    } catch {
-      toast.error('Error al cambiar el estado del usuario');
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Error al cambiar el estado del usuario'));
     } finally {
       setUpdatingId(null);
     }
@@ -112,8 +113,8 @@ export function UsersPage() {
       const { temporaryPassword } = await usersApi.resetPassword(target.id);
       setCopied(false);
       setTempCredential({ email: target.email, password: temporaryPassword });
-    } catch {
-      toast.error('No se pudo resetear la contraseña');
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'No se pudo resetear la contraseña'));
     } finally {
       setUpdatingId(null);
     }
@@ -124,8 +125,8 @@ export function UsersPage() {
     try {
       await navigator.clipboard.writeText(tempCredential.password);
       setCopied(true);
-    } catch {
-      toast.error('No se pudo copiar. Seleccioná el texto manualmente.');
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'No se pudo copiar. Seleccioná el texto manualmente.'));
     }
   };
 

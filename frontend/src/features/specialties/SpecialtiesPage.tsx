@@ -11,6 +11,7 @@ import { Modal } from '../../components/ui/Modal';
 import { Pagination } from '../../components/ui/Pagination';
 import { SpecialtyForm } from './SpecialtyForm';
 import styles from './SpecialtiesPage.module.css';
+import { apiErrorMessage } from '../../api/client';
 
 export function SpecialtiesPage() {
   const { toast } = useToast();
@@ -73,8 +74,8 @@ export function SpecialtiesPage() {
       await specialtiesApi.remove(specialty.id);
       toast.success(`Especialidad "${specialty.name}" eliminada`);
       await refetch();
-    } catch {
-      toast.error(`No se pudo eliminar "${specialty.name}"`);
+    } catch (err) {
+      toast.error(apiErrorMessage(err, `No se pudo eliminar "${specialty.name}"`));
     } finally {
       setPendingId(null);
     }

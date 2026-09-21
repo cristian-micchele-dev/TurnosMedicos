@@ -9,6 +9,7 @@ import { AppointmentDetailModal } from '../appointments/AppointmentDetailModal';
 import { useToast } from '../../hooks/useToast';
 import { toLocalDateString } from '../../utils/date';
 import styles from './AgendaPage.module.css';
+import { apiErrorMessage } from '../../api/client';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -229,8 +230,8 @@ export function AgendaPage() {
       }
       setSelectedAppointment(null);
       await refetch();
-    } catch {
-      toast.error(`No se pudo actualizar el turno ${appointment.code}`);
+    } catch (err) {
+      toast.error(apiErrorMessage(err, `No se pudo actualizar el turno ${appointment.code}`));
     }
   }
 

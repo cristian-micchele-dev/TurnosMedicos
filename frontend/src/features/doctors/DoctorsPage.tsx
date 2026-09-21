@@ -13,6 +13,7 @@ import { Modal } from '../../components/ui/Modal';
 import { Pagination } from '../../components/ui/Pagination';
 import { DoctorForm } from './DoctorForm';
 import styles from './DoctorsPage.module.css';
+import { apiErrorMessage } from '../../api/client';
 
 export function DoctorsPage() {
   const navigate = useNavigate();
@@ -97,8 +98,8 @@ export function DoctorsPage() {
       await doctorsApi.update(doctor.id, { active: false });
       toast.success(`${name} desactivado`);
       await refetchDoctors();
-    } catch {
-      toast.error(`No se pudo desactivar a ${name}`);
+    } catch (err) {
+      toast.error(apiErrorMessage(err, `No se pudo desactivar a ${name}`));
     } finally {
       setPendingId(null);
     }

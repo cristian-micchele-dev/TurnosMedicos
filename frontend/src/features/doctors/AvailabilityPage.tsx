@@ -8,6 +8,7 @@ import { Select } from '../../components/ui/Select';
 import { Input } from '../../components/ui/Input';
 import { EmptyState } from '../../components/ui/EmptyState';
 import styles from './AvailabilityPage.module.css';
+import { apiErrorMessage } from '../../api/client';
 
 const DAY_NAMES: Record<number, string> = {
   0: 'Domingo',
@@ -143,8 +144,8 @@ export function AvailabilityPage() {
           );
           setBlocks(blocksData);
         }
-      } catch {
-        toast.error('Error al cargar la disponibilidad');
+      } catch (err) {
+        toast.error(apiErrorMessage(err, 'Error al cargar la disponibilidad'));
       } finally {
         setLoading(false);
       }
@@ -221,8 +222,8 @@ export function AvailabilityPage() {
       }));
       await doctorsApi.setAvailability(resolvedDoctorId, payload);
       toast.success('Disponibilidad guardada correctamente');
-    } catch {
-      toast.error('Error al guardar la disponibilidad');
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Error al guardar la disponibilidad'));
     } finally {
       setSaving(false);
     }
@@ -257,8 +258,8 @@ export function AvailabilityPage() {
       setBlockFormErrors({});
       setShowBlockForm(false);
       toast.success('Bloqueo agregado correctamente');
-    } catch {
-      toast.error('Error al agregar el bloqueo');
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Error al agregar el bloqueo'));
     } finally {
       setSavingBlock(false);
     }
@@ -270,8 +271,8 @@ export function AvailabilityPage() {
       await doctorsApi.removeBlock(resolvedDoctorId, blockId);
       setBlocks((prev) => prev.filter((b) => b.id !== blockId));
       toast.success('Bloqueo eliminado');
-    } catch {
-      toast.error('Error al eliminar el bloqueo');
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Error al eliminar el bloqueo'));
     }
   };
 

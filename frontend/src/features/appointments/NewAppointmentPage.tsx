@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { specialtiesApi, type Specialty } from '../../api/specialties';
 import { doctorsApi, type Doctor, type Availability } from '../../api/doctors';
 import { appointmentsApi } from '../../api/appointments';
+import type { ApiError } from '../../api/client';
 import { patientsApi, type Patient, type PatientInput } from '../../api/patients';
 import { useToast } from '../../hooks/useToast';
 import { useAuth } from '../../context/AuthContext';
@@ -13,6 +14,7 @@ import { PatientForm } from '../patients/PatientForm';
 import { Check } from 'lucide-react';
 import { addDaysLocal, localDateTimeToIso, todayLocal } from '../../utils/date';
 import styles from './NewAppointmentPage.module.css';
+import { apiErrorMessage } from '../../api/client';
 
 // ── Step kinds ──────────────────────────────────────────────────────────────
 type StepKind = 'patient' | 'specialty' | 'doctor' | 'datetime' | 'confirm';
@@ -113,8 +115,8 @@ export function NewAppointmentPage() {
       setCreatingPatient(false);
       setPatientQuery('');
       toast.success(`Paciente ${created.name} registrado`);
-    } catch {
-      toast.error('No se pudo registrar el paciente');
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'No se pudo registrar el paciente'));
     }
   };
 
@@ -203,8 +205,8 @@ export function NewAppointmentPage() {
           }),
       );
       setBookedSlots(booked);
-    } catch {
-      toast.error('Error al cargar los horarios disponibles');
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Error al cargar los horarios disponibles'));
     } finally {
       setAvailabilityLoading(false);
     }
@@ -228,8 +230,9 @@ export function NewAppointmentPage() {
       });
       toast.success('Turno creado correctamente');
       navigate(user?.role === 'DOCTOR' ? '/mis-turnos' : '/turnos');
-    } catch {
-      toast.error('Error al solicitar el turno');
+    } catch (err) {
+      // The API explains business-rule rejections (double booking, same-day specialty…) in Spanish: show that.
+      toast.error((err as Partial<ApiError>).detail ?? 'No se pudo crear el turno');
     } finally {
       setSubmitting(false);
     }

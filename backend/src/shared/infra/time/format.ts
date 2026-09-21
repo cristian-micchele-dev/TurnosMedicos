@@ -29,6 +29,12 @@ export function clinicLocalToUtc(dateIso: string, time: string): Date {
   return new Date(`${dateIso}T${time}${iso}`);
 }
 
+/** Calendar date (YYYY-MM-DD) of an instant on the clinic clock. */
+export function toClinicDate(date: Date): string {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: APP_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(date).map(p => [p.type, p.value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
 /** Start and end instants of a clinic calendar day. */
 export function clinicDayRange(dateIso: string): { start: Date; end: Date } {
   return { start: clinicLocalToUtc(dateIso, '00:00:00'), end: clinicLocalToUtc(dateIso, '23:59:59.999') };

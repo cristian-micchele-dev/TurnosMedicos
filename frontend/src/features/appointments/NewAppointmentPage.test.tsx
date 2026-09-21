@@ -194,4 +194,20 @@ describe('NewAppointmentPage', () => {
     expect(screen.getByRole('option', { name: /ana pérez/i })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('option', { name: /bruno díaz/i })).toHaveAttribute('aria-selected', 'false');
   });
+
+  it('si el backend rechaza el turno muestra SU motivo, no un error genérico', async () => {
+    auth.user.role = 'DOCTOR';
+    appointmentsApi.create.mockRejectedValue({ status: 409, code: 'DUPLICATE_SPECIALTY_BOOKING', detail: 'El paciente ya tiene un turno en esta especialidad para el mismo día' });
+    renderPage();
+    await userEvent.click(await screen.findByText('Ana Pérez'));
+    await userEvent.click(screen.getByRole('button', { name: /siguiente/i }));
+    const dateInput = await screen.findByLabelText(/fecha del turno/i);
+    await userEvent.clear(dateInput);
+    await userEvent.type(dateInput, nextMonday());
+    await userEvent.click(await screen.findByRole('button', { name: '09:30' }));
+    await userEvent.click(screen.getByRole('button', { name: /siguiente/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /confirmar turno/i }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('El paciente ya tiene un turno en esta especialidad para el mismo día'));
+    expect(navigate).not.toHaveBeenCalled();
+  });
 });
