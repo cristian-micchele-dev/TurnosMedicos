@@ -5,7 +5,7 @@ import { doctorsApi, type Doctor, type Availability } from '../../api/doctors';
 import { appointmentsApi } from '../../api/appointments';
 import { patientsApi, type Patient } from '../../api/patients';
 import { useToast } from '../../hooks/useToast';
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
 import { addDaysLocal, localDateTimeToIso, todayLocal } from '../../utils/date';

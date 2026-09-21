@@ -5,7 +5,7 @@ import { CLOCK as CLOCK_TOKEN, Clock, HASHER, Hasher, TOKEN_SERVICE, TokenServic
 import { UserRepository } from '../../users/user.repository.port';
 import { User } from '../../users/domain/user';
 import { LoginDto, ResetPasswordDto } from '../../users/application/dto/auth.dto';
-import { MailerPort, MAILER, RESET_REPOSITORY, ResetRepository, SESSION_REPOSITORY, SessionRepository } from '../ports/repositories';
+import { MailerPort, MAILER, RESET_REPOSITORY, ResetRepository, SESSION_REPOSITORY, SessionRepository } from '../auth.repository.port';
 const sha = (value: string) => createHash('sha256').update(value).digest('hex');
 
 @Injectable()

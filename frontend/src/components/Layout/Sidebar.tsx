@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import styles from './Sidebar.module.css';
 import layoutStyles from './Layout.module.css';
 

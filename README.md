@@ -39,6 +39,8 @@ src/modules/<feature>/
 └── <feature>.repository.port.ts   # Interfaz del repositorio (el dominio depende de esto, no de TypeORM)
 ```
 
+Dos módulos son planos a propósito: `dashboard/` (solo agrega lecturas de otros módulos, no tiene dominio propio) y `notifications/` (un gateway de Socket.IO). Lo transversal a la HTTP — health check, filtro de errores — vive en `shared/infra/http/`.
+
 Puntos que vale la pena mirar:
 
 - **Reglas de negocio como clases puras** — `appointments/domain/rules/*.rule.ts`. Se testean sin base de datos ni framework.
@@ -53,9 +55,9 @@ Puntos que vale la pena mirar:
 ```
 src/
 ├── api/            # Cliente HTTP (refresh automático, CSRF) + un módulo por recurso
-├── auth/           # AuthContext + ProtectedRoute por rol
+├── context/        # AuthContext y ThemeContext (providers globales)
 ├── features/       # Una carpeta por pantalla, con su CSS Module al lado
-├── components/ui/  # Primitivas reutilizables (Button, Input, Table, Modal, Toast…)
+├── components/     # ui/ (primitivas: Button, Input, Table, Modal, Toast…), Layout, ProtectedRoute
 ├── hooks/          # useFetch (TanStack Query con invalidación por recurso), useToast…
 ├── lib/            # queryClient
 └── utils/          # date (reloj local, nunca toISOString().split('T'))

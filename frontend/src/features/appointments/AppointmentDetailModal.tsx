@@ -7,7 +7,7 @@ import { prescriptionsApi, type Prescription, type Medication } from '../../api/
 import { Modal } from '../../components/ui/Modal';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../hooks/useToast';
 import { generateAppointmentPdf } from '../../utils/generateAppointmentPdf';
 import { generatePrescriptionPdf } from '../../utils/generatePrescriptionPdf';

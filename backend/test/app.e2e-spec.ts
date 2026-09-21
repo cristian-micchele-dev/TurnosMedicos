@@ -1,7 +1,7 @@
 import { Controller, Get, Module, UseGuards } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { HealthController } from '../src/health.controller';
+import { HealthController } from '../src/shared/infra/http/health.controller';
 import { configureApp } from '../src/main';
 import { AuthController } from '../src/modules/auth/adapters/http/auth.controller';
 import { JwtAuthGuard } from '../src/modules/auth/adapters/http/auth.guards';
@@ -10,7 +10,7 @@ import { Role } from '../src/modules/users/domain/user';
 import { AuthService } from '../src/modules/auth/application/auth.service';
 import { User } from '../src/modules/users/domain/user';
 import { TOKEN_SERVICE, HASHER, CLOCK } from '../src/shared/application/ports';
-import { MAILER, RESET_REPOSITORY, SESSION_REPOSITORY } from '../src/modules/auth/ports/repositories';
+import { MAILER, RESET_REPOSITORY, SESSION_REPOSITORY } from '../src/modules/auth/auth.repository.port';
 import { DataSource } from 'typeorm';
 
 const users = new Map<string, User>();

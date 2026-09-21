@@ -6,7 +6,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import configuration from './config/configuration';
 import { validateEnv } from './config/env.schema';
-import { HealthController } from './health.controller';
+import { HealthController } from './shared/infra/http/health.controller';
 import { UserOrmEntity, AuthSessionOrmEntity, ResetTokenOrmEntity } from './modules/users/adapters/persistence/entities';
 import { SpecialtyOrmEntity } from './modules/specialties/adapters/persistence/specialty.entity';
 import { DoctorOrmEntity, AvailabilityOrmEntity, ScheduleBlockOrmEntity } from './modules/doctors/adapters/persistence/doctor.entity';

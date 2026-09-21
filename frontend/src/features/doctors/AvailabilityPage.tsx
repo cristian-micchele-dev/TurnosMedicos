@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doctorsApi, type Doctor, type AvailabilitySlot, type ScheduleBlock, type CreateScheduleBlockDto } from '../../api/doctors';
 import { useToast } from '../../hooks/useToast';
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
 import { Input } from '../../components/ui/Input';

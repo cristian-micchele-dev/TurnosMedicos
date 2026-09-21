@@ -19,7 +19,7 @@ vi.mock('react-router-dom', async (importOriginal) => ({
   useNavigate: () => navigate,
 }));
 vi.mock('../../hooks/useToast', () => ({ useToast: () => ({ toast }) }));
-vi.mock('../../auth/AuthContext', () => ({ useAuth: () => auth }));
+vi.mock('../../context/AuthContext', () => ({ useAuth: () => auth }));
 vi.mock('../../api/doctors', () => ({ doctorsApi }));
 vi.mock('../../api/patients', () => ({ patientsApi }));
 vi.mock('../../api/specialties', () => ({ specialtiesApi }));

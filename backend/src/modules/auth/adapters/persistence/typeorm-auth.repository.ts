@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, MoreThan, Repository } from 'typeorm';
-import { AuthSession, ResetRepository, ResetToken, SessionRepository } from '../../ports/repositories';
+import { AuthSession, ResetRepository, ResetToken, SessionRepository } from '../../auth.repository.port';
 import { AuthSessionOrmEntity, ResetTokenOrmEntity } from '../../../users/adapters/persistence/entities';
 
 @Injectable()

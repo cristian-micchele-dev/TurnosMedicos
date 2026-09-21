@@ -1,15 +1,15 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { vi } from 'vitest';
-import type { AuthContextValue } from '../../auth/AuthContext.types';
+import type { AuthContextValue } from '../../context/AuthContext.types';
 import { ProtectedRoute } from './ProtectedRoute';
 
 // Mock the AuthContext module so we control what useAuth returns per test
-vi.mock('../../auth/AuthContext', () => ({
+vi.mock('../../context/AuthContext', () => ({
   useAuth: vi.fn(),
 }));
 
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 const mockUseAuth = vi.mocked(useAuth);
 

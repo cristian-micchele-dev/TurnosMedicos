@@ -7,7 +7,7 @@ import {
   PieChart, Pie, Cell, Legend,
   BarChart, Bar,
 } from 'recharts';
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { dashboardApi, type DashboardStats, type ChartData } from '../../api/dashboard';
 import { appointmentsApi, type Appointment } from '../../api/appointments';
 import { Skeleton } from '../../components/ui/Skeleton';
