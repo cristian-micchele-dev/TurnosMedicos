@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { appointmentsApi, type Appointment, type AppointmentStatus } from '../../api/appointments';
+import { doctorsApi, type Availability } from '../../api/doctors';
 import type { PaginatedResponse } from '../../api/users';
 import { useFetch } from '../../hooks/useFetch';
 import { AppointmentDetailModal } from '../appointments/AppointmentDetailModal';
@@ -9,9 +10,23 @@ import styles from './AgendaPage.module.css';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const HOUR_START = 7;
-const HOUR_END = 20;
-const TOTAL_HOURS = HOUR_END - HOUR_START;
+const DEFAULT_HOUR_START = 7;
+const DEFAULT_HOUR_END = 20;
+const EARLIEST_HOUR = 6;
+const LATEST_HOUR = 22;
+
+const toMinutes = (hhmm: string) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
+
+/** Hour window that fits every availability block with one hour of margin, clamped to [6, 22]. */
+function hourRange(blocks: Availability[]): { start: number; end: number } {
+  if (blocks.length === 0) return { start: DEFAULT_HOUR_START, end: DEFAULT_HOUR_END };
+  const first = Math.min(...blocks.map((b) => toMinutes(b.startTime)));
+  const last = Math.max(...blocks.map((b) => toMinutes(b.endTime)));
+  return {
+    start: Math.max(EARLIEST_HOUR, Math.floor(first / 60) - 1),
+    end: Math.min(LATEST_HOUR, Math.ceil(last / 60) + 1),
+  };
+}
 
 const DAY_NAMES = [
   'Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado',
@@ -44,25 +59,25 @@ function formatTime(iso: string): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-/** Returns top offset percent within the [HOUR_START, HOUR_END] window */
-function topPercent(iso: string): number {
+type Window = { start: number; end: number };
+
+const minutesToPercent = (minutes: number, w: Window) => ((minutes - w.start * 60) / ((w.end - w.start) * 60)) * 100;
+
+function topPercent(iso: string, w: Window): number {
   const d = new Date(iso);
-  const minutesFromStart = (d.getHours() - HOUR_START) * 60 + d.getMinutes();
-  return (minutesFromStart / (TOTAL_HOURS * 60)) * 100;
+  return minutesToPercent(d.getHours() * 60 + d.getMinutes(), w);
 }
 
-/** Returns height percent for a given duration in minutes */
-function heightPercent(durationMinutes: number): number {
-  return (durationMinutes / (TOTAL_HOURS * 60)) * 100;
+function heightPercent(durationMinutes: number, w: Window): number {
+  return (durationMinutes / ((w.end - w.start) * 60)) * 100;
 }
 
 /** Current time offset percent — null if outside window */
-function currentTimePercent(): number | null {
+function currentTimePercent(w: Window): number | null {
   const now = new Date();
-  const h = now.getHours();
-  if (h < HOUR_START || h >= HOUR_END) return null;
-  const minutes = (h - HOUR_START) * 60 + now.getMinutes();
-  return (minutes / (TOTAL_HOURS * 60)) * 100;
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  if (minutes < w.start * 60 || minutes >= w.end * 60) return null;
+  return minutesToPercent(minutes, w);
 }
 
 function isSameDay(isoA: Date, isoB: Date): boolean {
@@ -85,34 +100,40 @@ export function AgendaPage() {
   });
 
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [nowPercent, setNowPercent] = useState<number | null>(currentTimePercent);
 
-  // Refresh current-time indicator every minute
-  useEffect(() => {
-    const id = setInterval(() => setNowPercent(currentTimePercent()), 60_000);
-    return () => clearInterval(id);
-  }, []);
-
-  const { from, to } = useMemo(() => {
-    const next = new Date(currentDate);
-    next.setDate(next.getDate() + 1);
-    return {
-      from: toLocalDateString(currentDate),
-      to: toLocalDateString(next),
-    };
-  }, [currentDate]);
+  // The backend treats a bare date as that whole clinic day, so from === to.
+  const day = toLocalDateString(currentDate);
 
   const { data: result, loading, refetch } = useFetch<PaginatedResponse<Appointment>>(
-    ['appointments', 'agenda', from, to],
-    () => appointmentsApi.findAll({ from, to }, 1, 50),
+    ['appointments', 'agenda', day],
+    () => appointmentsApi.findAll({ from: day, to: day }, 1, 50),
   );
 
+  const { data: availability } = useFetch<Availability[]>(
+    ['availability', 'me'],
+    async () => doctorsApi.getAvailability((await doctorsApi.me()).id),
+  );
+
+  const dayBlocks = useMemo(
+    () => (availability ?? []).filter((b) => b.dayOfWeek === currentDate.getDay()),
+    [availability, currentDate],
+  );
+  const window = useMemo(() => hourRange(availability ?? []), [availability]);
+
+  const [nowPercent, setNowPercent] = useState<number | null>(null);
+  useEffect(() => {
+    setNowPercent(currentTimePercent(window));
+    const id = setInterval(() => setNowPercent(currentTimePercent(window)), 60_000);
+    return () => clearInterval(id);
+  }, [window]);
+
+  // Blocks are positioned by wall-clock hour only, so anything outside this day must be dropped.
   const appointments = useMemo(() => {
-    const list = result?.data ?? [];
+    const list = (result?.data ?? []).filter((a) => isSameDay(new Date(a.dateTime), currentDate));
     return [...list].sort(
       (a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime(),
     );
-  }, [result]);
+  }, [result, currentDate]);
 
   // Next upcoming appointment
   const nextAppointment = useMemo(() => {
@@ -173,7 +194,8 @@ export function AgendaPage() {
     }
   }
 
-  const hours = Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => HOUR_START + i);
+  const totalHours = window.end - window.start;
+  const hours = Array.from({ length: totalHours + 1 }, (_, i) => window.start + i);
 
   return (
     <div className={styles.page}>
@@ -224,13 +246,14 @@ export function AgendaPage() {
       </div>
 
       {/* ── Timeline ── */}
-      {!loading && appointments.length === 0 ? (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>📅</div>
-          <p className={styles.emptyTitle}>No hay turnos para este día</p>
-          <p className={styles.emptySubtitle}>Disfrutá el descanso o revisá otro día</p>
-        </div>
-      ) : (
+      {!loading && appointments.length === 0 && (
+        <p className={styles.emptyNote}>
+          {dayBlocks.length === 0
+            ? 'Sin turnos — no tenés disponibilidad configurada para este día.'
+            : 'Sin turnos para este día. Los bloques sombreados son tu horario de atención.'}
+        </p>
+      )}
+      {(
         <div className={styles.timelineWrapper}>
           {/* Time axis */}
           <div className={styles.timeAxis} aria-hidden="true">
@@ -242,13 +265,26 @@ export function AgendaPage() {
           </div>
 
           {/* Grid + appointment blocks */}
-          <div className={styles.timelineGrid}>
+          <div className={styles.timelineGrid} style={{ height: `${totalHours * 60}px` }}>
+            {/* Availability shading */}
+            {dayBlocks.map((b) => (
+              <div
+                key={b.id}
+                className={styles.availabilityBlock}
+                style={{
+                  top: `${minutesToPercent(toMinutes(b.startTime), window)}%`,
+                  height: `${heightPercent(toMinutes(b.endTime) - toMinutes(b.startTime), window)}%`,
+                }}
+                aria-label={`Disponible ${b.startTime}–${b.endTime}`}
+              />
+            ))}
+
             {/* Hour grid lines */}
             {hours.map((h) => (
               <div
                 key={h}
                 className={styles.gridLine}
-                style={{ top: `${((h - HOUR_START) / TOTAL_HOURS) * 100}%` }}
+                style={{ top: `${((h - window.start) / totalHours) * 100}%` }}
               />
             ))}
 
@@ -263,8 +299,8 @@ export function AgendaPage() {
 
             {/* Appointment blocks */}
             {appointments.map((appt) => {
-              const top = topPercent(appt.dateTime);
-              const height = Math.max(heightPercent(appt.durationMinutes), 3);
+              const top = topPercent(appt.dateTime, window);
+              const height = Math.max(heightPercent(appt.durationMinutes, window), 3);
               const isNext = nextAppointment?.id === appt.id;
               const statusCfg = STATUS_CONFIG[appt.status];
 
@@ -276,7 +312,7 @@ export function AgendaPage() {
                   onClick={() => setSelectedAppointment(appt)}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && setSelectedAppointment(appt)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedAppointment(appt); } }}
                   aria-label={`Turno de ${appt.patient?.name ?? 'Paciente'} a las ${formatTime(appt.dateTime)}`}
                 >
                   <div className={styles.apptTime}>{formatTime(appt.dateTime)}</div>

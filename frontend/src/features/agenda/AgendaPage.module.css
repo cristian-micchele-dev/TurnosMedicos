@@ -324,38 +324,7 @@
   color: var(--danger);
 }
 
-/* ── Empty state ────────────────────────────────────────────────────────────── */
 
-.emptyState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 4rem 2rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  text-align: center;
-  opacity: 0;
-  animation: fadeSlideUp 0.5s ease 0.2s both;
-}
-
-.emptyIcon {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.emptyTitle {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.emptySubtitle {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-}
 
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
 
@@ -402,4 +371,20 @@
     min-width: unset;
     font-size: 0.9rem;
   }
+}
+
+/* Availability shading — the doctor's working hours for the visible day */
+.availabilityBlock {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: var(--primary-light);
+  border-left: 2px solid var(--primary-ring);
+  pointer-events: none;
+}
+
+.emptyNote {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
 }
