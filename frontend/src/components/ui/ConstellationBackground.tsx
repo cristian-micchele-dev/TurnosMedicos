@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
-import styles from './CellsBackground.module.css';
+import styles from './Backdrop.module.css';
 
 interface ConstellationBackgroundProps {
+  /** `soft` sits behind data (dashboard); `strong` is the login scene — same sky, more of it. */
+  intensity?: 'soft' | 'strong';
   className?: string;
 }
 
@@ -28,9 +30,12 @@ interface Star {
 const DARK: Palette = { star: [125, 211, 252], line: [125, 211, 252], alpha: 1 };
 const LIGHT: Palette = { star: [46, 78, 128], line: [46, 78, 128], alpha: 0.8 };
 
-const STARS_PER_MEGAPIXEL = 14;
-const LINK_DISTANCE = 190; // px: a line exists while two stars are closer than this
-const DRIFT = 0.12; // px per 60fps frame: barely moving — a line forms or fades every few seconds
+// One sky, two intensities: the same look reads as one product across screens.
+const SETTINGS = {
+  soft: { starsPerMegapixel: 14, linkDistance: 190, drift: 0.12, alpha: 1 },
+  strong: { starsPerMegapixel: 26, linkDistance: 230, drift: 0.16, alpha: 1.6 },
+};
+type Intensity = keyof typeof SETTINGS;
 
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 const rgba = ([r, g, b]: RGB, a: number) => `rgba(${r}, ${g}, ${b}, ${a})`;
@@ -44,8 +49,9 @@ function prefersReducedMotion(): boolean {
 }
 
 // Stars scattered with breathing room so the sky never clumps.
-function seed(width: number, height: number): Star[] {
-  const count = Math.max(8, Math.round((width * height) / 1_000_000 * STARS_PER_MEGAPIXEL));
+function seed(width: number, height: number, intensity: Intensity): Star[] {
+  const s = SETTINGS[intensity];
+  const count = Math.max(8, Math.round((width * height) / 1_000_000 * s.starsPerMegapixel));
   const stars: Star[] = [];
   for (let i = 0; i < count; i++) {
     let x = 0, y = 0, ok = false;
@@ -55,13 +61,16 @@ function seed(width: number, height: number): Star[] {
       ok = stars.every((s) => Math.hypot(s.x - x, s.y - y) > 80);
     }
     const angle = rand(0, Math.PI * 2);
-    const speed = rand(0.5, 1) * DRIFT;
+    const speed = rand(0.5, 1) * s.drift;
     stars.push({ x, y, r: rand(1.4, 2.4), vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, phase: rand(0, Math.PI * 2) });
   }
   return stars;
 }
 
-function paint(ctx: CanvasRenderingContext2D, stars: Star[], width: number, height: number, t: number, p: Palette) {
+function paint(ctx: CanvasRenderingContext2D, stars: Star[], width: number, height: number, t: number, p: Palette, intensity: Intensity) {
+  const linkDistance = SETTINGS[intensity].linkDistance;
+  // May exceed 1 on the strong sky; the canvas clamps colour alpha, so cores saturate and halos widen.
+  const alpha = p.alpha * SETTINGS[intensity].alpha;
   ctx.clearRect(0, 0, width, height);
 
   // Lines first, under the stars. Opacity falls off with distance, so a link fades in
@@ -71,9 +80,9 @@ function paint(ctx: CanvasRenderingContext2D, stars: Star[], width: number, heig
     for (let j = i + 1; j < stars.length; j++) {
       const a = stars[i], b = stars[j];
       const d = Math.hypot(a.x - b.x, a.y - b.y);
-      if (d > LINK_DISTANCE) continue;
-      const strength = 1 - d / LINK_DISTANCE;
-      ctx.strokeStyle = rgba(p.line, 0.18 * strength * p.alpha);
+      if (d > linkDistance) continue;
+      const strength = 1 - d / linkDistance;
+      ctx.strokeStyle = rgba(p.line, 0.18 * strength * alpha);
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
@@ -85,13 +94,13 @@ function paint(ctx: CanvasRenderingContext2D, stars: Star[], width: number, heig
     const twinkle = 0.7 + Math.sin(t * 0.0006 + s.phase) * 0.3;
     // A soft halo and a crisp core: the star reads even at 2px.
     const halo = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 5);
-    halo.addColorStop(0, rgba(p.star, 0.35 * twinkle * p.alpha));
+    halo.addColorStop(0, rgba(p.star, 0.35 * twinkle * alpha));
     halo.addColorStop(1, rgba(p.star, 0));
     ctx.fillStyle = halo;
     ctx.beginPath();
     ctx.arc(s.x, s.y, s.r * 5, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = rgba(p.star, 0.9 * twinkle * p.alpha);
+    ctx.fillStyle = rgba(p.star, 0.9 * twinkle * alpha);
     ctx.beginPath();
     ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
     ctx.fill();
@@ -103,7 +112,7 @@ function paint(ctx: CanvasRenderingContext2D, stars: Star[], width: number, heig
  * the faint lines between them form and dissolve over seconds. Decoration only:
  * aria-hidden, no pointer, paused when the tab is hidden, a still frame under reduced motion.
  */
-export function ConstellationBackground({ className }: ConstellationBackgroundProps) {
+export function ConstellationBackground({ intensity = 'soft', className }: ConstellationBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -128,7 +137,7 @@ export function ConstellationBackground({ className }: ConstellationBackgroundPr
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      if (stars.length === 0) stars = seed(width, height);
+      if (stars.length === 0) stars = seed(width, height, intensity);
     };
 
     const step = (t: number) => {
@@ -141,7 +150,7 @@ export function ConstellationBackground({ className }: ConstellationBackgroundPr
         if (s.x < 0 || s.x > width) s.vx = -s.vx;
         if (s.y < 0 || s.y > height) s.vy = -s.vy;
       }
-      paint(ctx, stars, width, height, t, palette);
+      paint(ctx, stars, width, height, t, palette, intensity);
       frame = requestAnimationFrame(step);
     };
 
@@ -160,11 +169,11 @@ export function ConstellationBackground({ className }: ConstellationBackgroundPr
 
     const themeWatcher = new MutationObserver(() => {
       palette = isLightTheme() ? LIGHT : DARK;
-      if (still) paint(ctx, stars, width, height, 0, palette);
+      if (still) paint(ctx, stars, width, height, 0, palette, intensity);
     });
 
     resize();
-    if (still) paint(ctx, stars, width, height, 0, palette);
+    if (still) paint(ctx, stars, width, height, 0, palette, intensity);
     else start();
 
     const observer = new ResizeObserver(resize);
@@ -178,7 +187,7 @@ export function ConstellationBackground({ className }: ConstellationBackgroundPr
       themeWatcher.disconnect();
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, []);
+  }, [intensity]);
 
   return (
     <canvas
