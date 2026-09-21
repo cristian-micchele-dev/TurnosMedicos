@@ -199,20 +199,15 @@ Sombras: azuladas (`rgba(43,66,105,…)`) y difusas — la elevación se lee por
 
 ### Familias
 
-**Principio:** una sola familia con tres voces, para que el panel se lea como un documento del hospital y no como una plantilla. La sans humanista lleva la interfaz y los datos; su serif hermana firma los títulos de página, el saludo del día, las cifras del dashboard y la marca (la "tinta" del tema papel clínico); la mono de la misma familia va solo donde hay códigos o matrículas. Sin Inter: es la tipografía por defecto de toda interfaz generada y delata el origen.
+| Rol | Familia | Fallback |
+|-----|---------|----------|
+| UI principal | **Inter** | system-ui, sans-serif |
+| Monoespaciado (códigos de turno) | **JetBrains Mono** | 'Courier New', monospace |
 
-| Rol | Familia | Token | Fallback |
-|-----|---------|-------|----------|
-| UI, datos, formularios | **Source Sans 3** (400–700) | `--font` | 'Segoe UI', system-ui, sans-serif |
-| Títulos de página (h1), saludo, cifras, marca | **Source Serif 4** (600, 700) | `--font-display` | Georgia, serif |
-| Códigos de turno, matrículas | **Source Code Pro** (500) | `--font-mono` | 'Courier New', monospace |
-
-Reglas: solo `h1` y las cifras usan la serif; de `h2` hacia abajo todo queda en la sans para que las tablas se lean rápido. Pesos disponibles hasta 700 — no declarar 800. Numerales tabulares (`font-variant-numeric: tabular-nums`) en tablas, horas y cifras. Las superficies que dibuja el navegador también llevan la paleta: selección de texto, caret y scrollbar.
-
-> Importar desde Google Fonts (ya está en `globals.css`):
+> Importar desde Google Fonts:
 > ```html
 > <link rel="preconnect" href="https://fonts.googleapis.com">
-> <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Source+Code+Pro:wght@500&display=swap" rel="stylesheet">
+> <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 > ```
 
 ### Escala Tipográfica
@@ -233,9 +228,8 @@ Reglas: solo `h1` y las cifras usan la serif; de `h2` hacia abajo todo queda en 
 
 ```css
 :root {
-  --font:         'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
-  --font-display: 'Source Serif 4', Georgia, serif;
-  --font-mono:    'Source Code Pro', 'Courier New', monospace;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
 
   --text-h1:       clamp(2rem, 5vw, 3rem);
   --text-h2:       clamp(1.5rem, 3.5vw, 2.25rem);

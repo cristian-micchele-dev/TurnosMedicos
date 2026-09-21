@@ -1,4 +1,3 @@
-import { CalendarOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doctorsApi, type Doctor, type AvailabilitySlot, type ScheduleBlock, type CreateScheduleBlockDto } from '../../api/doctors';
@@ -389,7 +388,7 @@ export function AvailabilityPage() {
       {sortedSlots.length === 0 ? (
         <div className={styles.emptyWrapper}>
           <EmptyState
-            icon={<CalendarOff size={28} strokeWidth={1.5} />}
+            icon="📅"
             title="Sin horarios configurados"
             description="Agregá los horarios de atención para que los pacientes puedan reservar turnos."
             action={{ label: '+ Agregar Horario', onClick: () => setShowForm(true) }}

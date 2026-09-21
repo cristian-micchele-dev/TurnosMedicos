@@ -11,7 +11,7 @@ import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
 import { Modal } from '../../components/ui/Modal';
 import { PatientForm } from '../patients/PatientForm';
-import { Check, Stethoscope, UserRound, CalendarOff } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { addDaysLocal, localDateTimeToIso, todayLocal } from '../../utils/date';
 import styles from './NewAppointmentPage.module.css';
 import { apiErrorMessage } from '../../api/client';
@@ -284,7 +284,7 @@ export function NewAppointmentPage() {
                 disabled={!isDone}
                 aria-current={isActive ? 'step' : undefined}
               >
-                {isDone ? <Check size={14} strokeWidth={3} aria-label="Completado" /> : s}
+                {isDone ? '✓' : s}
               </button>
               <span className={[styles.stepLabel, isActive ? styles.stepLabelActive : ''].filter(Boolean).join(' ')}>
                 {STEP_LABEL[kind]}
@@ -395,7 +395,7 @@ export function NewAppointmentPage() {
                     ].filter(Boolean).join(' ')}
                     onClick={() => setSelectedSpecialty(s)}
                   >
-                    <span className={styles.optionIcon}><Stethoscope size={18} strokeWidth={1.75} aria-hidden /></span>
+                    <span className={styles.optionIcon}>🏥</span>
                     <span className={styles.optionName}>{s.name}</span>
                     {s.description && (
                       <span className={styles.optionDesc}>{s.description}</span>
@@ -438,7 +438,7 @@ export function NewAppointmentPage() {
                     ].filter(Boolean).join(' ')}
                     onClick={() => setSelectedDoctor(d)}
                   >
-                    <span className={styles.optionIcon}><UserRound size={18} strokeWidth={1.75} aria-hidden /></span>
+                    <span className={styles.optionIcon}>👨‍⚕️</span>
                     <span className={styles.optionName}>{d.user?.name ?? '—'}</span>
                     <span className={styles.optionDesc}>Mat. {d.licenseNumber}</span>
                     {d.specialty && (
@@ -478,7 +478,7 @@ export function NewAppointmentPage() {
               <div className={styles.centered}><Spinner /></div>
             ) : allSlots.length === 0 ? (
               <div className={styles.noSlots}>
-                <span className={styles.noSlotsIcon}><CalendarOff size={26} strokeWidth={1.5} aria-hidden /></span>
+                <span className={styles.noSlotsIcon}>📅</span>
                 <p>
                   {user?.role === 'DOCTOR'
                     ? 'No tenés disponibilidad configurada para esta fecha.'

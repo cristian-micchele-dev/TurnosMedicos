@@ -24,6 +24,7 @@
   gap: 1rem;
   flex-wrap: wrap;
   opacity: 0;
+  animation: fadeSlideUp 0.5s ease 0.1s both;
 }
 
 .headerLeft {
@@ -97,6 +98,7 @@
   margin-bottom: 1.5rem;
   box-shadow: var(--shadow-sm);
   opacity: 0;
+  animation: fadeSlideUp 0.5s ease 0.2s both;
 }
 
 .formTitle {
@@ -129,6 +131,7 @@
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   opacity: 0;
+  animation: fadeSlideUp 0.5s ease 0.35s both;
 }
 
 .scheduleHeader {
@@ -218,6 +221,7 @@
 .blocksSection {
   margin-top: 2.5rem;
   opacity: 0;
+  animation: fadeSlideUp 0.5s ease 0.45s both;
 }
 
 .blocksSectionHeader {

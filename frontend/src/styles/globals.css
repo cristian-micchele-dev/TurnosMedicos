@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Source+Code+Pro:wght@500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -124,11 +124,8 @@
   --page-wash:         none;
 
   /* ── Tipografía & Motion ── */
-  /* One family, three voices: humanist sans for the UI, its serif sibling for page titles
-     (the "paper" of the clinical-paper theme), and the matching mono for codes and licences. */
-  --font:            'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
-  --font-display:    'Source Serif 4', Georgia, 'Times New Roman', serif;
-  --font-mono:       'Source Code Pro', 'Courier New', monospace;
+  --font:            'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:       'JetBrains Mono', 'Courier New', monospace;
   --transition:      150ms ease;
   --transition-slow: 300ms ease;
 
@@ -250,13 +247,8 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  caret-color: var(--primary);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
-
-/* The parts the browser draws still carry the palette. */
-::selection { background: var(--primary-ring); color: var(--text-primary); }
-a[href]:hover { text-underline-offset: 0.15em; }
-table, time, .tabular { font-variant-numeric: tabular-nums; }
 
 a { text-decoration: none; color: inherit; }
 
@@ -274,14 +266,6 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.02em;
-}
-
-/* Page titles speak in the serif; everything below stays in the sans so data reads fast. */
-h1 {
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  line-height: 1.15;
 }
 
 p { color: var(--text-secondary); }
