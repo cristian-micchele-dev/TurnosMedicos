@@ -7,7 +7,7 @@ import { prescriptionsApi, type Prescription, type Medication } from '../../api/
 import { Modal } from '../../components/ui/Modal';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
-import { useAuth } from '../../context/AuthContext';
+import { useMyDoctor } from '../../hooks/useMyDoctor';
 import { useToast } from '../../hooks/useToast';
 import { generateAppointmentPdf } from '../../utils/generateAppointmentPdf';
 import { generatePrescriptionPdf } from '../../utils/generatePrescriptionPdf';
@@ -63,7 +63,9 @@ export function AppointmentDetailModal({
   onAction,
   role,
 }: AppointmentDetailModalProps) {
-  const { user } = useAuth();
+  // Ownership is a doctor-PROFILE id, not the account id in the JWT: the two are different rows.
+  const { doctor: myDoctor } = useMyDoctor();
+  const isTreatingDoctor = role === 'DOCTOR' && myDoctor?.id === appointment.doctorId;
   const { toast } = useToast();
 
   const [cancelling, setCancelling] = useState(false);
@@ -197,15 +199,8 @@ export function AppointmentDetailModal({
     });
   };
 
-  const canUploadReport =
-    role === 'DOCTOR' &&
-    appointment.status === 'COMPLETED' &&
-    user?.id === appointment.doctorId;
-
-  const canCreatePrescription =
-    role === 'DOCTOR' &&
-    appointment.status === 'COMPLETED' &&
-    user?.id === appointment.doctorId;
+  const canUploadReport = isTreatingDoctor && appointment.status === 'COMPLETED';
+  const canCreatePrescription = isTreatingDoctor && appointment.status === 'COMPLETED';
 
   const statusCfg = STATUS_CONFIG[appointment.status];
 
@@ -336,7 +331,7 @@ export function AppointmentDetailModal({
             <div className={styles.reportsList}>
               {reports.map((report) => {
                 const isImage = report.mimeType.startsWith('image/');
-                const isOwner = role === 'DOCTOR' && user?.id === report.doctorId;
+                const isOwner = role === 'DOCTOR' && myDoctor?.id === report.doctorId;
                 return (
                   <div key={report.id} className={styles.reportItem}>
                     <div className={`${styles.reportIcon} ${isImage ? styles.reportIconImage : styles.reportIconPdf}`}>
