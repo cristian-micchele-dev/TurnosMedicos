@@ -163,4 +163,22 @@ describe('NewAppointmentPage', () => {
       expect(await screen.findByLabelText(/nombre completo/i)).toHaveValue('Zoe Nueva');
     });
   });
+
+  it('pide pacientes dentro del máximo que acepta el backend (100)', async () => {
+    auth.user.role = 'DOCTOR';
+    renderPage();
+    await waitFor(() => expect(patientsApi.findAll).toHaveBeenCalled());
+    const [, limit] = patientsApi.findAll.mock.calls[0];
+    expect(limit).toBeLessThanOrEqual(100);
+  });
+
+  it('si la carga de pacientes falla lo dice y ofrece reintentar, no finge que no hay pacientes', async () => {
+    auth.user.role = 'DOCTOR';
+    patientsApi.findAll.mockRejectedValueOnce({ status: 400 });
+    renderPage();
+    expect(await screen.findByText(/no pudimos cargar los pacientes/i)).toBeInTheDocument();
+    expect(screen.queryByText(/todavía no hay pacientes/i)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /reintentar/i }));
+    expect(await screen.findByText('Ana Pérez')).toBeInTheDocument();
+  });
 });

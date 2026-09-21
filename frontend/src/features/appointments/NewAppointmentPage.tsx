@@ -75,6 +75,17 @@ export function NewAppointmentPage() {
 
   const [patients, setPatients]               = useState<Patient[]>([]);
   const [patientsLoading, setPatientsLoading] = useState(false);
+  const [patientsError, setPatientsError] = useState(false);
+
+  // The API caps limit at 100; asking for more is a 400, not a bigger page.
+  const loadPatients = () => {
+    setPatientsLoading(true);
+    setPatientsError(false);
+    patientsApi.findAll(1, 100)
+      .then(res => setPatients(res.data.filter(p => p.active)))
+      .catch(() => setPatientsError(true))
+      .finally(() => setPatientsLoading(false));
+  };
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [creatingPatient, setCreatingPatient] = useState(false);
   const [patientQuery, setPatientQuery] = useState('');
@@ -131,13 +142,7 @@ export function NewAppointmentPage() {
 
   // Load data when entering each step
   useEffect(() => {
-    if (currentKind === 'patient' && patients.length === 0) {
-      setPatientsLoading(true);
-      patientsApi.findAll(1, 200)
-        .then(res => setPatients(res.data.filter(p => p.active)))
-        .catch(() => toast.error('Error al cargar pacientes'))
-        .finally(() => setPatientsLoading(false));
-    }
+    if (currentKind === 'patient' && patients.length === 0 && !patientsError) loadPatients();
 
     if (currentKind === 'specialty' && specialties.length === 0) {
       setSpecialtiesLoading(true);
@@ -306,6 +311,11 @@ export function NewAppointmentPage() {
             />
             {patientsLoading ? (
               <div className={styles.centered}><Spinner /></div>
+            ) : patientsError ? (
+              <div className={styles.notFound}>
+                <p>No pudimos cargar los pacientes.</p>
+                <Button variant="secondary" size="sm" onClick={loadPatients}>Reintentar</Button>
+              </div>
             ) : patients.length === 0 ? (
               <p className={styles.emptyMsg}>Todavía no hay pacientes registrados — creá el primero con el botón de arriba.</p>
             ) : visiblePatients.length === 0 ? (
