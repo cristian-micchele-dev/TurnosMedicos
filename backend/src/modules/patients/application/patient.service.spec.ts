@@ -30,6 +30,16 @@ describe('PatientService', () => {
   });
 
   describe('findAll', () => {
+    it('pasa el término de búsqueda recortado al repositorio', async () => {
+      await service().findAll({ q: '  Pérez  ', page: 2, limit: 10 });
+      expect(patients.findAll).toHaveBeenCalledWith({ skip: 10, take: 10, q: 'Pérez' });
+    });
+
+    it('un término vacío es lo mismo que no buscar', async () => {
+      await service().findAll({ q: '   ' });
+      expect(patients.findAll).toHaveBeenCalledWith({ skip: 0, take: 20, q: undefined });
+    });
+
     it('retorna lista de pacientes', async () => {
       patients.findAll.mockResolvedValue([[new Patient('p1', 'Ana', null)], 1]);
       const result = await service().findAll();

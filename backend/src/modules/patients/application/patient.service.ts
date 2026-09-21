@@ -3,8 +3,8 @@ import { randomUUID } from 'crypto';
 import { Patient } from '../domain/patient';
 import { PatientNotFoundError } from '../domain/patient-not-found.exception';
 import { PatientRepository, PATIENT_REPOSITORY } from '../patient.repository.port';
-import { CreatePatientDto, UpdatePatientDto } from './dto/patient.dto';
-import { PaginationDto, PaginatedResult } from '../../../shared/application/pagination';
+import { CreatePatientDto, UpdatePatientDto, PatientQueryDto } from './dto/patient.dto';
+import { PaginatedResult } from '../../../shared/application/pagination';
 
 @Injectable()
 export class PatientService {
@@ -18,11 +18,12 @@ export class PatientService {
     return (await this.patients.save(patient)).toPublic();
   }
 
-  async findAll(pagination: PaginationDto = {}): Promise<PaginatedResult<ReturnType<Patient['toPublic']>>> {
+  async findAll(pagination: PatientQueryDto = {}): Promise<PaginatedResult<ReturnType<Patient['toPublic']>>> {
     const page = pagination.page ?? 1;
     const limit = pagination.limit ?? 20;
     const skip = (page - 1) * limit;
-    const [list, total] = await this.patients.findAll({ skip, take: limit });
+    const q = pagination.q?.trim() || undefined;
+    const [list, total] = await this.patients.findAll({ skip, take: limit, q });
     return { data: list.map(p => p.toPublic()), total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 

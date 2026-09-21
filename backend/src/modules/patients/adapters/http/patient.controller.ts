@@ -3,9 +3,8 @@ import { Request } from 'express';
 import { JwtAuthGuard, Roles, RolesGuard } from '../../../auth/adapters/http/auth.guards';
 import { Role } from '../../../users/domain/user';
 import { PatientService } from '../../application/patient.service';
-import { CreatePatientDto, UpdatePatientDto } from '../../application/dto/patient.dto';
+import { CreatePatientDto, UpdatePatientDto, PatientQueryDto } from '../../application/dto/patient.dto';
 import { ForbiddenError } from '../../../../shared/domain/errors';
-import { PaginationDto } from '../../../../shared/application/pagination';
 
 // Patients are a hospital-wide registry: doctors register and update them too.
 // Only ADMIN decides who is active in the system.
@@ -20,8 +19,8 @@ export class PatientController {
   }
 
   @Get() @Roles(Role.ADMIN, Role.DOCTOR)
-  findAll(@Query() pagination: PaginationDto) {
-    return this.service.findAll(pagination);
+  findAll(@Query() query: PatientQueryDto) {
+    return this.service.findAll(query);
   }
 
   @Get(':id') @Roles(Role.ADMIN, Role.DOCTOR)

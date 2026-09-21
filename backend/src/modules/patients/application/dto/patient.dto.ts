@@ -1,4 +1,5 @@
 import { IsBoolean, IsDateString, IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { PaginationDto } from '../../../../shared/application/pagination';
 
 export class CreatePatientDto {
   @IsString() @MinLength(2) @MaxLength(120) name!: string;
@@ -19,4 +20,9 @@ export class UpdatePatientDto {
   @IsOptional() @IsString() @MaxLength(50) insuranceNumber?: string;
   @IsOptional() @IsString() notes?: string;
   @IsOptional() @IsBoolean() active?: boolean;
+}
+
+export class PatientQueryDto extends PaginationDto {
+  /** Free text over name, email, insurance number and phone; accents and case are ignored. */
+  @IsOptional() @IsString() @MaxLength(80) q?: string;
 }
