@@ -102,4 +102,57 @@ describe('AgendaPage', () => {
     expect(screen.getByRole('link', { name: /^lista$/i })).toHaveAttribute('href', '/mis-turnos');
     expect(screen.getByRole('link', { name: /editar horario/i })).toHaveAttribute('href', '/disponibilidad');
   });
+
+  describe('resumen del día', () => {
+    const today = todayLocal();
+    const withAppts = () => appointmentsApi.findAll.mockResolvedValue({
+      data: [
+        { ...appt('1', localDateTimeToIso(today, '08:30'), 'Ana'), status: 'COMPLETED' },
+        { ...appt('2', localDateTimeToIso(today, '09:00'), 'Bruno'), status: 'CONFIRMED' },
+        { ...appt('3', localDateTimeToIso(today, '17:00'), 'Carla'), status: 'PENDING' },
+        { ...appt('4', localDateTimeToIso(today, '17:30'), 'Dani'), status: 'CANCELLED' },
+      ],
+      total: 4, page: 1, totalPages: 1,
+    });
+
+    it('desglosa los turnos por estado', async () => {
+      withAppts();
+      renderPage();
+      const summary = await screen.findByRole('region', { name: /resumen del día/i });
+      await waitFor(() => expect(summary).not.toHaveTextContent(/cargando/i));
+      expect(summary).toHaveTextContent(/3 turnos/i);
+      expect(summary).toHaveTextContent(/1 pendiente/i);
+      expect(summary).toHaveTextContent(/1 confirmado/i);
+      expect(summary).toHaveTextContent(/1 completado/i);
+      expect(summary).toHaveTextContent(/1 cancelado/i);
+    });
+
+    it('muestra el horario de atención del día y los lugares libres', async () => {
+      withAppts();
+      renderPage();
+      const summary = await screen.findByRole('region', { name: /resumen del día/i });
+      await waitFor(() => expect(summary).not.toHaveTextContent(/cargando/i));
+      // 08:00–12:00 (8 slots) + 16:30–20:00 (7 slots) = 15; 3 activos → 12 libres
+      expect(summary).toHaveTextContent('08:00–12:00');
+      expect(summary).toHaveTextContent('16:30–20:00');
+      expect(summary).toHaveTextContent(/12 de 15 lugares libres/i);
+    });
+
+    it('sin disponibilidad ese día lo dice explícitamente', async () => {
+      doctorsApi.getAvailability.mockResolvedValue([]);
+      renderPage();
+      const summary = await screen.findByRole('region', { name: /resumen del día/i });
+      await waitFor(() => expect(summary).not.toHaveTextContent(/cargando/i));
+      expect(summary).toHaveTextContent(/no atendés este día/i);
+    });
+  });
+
+  it('extiende la ventana horaria para que un turno fuera del horario de atención no quede recortado', async () => {
+    const today = todayLocal();
+    appointmentsApi.findAll.mockResolvedValue({ data: [appt('x', localDateTimeToIso(today, '06:00'), 'Temprano')], total: 1, page: 1, totalPages: 1 });
+    renderPage();
+    await screen.findByRole('button', { name: /turno de temprano/i });
+    // axis label + block label: the hour is now part of the visible window
+    expect(screen.getAllByText('06:00').length).toBeGreaterThanOrEqual(2);
+  });
 });
