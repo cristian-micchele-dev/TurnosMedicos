@@ -1,4 +1,5 @@
-import { forwardRef, type InputHTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, useState, type InputHTMLAttributes, type ReactNode } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import styles from './Input.module.css';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -9,9 +10,11 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, helperText, leftElement, className = '', id, required, ...props }, ref) => {
+  ({ label, error, helperText, leftElement, className = '', id, required, type, ...props }, ref) => {
     const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
     const hasError = Boolean(error);
+    const isPassword = type === 'password';
+    const [revealed, setRevealed] = useState(false);
 
     return (
       <div className={styles.wrapper}>
@@ -33,10 +36,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               styles.input,
               hasError ? styles.inputError : '',
               leftElement ? styles.inputWithLeft : '',
+              isPassword ? styles.inputWithRight : '',
               className,
             ]
               .filter(Boolean)
               .join(' ')}
+            type={isPassword && revealed ? 'text' : type}
             required={required}
             aria-invalid={hasError}
             aria-describedby={
@@ -48,6 +53,18 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             }
             {...props}
           />
+          {isPassword && (
+            <button
+              type="button"
+              className={styles.reveal}
+              onClick={() => setRevealed((v) => !v)}
+              aria-label={revealed ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              aria-pressed={revealed}
+              tabIndex={-1}
+            >
+              {revealed ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
+            </button>
+          )}
         </div>
 
         {hasError && (

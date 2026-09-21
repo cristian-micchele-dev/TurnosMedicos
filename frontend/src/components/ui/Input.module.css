@@ -113,3 +113,29 @@
   align-items: baseline;
   gap: 3px;
 }
+
+.inputWithRight {
+  padding-right: 40px;
+}
+
+.reveal {
+  position: absolute;
+  right: 6px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: color var(--transition), background var(--transition);
+}
+
+.reveal:hover {
+  color: var(--text-primary);
+  background: var(--ice);
+}
+
+.reveal[aria-pressed='true'] {
+  color: var(--primary);
+}
