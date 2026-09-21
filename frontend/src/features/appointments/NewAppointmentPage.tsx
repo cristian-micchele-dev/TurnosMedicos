@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
 import { Modal } from '../../components/ui/Modal';
 import { PatientForm } from '../patients/PatientForm';
+import { Check } from 'lucide-react';
 import { addDaysLocal, localDateTimeToIso, todayLocal } from '../../utils/date';
 import styles from './NewAppointmentPage.module.css';
 
@@ -30,6 +31,11 @@ const STEP_LABEL: Record<StepKind, string> = {
 };
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+}
+
 function getTomorrowDate(): string {
   return addDaysLocal(todayLocal(), 1);
 }
@@ -326,28 +332,33 @@ export function NewAppointmentPage() {
                 </Button>
               </div>
             ) : (
-              <div className={styles.cardGrid}>
-                {visiblePatients.map(p => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    className={[
-                      styles.optionCard,
-                      selectedPatient?.id === p.id ? styles.optionCardSelected : '',
-                    ].filter(Boolean).join(' ')}
-                    onClick={() => setSelectedPatient(p)}
-                  >
-                    <span className={styles.optionIcon}>👤</span>
-                    <span className={styles.optionName}>{p.name}</span>
-                    {p.email && (
-                      <span className={styles.optionDesc}>{p.email}</span>
-                    )}
-                    {p.insuranceNumber && (
-                      <span className={styles.optionDesc}>OS: {p.insuranceNumber}</span>
-                    )}
-                  </button>
-                ))}
-              </div>
+              <>
+                <p className={styles.resultCount}>
+                  {visiblePatients.length} {visiblePatients.length === 1 ? 'paciente' : 'pacientes'}{patientQuery.trim() ? ' encontrados' : ' en el registro'}
+                </p>
+                <ul className={styles.patientList} role="listbox" aria-label="Pacientes">
+                  {visiblePatients.map(p => {
+                    const selected = selectedPatient?.id === p.id;
+                    const meta = [p.email, p.insuranceNumber && `OS ${p.insuranceNumber}`, p.phone].filter(Boolean).join(' · ');
+                    return (
+                      <li key={p.id} role="option" aria-selected={selected}>
+                        <button
+                          type="button"
+                          className={`${styles.patientRow} ${selected ? styles.patientRowSelected : ''}`}
+                          onClick={() => setSelectedPatient(p)}
+                        >
+                          <span className={styles.patientAvatar} aria-hidden>{initials(p.name)}</span>
+                          <span className={styles.patientText}>
+                            <span className={styles.patientName}>{p.name}</span>
+                            {meta && <span className={styles.patientMeta}>{meta}</span>}
+                          </span>
+                          <span className={styles.patientCheck} aria-hidden>{selected && <Check size={16} />}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
             )}
             <div className={styles.stepFooter}>
               <Button variant="primary" disabled={!selectedPatient} onClick={goForward}>

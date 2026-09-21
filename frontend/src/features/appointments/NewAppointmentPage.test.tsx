@@ -181,4 +181,17 @@ describe('NewAppointmentPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /reintentar/i }));
     expect(await screen.findByText('Ana Pérez')).toBeInTheDocument();
   });
+
+  it('lista los pacientes como filas con iniciales y marca la seleccionada', async () => {
+    auth.user.role = 'DOCTOR';
+    renderPage();
+    const list = await screen.findByRole('listbox', { name: /pacientes/i });
+    const options = screen.getAllByRole('option');
+    expect(options).toHaveLength(2);
+    expect(list).toHaveTextContent('AP'); // Ana Pérez
+    expect(list).toHaveTextContent('BD'); // Bruno Díaz
+    await userEvent.click(screen.getByText('Ana Pérez'));
+    expect(screen.getByRole('option', { name: /ana pérez/i })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('option', { name: /bruno díaz/i })).toHaveAttribute('aria-selected', 'false');
+  });
 });
