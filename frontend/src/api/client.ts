@@ -30,10 +30,9 @@ class HttpClient {
     this.baseUrl = baseUrl;
   }
 
-  private getHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
+  // A FormData body must NOT get a Content-Type: the browser sets the multipart boundary.
+  private getHeaders(body?: unknown): Record<string, string> {
+    const headers: Record<string, string> = body instanceof FormData ? {} : { 'Content-Type': 'application/json' };
 
     const token = localStorage.getItem('access_token');
     if (token) {
@@ -103,52 +102,31 @@ class HttpClient {
     }
   }
 
+  private send(method: string, url: string, body: unknown, token?: string): Promise<Response> {
+    return fetch(url, {
+      method,
+      credentials: 'include',
+      headers: { ...this.getHeaders(body), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      ...(body === undefined ? {} : { body: body instanceof FormData ? body : JSON.stringify(body) }),
+    });
+  }
+
   private async request<T>(
     method: string,
     path: string,
     body?: unknown,
+    as: 'json' | 'blob' = 'json',
   ): Promise<T> {
     const url = `${this.baseUrl}${path}`;
 
-    const response = await fetch(url, {
-      method,
-      credentials: 'include',
-      headers: this.getHeaders(),
-      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-    });
+    let response = await this.send(method, url, body);
 
     const canRefresh =
       !NO_REFRESH_PATHS.some((p) => path.startsWith(p)) && localStorage.getItem('access_token') !== null;
 
     if (response.status === 401 && canRefresh) {
       const newToken = await this.handleRefresh();
-
-      const retryResponse = await fetch(url, {
-        method,
-        credentials: 'include',
-        headers: {
-          ...this.getHeaders(),
-          Authorization: `Bearer ${newToken}`,
-        },
-        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-      });
-
-      if (!retryResponse.ok) {
-        const errorData = (await retryResponse.json().catch(() => ({}))) as Partial<ApiError>;
-        const error: ApiError = {
-          status: retryResponse.status,
-          title: errorData.title ?? 'Request failed',
-          detail: errorData.detail,
-          code: errorData.code,
-        };
-        throw error;
-      }
-
-      if (retryResponse.status === 204) {
-        return undefined as T;
-      }
-
-      return retryResponse.json() as Promise<T>;
+      response = await this.send(method, url, body, newToken);
     }
 
     if (!response.ok) {
@@ -166,7 +144,7 @@ class HttpClient {
       return undefined as T;
     }
 
-    return response.json() as Promise<T>;
+    return (as === 'blob' ? response.blob() : response.json()) as Promise<T>;
   }
 
   async get<T>(path: string): Promise<T> {
@@ -175,6 +153,14 @@ class HttpClient {
 
   async post<T>(path: string, body?: unknown): Promise<T> {
     return this.request<T>('POST', path, body);
+  }
+
+  async postForm<T>(path: string, form: FormData): Promise<T> {
+    return this.request<T>('POST', path, form);
+  }
+
+  async getBlob(path: string): Promise<Blob> {
+    return this.request<Blob>('GET', path, undefined, 'blob');
   }
 
   async patch<T>(path: string, body?: unknown): Promise<T> {

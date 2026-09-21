@@ -20,6 +20,7 @@ function AnimatedPage({ children }: { children: ReactNode }) {
 }
 
 const LoginPage = lazy(() => import('./features/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
+const ProfilePage = lazy(() => import('./features/profile/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 const DashboardPage = lazy(() => import('./features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const SpecialtiesPage = lazy(() => import('./features/specialties/SpecialtiesPage').then((m) => ({ default: m.SpecialtiesPage })));
 const DoctorsPage = lazy(() => import('./features/doctors/DoctorsPage').then((m) => ({ default: m.DoctorsPage })));
@@ -49,6 +50,7 @@ export function App() {
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/cambiar-contrasena" element={<ChangePasswordPage />} />
+          <Route path="/perfil" element={<ProfilePage />} />
 
           {/* Admin */}
           <Route element={<ProtectedRoute roles={['ADMIN']} />}>

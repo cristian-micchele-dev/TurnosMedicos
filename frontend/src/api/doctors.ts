@@ -8,6 +8,9 @@ export interface Doctor {
   licenseNumber: string;
   phone: string | null;
   active: boolean;
+  // File name of the profile photo, or null; the bytes come from avatarBlob().
+  avatarFile: string | null;
+  createdAt?: string;
   user?: { id: string; email: string; name: string };
   specialty?: { id: string; name: string };
 }
@@ -49,6 +52,13 @@ export const doctorsApi = {
   me: () => api.get<Doctor>('/doctors/me'),
   create: (data: { userId: string; specialtyId: string; licenseNumber: string; phone?: string }) => api.post<Doctor>('/doctors', data),
   update: (id: string, data: { phone?: string; specialtyId?: string; active?: boolean }) => api.patch<Doctor>(`/doctors/${id}`, data),
+  uploadAvatar: (id: string, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.postForm<Doctor>(`/doctors/${id}/avatar`, form);
+  },
+  avatarBlob: (id: string) => api.getBlob(`/doctors/${id}/avatar`),
+  removeAvatar: (id: string) => api.delete<void>(`/doctors/${id}/avatar`),
   getAvailability: (id: string, date?: string) => {
     const query = date ? `?date=${date}` : '';
     return api.get<Availability[]>(`/doctors/${id}/availability${query}`);

@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Sun, Moon, Bell } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useSocket } from '../../hooks/useSocket';
+import { useMyDoctor } from '../../hooks/useMyDoctor';
+import { useDoctorAvatar } from '../../hooks/useDoctorAvatar';
+import { Avatar } from '../ui/Avatar';
 import { useToast } from '../../hooks/useToast';
 import styles from './Header.module.css';
 
@@ -25,6 +28,7 @@ const pageTitles: Record<string, string> = {
   '/calendario':     'Calendario',
   '/cambiar-contrasena': 'Cambiar contraseña',
   '/agenda':         'Mi Agenda',
+  '/perfil':         'Mi perfil',
 };
 
 interface Notification {
@@ -61,6 +65,8 @@ export function Header({ onMenuToggle }: HeaderProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const bellRef = useRef<HTMLButtonElement>(null);
   const socket = useSocket();
+  const { doctor } = useMyDoctor();
+  const avatarUrl = useDoctorAvatar(doctor);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -193,14 +199,15 @@ export function Header({ onMenuToggle }: HeaderProps) {
         </div>
 
         {user && (
-          <>
+          <Link to="/perfil" className={styles.userLink} title="Ver mi perfil">
+            <Avatar name={user.name || user.email} src={avatarUrl} size="sm" />
             <div className={styles.userDetails}>
               <span className={styles.userName}>{user.name || user.email}</span>
             </div>
             <span className={`${styles.roleBadge} ${styles[`role${user.role}`]}`}>
               {roleLabels[user.role] ?? user.role}
             </span>
-          </>
+          </Link>
         )}
       </div>
     </header>

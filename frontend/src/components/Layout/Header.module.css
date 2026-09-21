@@ -35,6 +35,24 @@
   gap: 14px;
 }
 
+.userLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 4px 4px;
+  margin-left: 2px;
+  border-radius: var(--radius-full);
+  color: inherit;
+  text-decoration: none;
+  transition: background var(--transition);
+}
+
+.userLink:hover,
+.userLink:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+  outline: none;
+}
+
 .userDetails {
   display: flex;
   flex-direction: column;
