@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Stethoscope, HeartPulse, Users, Zap, AlertTriangle, RefreshCw, Calendar, Clock, CheckCircle, ChevronRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -21,6 +21,8 @@ interface StatCard {
   value: string | number;
   icon: LucideIcon;
   accent: 'blue' | 'green' | 'amber' | 'slate';
+  /** Where the number drills down to (the list, pre-filtered). */
+  to?: string;
 }
 
 interface QuickAction {
@@ -31,18 +33,18 @@ interface QuickAction {
 
 function buildAdminCards(stats: DashboardStats): StatCard[] {
   return [
-    { label: 'Doctores', value: stats.totalDoctors ?? '—', icon: Stethoscope, accent: 'blue' },
-    { label: 'Pacientes', value: stats.totalPatients ?? '—', icon: HeartPulse, accent: 'green' },
-    { label: 'Usuarios', value: stats.totalUsers ?? '—', icon: Users, accent: 'amber' },
-    { label: 'Activos', value: stats.activeUsers ?? '—', icon: Zap, accent: 'slate' },
+    { label: 'Doctores', value: stats.totalDoctors ?? '—', icon: Stethoscope, accent: 'blue', to: '/doctores' },
+    { label: 'Pacientes', value: stats.totalPatients ?? '—', icon: HeartPulse, accent: 'green', to: '/pacientes' },
+    { label: 'Usuarios', value: stats.totalUsers ?? '—', icon: Users, accent: 'amber', to: '/usuarios' },
+    { label: 'Activos', value: stats.activeUsers ?? '—', icon: Zap, accent: 'slate', to: '/usuarios' },
   ];
 }
 
 function buildDoctorCards(todayCount: number, pendingCount: number, completedCount: number): StatCard[] {
   return [
-    { label: 'Turnos Hoy', value: todayCount, icon: Calendar, accent: 'blue' },
-    { label: 'Pendientes', value: pendingCount, icon: Clock, accent: 'amber' },
-    { label: 'Completados', value: completedCount, icon: CheckCircle, accent: 'green' },
+    { label: 'Turnos Hoy', value: todayCount, icon: Calendar, accent: 'blue', to: '/agenda' },
+    { label: 'Pendientes', value: pendingCount, icon: Clock, accent: 'amber', to: '/mis-turnos?status=PENDING' },
+    { label: 'Completados', value: completedCount, icon: CheckCircle, accent: 'green', to: '/mis-turnos?status=COMPLETED' },
   ];
 }
 
@@ -224,16 +226,25 @@ export function DashboardPage() {
         <div className={styles.grid} data-tour="stats">
           {cards.map((card) => {
             const Icon = card.icon;
-            return (
-            <div key={card.label} className={`${styles.card} ${styles[card.accent]}`}>
-              <div className={styles.cardIcon}>
-                <Icon size={22} strokeWidth={1.8} />
-              </div>
-              <div className={styles.cardBody}>
-                <span className={styles.cardValue}>{card.value}</span>
-                <span className={styles.cardLabel}>{card.label}</span>
-              </div>
-            </div>
+            const body = (
+              <>
+                <div className={styles.cardIcon}>
+                  <Icon size={22} strokeWidth={1.8} />
+                </div>
+                <div className={styles.cardBody}>
+                  <span className={styles.cardValue}>{card.value}</span>
+                  <span className={styles.cardLabel}>{card.label}</span>
+                </div>
+              </>
+            );
+            const className = `${styles.card} ${styles[card.accent]}`;
+            return card.to ? (
+              <Link key={card.label} to={card.to} className={`${className} ${styles.cardLink}`} aria-label={`${card.value} ${card.label} — ver detalle`}>
+                {body}
+                <ChevronRight size={18} className={styles.cardArrow} aria-hidden />
+              </Link>
+            ) : (
+              <div key={card.label} className={className}>{body}</div>
             );
           })}
         </div>

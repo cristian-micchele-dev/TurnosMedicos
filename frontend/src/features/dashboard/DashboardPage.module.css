@@ -660,3 +660,33 @@
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border);
 }
+
+/* ---------- Clickable stat card ---------- */
+.cardLink {
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+}
+
+.cardArrow {
+  margin-left: auto;
+  color: var(--text-tertiary);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 200ms ease, transform 200ms ease, color 200ms ease;
+}
+
+.cardLink:hover .cardArrow,
+.cardLink:focus-visible .cardArrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--primary);
+}
+
+@media (hover: none) {
+  .cardArrow { opacity: 0.6; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardArrow { transition: none; transform: none; }
+}

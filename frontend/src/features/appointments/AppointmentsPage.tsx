@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   appointmentsApi,
   type Appointment,
@@ -56,13 +56,30 @@ export function AppointmentsPage() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
 
-  // Filters
-  const [searchText, setSearchText] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [specialtyFilter, setSpecialtyFilter] = useState('');
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
-  const [page, setPage] = useState(1);
+  // Filters live in the URL: dashboard cards deep-link here, reloads keep them, links are shareable.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchText = searchParams.get('q') ?? '';
+  const statusFilter = searchParams.get('status') ?? '';
+  const specialtyFilter = searchParams.get('specialty') ?? '';
+  const fromDate = searchParams.get('from') ?? '';
+  const toDate = searchParams.get('to') ?? '';
+  const page = Math.max(1, Number(searchParams.get('page')) || 1);
+
+  // react-router's functional setSearchParams reads the params of the current render, not the previous
+  // call's result — so never issue two updates in one handler; a filter change also resets the page here.
+  const setParam = (key: string, value: string) =>
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (value) next.set(key, value); else next.delete(key);
+      if (key !== 'page') next.delete('page');
+      return next;
+    }, { replace: true });
+  const setSearchText = (v: string) => setParam('q', v);
+  const setStatusFilter = (v: string) => setParam('status', v);
+  const setSpecialtyFilter = (v: string) => setParam('specialty', v);
+  const setFromDate = (v: string) => setParam('from', v);
+  const setToDate = (v: string) => setParam('to', v);
+  const setPage = (p: number) => setParam('page', p > 1 ? String(p) : '');
 
   const { data: specialtiesResult } = useFetch(
     ['specialties', 'all'],
@@ -343,7 +360,7 @@ export function AppointmentsPage() {
             label="Estado"
             options={STATUS_OPTIONS}
             value={statusFilter}
-            onChange={(v) => { setStatusFilter(v); setPage(1); }}
+            onChange={setStatusFilter}
             placeholder="Todos los estados"
           />
           <Select
@@ -357,27 +374,20 @@ export function AppointmentsPage() {
             label="Desde"
             type="date"
             value={fromDate}
-            onChange={(e) => { setFromDate(e.target.value); setPage(1); }}
+            onChange={(e) => setFromDate(e.target.value)}
           />
           <Input
             label="Hasta"
             type="date"
             value={toDate}
-            onChange={(e) => { setToDate(e.target.value); setPage(1); }}
+            onChange={(e) => setToDate(e.target.value)}
           />
           {(searchText || statusFilter || specialtyFilter || fromDate || toDate) && (
             <div className={styles.clearFilter}>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  setSearchText('');
-                  setStatusFilter('');
-                  setSpecialtyFilter('');
-                  setFromDate('');
-                  setToDate('');
-                  setPage(1);
-                }}
+                onClick={() => setSearchParams({}, { replace: true })}
               >
                 Limpiar filtros
               </Button>
