@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { ConstellationBackground } from '../../components/ui/ConstellationBackground';
+import { NeuralBackground } from '../../components/ui/NeuralBackground';
 import styles from './LoginPage.module.css';
 
 export function LoginPage() {
@@ -35,7 +35,7 @@ export function LoginPage() {
 
   return (
     <div className={styles.page}>
-      <ConstellationBackground intensity="strong" />
+      <NeuralBackground />
       <div className={styles.card} role="main">
         <div className={styles.brand}>
           <div className={styles.logo} aria-hidden="true">
