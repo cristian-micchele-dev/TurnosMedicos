@@ -20,6 +20,7 @@ function AnimatedPage({ children }: { children: ReactNode }) {
 }
 
 const LoginPage = lazy(() => import('./features/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
+const AuditPage = lazy(() => import('./features/audit/AuditPage').then((m) => ({ default: m.AuditPage })));
 const ProfilePage = lazy(() => import('./features/profile/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 const DashboardPage = lazy(() => import('./features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const SpecialtiesPage = lazy(() => import('./features/specialties/SpecialtiesPage').then((m) => ({ default: m.SpecialtiesPage })));
@@ -55,6 +56,7 @@ export function App() {
           {/* Admin */}
           <Route element={<ProtectedRoute roles={['ADMIN']} />}>
             <Route path="/usuarios" element={<UsersPage />} />
+            <Route path="/auditoria" element={<AuditPage />} />
             <Route path="/especialidades" element={<SpecialtiesPage />} />
             <Route path="/doctores" element={<DoctorsPage />} />
             <Route path="/doctores/:id/availability" element={<AvailabilityPage />} />

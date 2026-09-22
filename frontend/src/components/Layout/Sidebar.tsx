@@ -21,6 +21,7 @@ const sharedItems: NavItem[] = [
 
 const adminItems: NavItem[] = [
   { to: '/usuarios', label: 'Usuarios' },
+  { to: '/auditoria', label: 'Auditoría' },
   { to: '/especialidades', label: 'Especialidades' },
   { to: '/doctores', label: 'Doctores' },
   { to: '/pacientes', label: 'Pacientes' },
