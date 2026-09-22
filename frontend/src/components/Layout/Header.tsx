@@ -4,6 +4,8 @@ import { Sun, Moon, Bell } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useSocket } from '../../hooks/useSocket';
+import { useFetch } from '../../hooks/useFetch';
+import { notificationsApi, type Inbox, type Notification } from '../../api/notifications';
 import { useMyDoctor } from '../../hooks/useMyDoctor';
 import { useDoctorAvatar } from '../../hooks/useDoctorAvatar';
 import { Avatar } from '../ui/Avatar';
@@ -33,20 +35,6 @@ const pageTitles: Record<string, string> = {
   '/perfil':         'Mi perfil',
 };
 
-interface Notification {
-  id: string;
-  type: string;
-  message: string;
-  timestamp: Date;
-  read: boolean;
-}
-
-interface SocketNotificationPayload {
-  type: string;
-  message: string;
-  appointmentId?: string;
-}
-
 interface HeaderProps {
   onMenuToggle: () => void;
 }
@@ -62,7 +50,10 @@ export function Header({ onMenuToggle }: HeaderProps) {
   const { toast } = useToast();
   const pageTitle = pageTitles[pathname] ?? 'Dashboard';
 
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  // The bell reads the stored inbox; the socket only makes it arrive earlier.
+  const { data: inbox, refetch: refetchInbox } = useFetch<Inbox>(['notifications'], () => notificationsApi.inbox(20));
+  const notifications = inbox?.data ?? [];
+  const unreadCount = inbox?.unread ?? 0;
   const [panelOpen, setPanelOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const bellRef = useRef<HTMLButtonElement>(null);
@@ -70,28 +61,21 @@ export function Header({ onMenuToggle }: HeaderProps) {
   const { doctor } = useMyDoctor();
   const avatarUrl = useDoctorAvatar(doctor);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
   useEffect(() => {
     if (!socket) return;
 
-    const handleNotification = (data: SocketNotificationPayload) => {
-      const notification: Notification = {
-        id: crypto.randomUUID(),
-        type: data.type,
-        message: data.message,
-        timestamp: new Date(),
-        read: false,
-      };
-      setNotifications((prev) => [notification, ...prev].slice(0, 50));
+    // A pushed notification is already a row on the server: announce it and reread
+    // the inbox, so what the bell shows is always what is stored.
+    const handleNotification = (data: Notification) => {
       toast.info(data.message);
+      void refetchInbox();
     };
 
     socket.on('notification', handleNotification);
     return () => {
       socket.off('notification', handleNotification);
     };
-  }, [socket, toast]);
+  }, [socket, toast, refetchInbox]);
 
   useEffect(() => {
     if (!panelOpen) return;
@@ -118,14 +102,14 @@ export function Header({ onMenuToggle }: HeaderProps) {
     setPanelOpen((prev) => !prev);
   }
 
-  function markAllRead() {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  async function markAllRead() {
+    await notificationsApi.markAllRead();
+    await refetchInbox();
   }
 
-  function markRead(id: string) {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-    );
+  async function markRead(id: string) {
+    await notificationsApi.markRead(id);
+    await refetchInbox();
   }
 
   return (
@@ -172,7 +156,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
               <div className={styles.notifHeader}>
                 <span>Notificaciones</span>
                 {unreadCount > 0 && (
-                  <button className={styles.notifMarkAll} onClick={markAllRead}>
+                  <button className={styles.notifMarkAll} onClick={() => { void markAllRead(); }}>
                     Marcar todas como leidas
                   </button>
                 )}
@@ -189,10 +173,10 @@ export function Header({ onMenuToggle }: HeaderProps) {
                     ]
                       .filter(Boolean)
                       .join(' ')}
-                    onClick={() => markRead(n.id)}
+                    onClick={() => { void markRead(n.id); }}
                   >
                     <div>{n.message}</div>
-                    <div className={styles.notifTime}>{formatTime(n.timestamp)}</div>
+                    <div className={styles.notifTime}>{formatTime(new Date(n.createdAt))}</div>
                   </div>
                 ))
               )}
