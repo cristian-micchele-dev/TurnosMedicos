@@ -3,7 +3,16 @@ import { useCallback } from 'react';
 
 export type QueryKey = readonly unknown[];
 
-export function useFetch<T>(queryKey: QueryKey, fetcher: () => Promise<T>) {
+export interface FetchOptions {
+  /** Milliseconds between automatic refreshes. Off by default: most screens are read once. */
+  refetchInterval?: number;
+  /** Refresh when the tab regains focus. Off by default (see lib/queryClient). */
+  refetchOnWindowFocus?: boolean;
+  /** How long the cached value is considered fresh; overrides the global 60s. */
+  staleTime?: number;
+}
+
+export function useFetch<T>(queryKey: QueryKey, fetcher: () => Promise<T>, options: FetchOptions = {}) {
   const queryClient = useQueryClient();
 
   const query = useQuery<T, Error>({
@@ -15,6 +24,7 @@ export function useFetch<T>(queryKey: QueryKey, fetcher: () => Promise<T>) {
         throw e instanceof Error ? e : new Error(String(e));
       }
     },
+    ...options,
   });
 
   // Invalidates every query sharing the resource prefix (queryKey[0]),

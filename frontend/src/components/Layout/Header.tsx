@@ -51,7 +51,14 @@ export function Header({ onMenuToggle }: HeaderProps) {
   const pageTitle = pageTitles[pathname] ?? 'Dashboard';
 
   // The bell reads the stored inbox; the socket only makes it arrive earlier.
-  const { data: inbox, refetch: refetchInbox } = useFetch<Inbox>(['notifications'], () => notificationsApi.inbox(20));
+  // Tres caminos hacia la campanita, de más rápido a más confiable: el socket la
+  // empuja, volver a la pestaña la refresca, y un chequeo por minuto la cubre
+  // cuando el socket no está conectado —el peor caso deja de ser 'hasta que recargues'.
+  const { data: inbox, refetch: refetchInbox } = useFetch<Inbox>(
+    ['notifications'],
+    () => notificationsApi.inbox(20),
+    { refetchInterval: 60_000, refetchOnWindowFocus: true, staleTime: 15_000 },
+  );
   const notifications = inbox?.data ?? [];
   const unreadCount = inbox?.unread ?? 0;
   const [panelOpen, setPanelOpen] = useState(false);
