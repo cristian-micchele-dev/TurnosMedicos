@@ -14,6 +14,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Copy, KeyRound } from 'lucide-react';
 import styles from './UsersPage.module.css';
 import { apiErrorMessage } from '../../api/client';
+import { MIN_PASSWORD_LENGTH, PASSWORD_HINT } from '../../utils/password';
 
 const ROLE_LABELS: Record<UserListItem['role'], string> = {
   ADMIN: 'Admin',
@@ -371,7 +372,7 @@ function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
   function validate(): boolean {
     const next: Record<string, string> = {};
     if (!email.trim()) next.email = 'El email es requerido.';
-    if (password.length < 8) next.password = 'Mínimo 8 caracteres.';
+    if (password.length < MIN_PASSWORD_LENGTH) next.password = `Mínimo ${MIN_PASSWORD_LENGTH} caracteres.`;
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -427,7 +428,7 @@ function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        placeholder="Mínimo 8 caracteres"
+        placeholder={PASSWORD_HINT}
         autoComplete="new-password"
         required
         error={errors.password}

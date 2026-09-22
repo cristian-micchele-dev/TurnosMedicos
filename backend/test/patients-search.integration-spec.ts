@@ -32,12 +32,12 @@ describeDatabase('Patient search (PostgreSQL)', () => {
     await add(`Bruno Díaz ${tag}`, null, `SWISS-${tag}`, '11-5555-0002');
     await add(`Ñoño Muñoz ${tag}`, `nono.${tag}@mail.com`, null, null);
     await add(`Inactiva Pérez ${tag}`, null, null, null, false);
-  });
+  }, 60_000);
 
   afterAll(async () => {
     if (ids.length) await dataSource.query('DELETE FROM patients WHERE id = ANY($1)', [ids]);
     if (dataSource?.isInitialized) await dataSource.destroy();
-  });
+  }, 30_000);
 
   const names = async (q: string) => (await repo.findAll({ q, take: 50 }))[0].map((p) => p.name);
 

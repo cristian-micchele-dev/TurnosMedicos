@@ -7,8 +7,9 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import type { ApiError } from '../../api/client';
 import styles from './ChangePasswordPage.module.css';
+import { MIN_PASSWORD_LENGTH } from '../../utils/password';
 
-const MIN_LENGTH = 8;
+const MIN_LENGTH = MIN_PASSWORD_LENGTH;
 
 export function ChangePasswordPage() {
   const { user, changePassword } = useAuth();

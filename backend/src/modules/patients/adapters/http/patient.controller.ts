@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
+import { actorOf } from '../../../../shared/infra/http/actor';
 import { JwtAuthGuard, Roles, RolesGuard } from '../../../auth/adapters/http/auth.guards';
 import { Role } from '../../../users/domain/user';
 import { PatientService } from '../../application/patient.service';
@@ -30,7 +31,7 @@ export class PatientController {
 
   @Patch(':id') @Roles(Role.ADMIN, Role.DOCTOR, Role.SECRETARY)
   async update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdatePatientDto, @Req() req: Request) {
-    if ((req as any).user.role !== Role.ADMIN && dto.active !== undefined) throw new ForbiddenError();
+    if (actorOf(req).role !== Role.ADMIN && dto.active !== undefined) throw new ForbiddenError();
     return this.service.update(id, dto);
   }
 }

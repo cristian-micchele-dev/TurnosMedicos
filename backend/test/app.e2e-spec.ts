@@ -147,7 +147,7 @@ describe('foundation HTTP', () => {
     const known = await request(app.getHttpServer()).post('/api/v1/auth/forgot-password').send({ email: 'doctor@example.com' }).expect(201);
     expect(known.body).toEqual(unknown.body);
     const token = mailer.sendPasswordReset.mock.calls.at(-1)![1];
-    await request(app.getHttpServer()).post('/api/v1/auth/reset-password').send({ token, password: 'new-strong-password' }).expect(201).expect({ message: 'Contraseña actualizada' });
+    await request(app.getHttpServer()).post('/api/v1/auth/reset-password').send({ token, password: 'colina ventana 41' }).expect(201).expect({ message: 'Contraseña actualizada' });
     await request(app.getHttpServer()).post('/api/v1/auth/reset-password').send({ token, password: 'another-password' }).expect(401);
   });
 
@@ -165,7 +165,7 @@ describe('foundation HTTP', () => {
     await request(app.getHttpServer()).post('/api/v1/auth/forgot-password').send({ email: 'not-an-email', extra: true }).expect(400);
     await request(app.getHttpServer()).post('/api/v1/auth/reset-password').send({ token: 'x', password: 'short' }).expect(400);
     expect(users.size).toBe(before);
-    const login = await request(app.getHttpServer()).post('/api/v1/auth/login').send({ email: 'doctor@example.com', password: 'new-strong-password' }).expect(201);
+    const login = await request(app.getHttpServer()).post('/api/v1/auth/login').send({ email: 'doctor@example.com', password: 'colina ventana 41' }).expect(201);
     await request(app.getHttpServer()).get('/api/v1/admin-only').set('Authorization', `Bearer ${login.body.accessToken}`).expect(403);
     await request(app.getHttpServer()).get('/api/v1/admin-only').expect(401);
   });

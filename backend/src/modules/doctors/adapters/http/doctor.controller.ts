@@ -1,16 +1,14 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req, Res, StreamableFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
+import { actorOf } from '../../../../shared/infra/http/actor';
 import { createReadStream } from 'fs';
 import { JwtAuthGuard, Roles, RolesGuard } from '../../../auth/adapters/http/auth.guards';
 import { Role } from '../../../users/domain/user';
 import { DoctorService } from '../../application/doctor.service';
 import { CreateDoctorDto, UpdateDoctorDto, SetAvailabilityDto, CreateScheduleBlockDto } from '../../application/dto/doctor.dto';
 import { PaginationDto } from '../../../../shared/application/pagination';
-import { Actor } from '../../../users/domain/actor';
 import { UnsupportedImageError } from '../../domain/avatar.errors';
-
-const actorOf = (req: Request): Actor => (req as Request & { user: Actor }).user;
 
 @Controller('doctors')
 @UseGuards(JwtAuthGuard)

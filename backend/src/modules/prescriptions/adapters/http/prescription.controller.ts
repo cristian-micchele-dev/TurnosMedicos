@@ -12,13 +12,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { actorOf } from '../../../../shared/infra/http/actor';
 import { JwtAuthGuard, Roles, RolesGuard } from '../../../auth/adapters/http/auth.guards';
 import { Role } from '../../../users/domain/user';
-import { Actor } from '../../../users/domain/actor';
 import { PrescriptionService } from '../../application/prescription.service';
 import { CreatePrescriptionDto } from '../../application/dto/prescription.dto';
-
-const actorOf = (req: Request): Actor => (req as Request & { user: Actor }).user;
 
 @Controller()
 @UseGuards(JwtAuthGuard)

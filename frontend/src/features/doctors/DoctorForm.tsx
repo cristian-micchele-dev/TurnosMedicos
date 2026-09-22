@@ -7,6 +7,7 @@ import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
 import styles from './DoctorForm.module.css';
+import { MIN_PASSWORD_LENGTH, PASSWORD_HINT } from '../../utils/password';
 
 interface DoctorFormProps {
   doctor?: Doctor;
@@ -66,7 +67,7 @@ export function DoctorForm({ doctor, specialties, users, doctors, onSubmit, onCa
       }
       if (mode === 'new') {
         if (!newEmail.trim()) next.email = 'El email es requerido';
-        if (newPassword.length < 8) next.password = 'Mínimo 8 caracteres';
+        if (newPassword.length < MIN_PASSWORD_LENGTH) next.password = `Mínimo ${MIN_PASSWORD_LENGTH} caracteres`;
       }
       if (!licenseNumber.trim()) {
         next.licenseNumber = 'La matrícula es obligatoria';
@@ -161,7 +162,7 @@ export function DoctorForm({ doctor, specialties, users, doctors, onSubmit, onCa
                     if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
                   }}
                   error={errors.password}
-                  placeholder="Mínimo 8 caracteres"
+                  placeholder={PASSWORD_HINT}
                   required
                 />
               </>

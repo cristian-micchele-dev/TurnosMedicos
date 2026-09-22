@@ -17,6 +17,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
+import { actorOf } from '../../../../shared/infra/http/actor';
 import { createReadStream } from 'fs';
 import { attachment } from '../../../../shared/infra/http/content-disposition';
 import { JwtAuthGuard, Roles, RolesGuard } from '../../../auth/adapters/http/auth.guards';
@@ -25,9 +26,6 @@ import { MedicalReportService } from '../../application/medical-report.service';
 import { CreateMedicalReportDto } from '../../application/dto/create-medical-report.dto';
 import { CreatePatientReportDto } from '../../application/dto/create-patient-report.dto';
 import { QueryMedicalReportsDto } from '../../application/dto/query-medical-reports.dto';
-import { Actor } from '../../../users/domain/actor';
-
-const actorOf = (req: Request): Actor => (req as Request & { user: Actor }).user;
 
 @Controller()
 @UseGuards(JwtAuthGuard)

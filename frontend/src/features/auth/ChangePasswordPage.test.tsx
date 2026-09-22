@@ -35,10 +35,10 @@ describe('ChangePasswordPage', () => {
     expect(screen.getByLabelText(/contraseña temporal/i)).toBeInTheDocument();
   });
 
-  it('exige mínimo 8 caracteres y que la confirmación coincida', async () => {
+  it('exige la longitud mínima y que la confirmación coincida', async () => {
     renderPage();
     await fill('temp1234', 'corta', 'corta');
-    expect(await screen.findByText(/al menos 8/i)).toBeInTheDocument();
+    expect(await screen.findByText(/al menos 10/i)).toBeInTheDocument();
     expect(auth.changePassword).not.toHaveBeenCalled();
 
     await userEvent.clear(screen.getByLabelText(/^nueva contraseña/i));

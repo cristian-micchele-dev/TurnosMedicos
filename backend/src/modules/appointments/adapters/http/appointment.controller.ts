@@ -1,12 +1,10 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
+import { actorOf } from '../../../../shared/infra/http/actor';
 import { JwtAuthGuard, Roles, RolesGuard } from '../../../auth/adapters/http/auth.guards';
 import { Role } from '../../../users/domain/user';
-import { Actor } from '../../../users/domain/actor';
 import { AppointmentService } from '../../application/appointment.service';
 import { CreateAppointmentDto, CancelAppointmentDto, CompleteAppointmentDto, QueryAppointmentsDto, RescheduleAppointmentDto, SummaryAppointmentsDto } from '../../application/dto/appointment.dto';
-
-const actorOf = (req: Request): Actor => (req as Request & { user: Actor }).user;
 
 @Controller('appointments')
 @UseGuards(JwtAuthGuard)
