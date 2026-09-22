@@ -14,7 +14,7 @@ describe('MedicalReportService', () => {
   const doctor = new Doctor('doc-1', 'user-doc-1', 'spec-1', 'LIC-1', null);
   const otherDoctor = new Doctor('doc-2', 'user-doc-2', 'spec-1', 'LIC-2', null);
   const appointment = new Appointment('a1', 'doc-1', 'p1', 'spec-1', new Date('2026-09-07T10:00:00Z'), 30, AppointmentStatus.COMPLETED);
-  const file = { originalname: 'informe.pdf', mimetype: 'application/pdf', size: 10, buffer: Buffer.from('x') } as Express.Multer.File;
+  const file = { originalname: 'informe.pdf', mimetype: 'application/pdf', size: 10, buffer: Buffer.from('%PDF-1.7 contenido') } as Express.Multer.File;
   const dto = { title: 'Informe' };
 
   const reports: any = { save: jest.fn(async (r: unknown) => r), findById: jest.fn(), delete: jest.fn(), findByAppointmentId: jest.fn(), findByPatientId: jest.fn() };
@@ -42,6 +42,21 @@ describe('MedicalReportService', () => {
     it('rechaza si el turno es de otro médico', async () => {
       doctors.findByUserId.mockResolvedValueOnce(otherDoctor);
       await expect(service.upload('user-doc-2', 'a1', dto, file)).rejects.toBeInstanceOf(ForbiddenError);
+    });
+  });
+
+  describe('qué se acepta como informe', () => {
+    it('rechaza un archivo cuyos bytes no son PDF ni imagen, aunque se declare application/pdf', async () => {
+      const disguised = { ...file, buffer: Buffer.concat([Buffer.from('MZ'), Buffer.alloc(32)]) } as Express.Multer.File;
+      await expect(service.upload('user-doc-1', 'a1', dto, disguised)).rejects.toMatchObject({ status: 400, code: 'UNSUPPORTED_FILE' });
+      expect(reports.save).not.toHaveBeenCalled();
+    });
+
+    it('guarda el tipo real del archivo, no el que declaró el cliente', async () => {
+      const png = { ...file, mimetype: 'application/pdf', buffer: Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(8)]) } as Express.Multer.File;
+      const result = await service.upload('user-doc-1', 'a1', dto, png);
+      expect(result.mimeType).toBe('image/png');
+      expect(result.fileName).toMatch(/\.png$/);
     });
   });
 

@@ -20,7 +20,7 @@ describe('UserService', () => {
 
       const result = await service().resetPassword('u1');
 
-      expect(result.temporaryPassword).toMatch(/^[A-Za-z0-9]{12}$/);
+      expect(result.temporaryPassword).toMatch(/^[A-Za-z0-9]{14}$/);
       expect(hasher.hash).toHaveBeenCalledWith(result.temporaryPassword);
       expect(user.passwordHash).toBe(`hash:${result.temporaryPassword}`);
       expect(user.mustChangePassword).toBe(true);

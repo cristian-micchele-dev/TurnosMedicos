@@ -128,10 +128,10 @@ describe('AuthService', () => {
   it('consume reset una sola vez, cambia password e invalida sesiones', async () => {
     resets.consume.mockResolvedValue({ userId: 'u1' });
     users.findById.mockResolvedValue(user);
-    await expect(service().reset({ token: 'token', password: 'new-password' })).resolves.toEqual({ message: 'Contraseña actualizada' });
+    await expect(service().reset({ token: 'token', password: 'brida correcta 9' })).resolves.toEqual({ message: 'Contraseña actualizada' });
     expect(users.update).toHaveBeenCalled();
     expect(sessions.revokeAllForUser).toHaveBeenCalledWith('u1');
     resets.consume.mockResolvedValue(undefined);
-    await expect(service().reset({ token: 'token', password: 'new-password' })).rejects.toMatchObject({ status: 401 });
+    await expect(service().reset({ token: 'token', password: 'brida correcta 9' })).rejects.toMatchObject({ status: 401 });
   });
 });

@@ -10,6 +10,7 @@ import { Availability } from '../domain/availability';
 import { ScheduleBlock } from '../domain/schedule-block';
 import { DoctorNotFoundError } from '../domain/doctor-not-found.exception';
 import { AvatarNotFoundError, UnsupportedImageError } from '../domain/avatar.errors';
+import { EXTENSION_BY_TYPE, sniffFileType, type SniffedType } from '../../../shared/infra/files/sniff';
 import { DoctorRepository, AvailabilityRepository, ScheduleBlockRepository, DOCTOR_REPOSITORY, AVAILABILITY_REPOSITORY, SCHEDULE_BLOCK_REPOSITORY } from '../doctor.repository.port';
 import { SpecialtyRepository, SPECIALTY_REPOSITORY } from '../../specialties/specialty.repository.port';
 import { SpecialtyNotFoundError } from '../../specialties/domain/specialty-not-found.exception';
@@ -19,7 +20,7 @@ import { CreateDoctorDto, UpdateDoctorDto, SetAvailabilityDto, CreateScheduleBlo
 import { PaginationDto, PaginatedResult } from '../../../shared/application/pagination';
 
 const AVATARS_DIR = join(process.cwd(), 'uploads', 'avatars');
-const IMAGE_EXT: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+const ALLOWED_IMAGES: SniffedType[] = ['image/jpeg', 'image/png', 'image/webp'];
 const MIME_BY_EXT: Record<string, string> = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
 
 export type UploadedImage = Pick<Express.Multer.File, 'mimetype' | 'buffer'>;
@@ -99,8 +100,10 @@ export class DoctorService {
     await this.assertOwnsProfile(id, actor);
     const d = await this.doctors.findById(id);
     if (!d) throw new DoctorNotFoundError(id);
-    const ext = IMAGE_EXT[file.mimetype];
-    if (!ext) throw new UnsupportedImageError();
+    // file.mimetype is the browser's claim; the first bytes are the file's own answer.
+    const type = sniffFileType(file.buffer);
+    if (!type || !ALLOWED_IMAGES.includes(type)) throw new UnsupportedImageError();
+    const ext = EXTENSION_BY_TYPE[type];
     const fileName = `${randomUUID()}.${ext}`;
     await writeFile(join(AVATARS_DIR, fileName), file.buffer);
     await this.discardAvatarFile(d.avatarFile);

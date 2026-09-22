@@ -18,6 +18,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
 import { createReadStream } from 'fs';
+import { attachment } from '../../../../shared/infra/http/content-disposition';
 import { JwtAuthGuard, Roles, RolesGuard } from '../../../auth/adapters/http/auth.guards';
 import { Role } from '../../../users/domain/user';
 import { MedicalReportService } from '../../application/medical-report.service';
@@ -81,7 +82,7 @@ export class MedicalReportController {
 
     res.set({
       'Content-Type': report.mimeType,
-      'Content-Disposition': `attachment; filename="${report.originalName}"`,
+      'Content-Disposition': attachment(report.originalName),
     });
 
     return new StreamableFile(stream);

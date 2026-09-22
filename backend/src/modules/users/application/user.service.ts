@@ -1,5 +1,5 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { randomInt, randomUUID } from 'crypto';
+import { randomUUID } from 'crypto';
 import { User } from '../domain/user';
 import { HASHER, Hasher } from '../../../shared/application/ports';
 import { UserRepository } from '../user.repository.port';
@@ -7,15 +7,9 @@ import { SESSION_REPOSITORY, SessionRepository } from '../../auth/auth.repositor
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { PaginationDto, PaginatedResult } from '../../../shared/application/pagination';
+import { assertStrongPassword, generateTemporaryPassword } from '../domain/password-policy';
 
 // Unambiguous alphabet: no 0/O, 1/l/I — the admin reads this aloud or copies it once.
-const TEMP_PASSWORD_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-const TEMP_PASSWORD_LENGTH = 12;
-
-function generateTemporaryPassword(): string {
-  return Array.from({ length: TEMP_PASSWORD_LENGTH }, () => TEMP_PASSWORD_ALPHABET[randomInt(TEMP_PASSWORD_ALPHABET.length)]).join('');
-}
-
 @Injectable()
 export class UserService {
   constructor(
@@ -29,6 +23,7 @@ export class UserService {
     if (await this.users.findByEmail(email)) {
       throw new ConflictException('Ya existe un usuario con ese email');
     }
+    assertStrongPassword(dto.password, { email, name: dto.name });
     const user = await this.users.save(
       new User(randomUUID(), email, dto.name ?? '', await this.hasher.hash(dto.password), dto.role),
     );

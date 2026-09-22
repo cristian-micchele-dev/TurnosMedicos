@@ -98,7 +98,8 @@ describe('DoctorService', () => {
 
   describe('avatar', () => {
     const doctorActor = { sub: 'u1', role: Role.DOCTOR };
-    const png = { mimetype: 'image/png', originalname: 'yo.png', buffer: Buffer.from('img'), size: 3 } as any;
+    const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const png = { mimetype: 'image/png', originalname: 'yo.png', buffer: Buffer.concat([PNG_MAGIC, Buffer.alloc(8)]), size: 16 } as any;
 
     it('guarda la foto propia en disco y persiste el nombre de archivo', async () => {
       const d = new Doctor('d1', 'u1', 's1', 'MP-1');
@@ -117,9 +118,16 @@ describe('DoctorService', () => {
       expect(unlink).toHaveBeenCalledWith(expect.stringContaining('vieja.png'));
     });
 
+    it('un ejecutable disfrazado de PNG no entra: mandan los bytes, no el mimetype', async () => {
+      doctors.findById.mockResolvedValue(new Doctor('d1', 'u1', 's1', 'MP-1'));
+      const exe = { ...png, buffer: Buffer.concat([Buffer.from('MZ'), Buffer.alloc(32)]) };
+      await expect(service().setAvatar('d1', exe, admin)).rejects.toMatchObject({ status: 400, code: 'UNSUPPORTED_IMAGE' });
+      expect(writeFile).not.toHaveBeenCalled();
+    });
+
     it('rechaza archivos que no son imagen', async () => {
       doctors.findById.mockResolvedValue(new Doctor('d1', 'u1', 's1', 'MP-1'));
-      await expect(service().setAvatar('d1', { ...png, mimetype: 'application/pdf' }, admin)).rejects.toMatchObject({ status: 400, code: 'UNSUPPORTED_IMAGE' });
+      await expect(service().setAvatar('d1', { ...png, buffer: Buffer.from('%PDF-1.7 no soy una imagen') }, admin)).rejects.toMatchObject({ status: 400, code: 'UNSUPPORTED_IMAGE' });
       expect(writeFile).not.toHaveBeenCalled();
     });
 

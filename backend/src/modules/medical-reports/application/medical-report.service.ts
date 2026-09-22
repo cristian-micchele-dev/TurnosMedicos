@@ -9,7 +9,7 @@ import { MedicalReport } from '../domain/medical-report';
 import { MedicalReportNotFoundError } from '../domain/medical-report-not-found.exception';
 import { AppointmentNotFoundError } from '../../appointments/domain/exceptions';
 import { PatientNotFoundError } from '../../patients/domain/patient-not-found.exception';
-import { ForbiddenError } from '../../../shared/domain/errors';
+import { DomainError, ForbiddenError } from '../../../shared/domain/errors';
 import { AppointmentStatus } from '../../appointments/domain/appointment-status.enum';
 import { CreateMedicalReportDto } from './dto/create-medical-report.dto';
 import { CreatePatientReportDto } from './dto/create-patient-report.dto';
@@ -20,8 +20,24 @@ import { DoctorNotFoundError } from '../../doctors/domain/doctor-not-found.excep
 import { MedicalRecordAccessPolicy } from '../../appointments/application/medical-record-access.policy';
 import { Actor } from '../../users/domain/actor';
 import { Role } from '../../users/domain/user';
+import { EXTENSION_BY_TYPE, sniffFileType, type SniffedType } from '../../../shared/infra/files/sniff';
 
 const UPLOADS_DIR = join(process.cwd(), 'uploads', 'reports');
+
+const ALLOWED_UPLOADS: SniffedType[] = ['application/pdf', 'image/jpeg', 'image/png'];
+
+/**
+ * What the file says it is, not what the browser said. The declared mime type and
+ * the extension of the original name both come from the client, so neither decides
+ * what we store or what we later serve back.
+ */
+function assertAllowedUpload(file: Express.Multer.File): SniffedType {
+  const type = sniffFileType(file.buffer);
+  if (!type || !ALLOWED_UPLOADS.includes(type)) {
+    throw new DomainError('UNSUPPORTED_FILE', 'El informe debe ser un PDF o una imagen JPG o PNG', 400);
+  }
+  return type;
+}
 
 @Injectable()
 export class MedicalReportService {
@@ -56,8 +72,8 @@ export class MedicalReportService {
       throw new ForbiddenError();
     }
 
-    const ext = file.originalname.split('.').pop() ?? 'bin';
-    const fileName = `${randomUUID()}.${ext}`;
+    const type = assertAllowedUpload(file);
+    const fileName = `${randomUUID()}.${EXTENSION_BY_TYPE[type]}`;
     const filePath = join(UPLOADS_DIR, fileName);
     await writeFile(filePath, file.buffer);
 
@@ -70,7 +86,7 @@ export class MedicalReportService {
       dto.description ?? null,
       fileName,
       file.originalname,
-      file.mimetype,
+      type,
       file.size,
     );
 
@@ -91,8 +107,8 @@ export class MedicalReportService {
     // otherwise a doctor could file a report they are not even allowed to see.
     await this.access.assertCanRead({ sub: doctorUserId, role: Role.DOCTOR }, patientId);
 
-    const ext = file.originalname.split('.').pop() ?? 'bin';
-    const fileName = `${randomUUID()}.${ext}`;
+    const type = assertAllowedUpload(file);
+    const fileName = `${randomUUID()}.${EXTENSION_BY_TYPE[type]}`;
     const filePath = join(UPLOADS_DIR, fileName);
     await writeFile(filePath, file.buffer);
 
@@ -105,7 +121,7 @@ export class MedicalReportService {
       dto.description ?? null,
       fileName,
       file.originalname,
-      file.mimetype,
+      type,
       file.size,
     );
 

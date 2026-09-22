@@ -6,6 +6,7 @@ import { UserRepository } from '../../users/user.repository.port';
 import { User } from '../../users/domain/user';
 import { ChangePasswordDto, LoginDto, ResetPasswordDto } from '../../users/application/dto/auth.dto';
 import { MailerPort, MAILER, RESET_REPOSITORY, ResetRepository, SESSION_REPOSITORY, SessionRepository } from '../auth.repository.port';
+import { assertStrongPassword } from '../../users/domain/password-policy';
 const sha = (value: string) => createHash('sha256').update(value).digest('hex');
 
 @Injectable()
@@ -28,6 +29,7 @@ export class AuthService {
     const user = await this.users.findById(userId);
     if (!user || !user.active || !(await this.hasher.verify(user.passwordHash, dto.currentPassword))) throw new UnauthorizedError();
     if (dto.currentPassword === dto.newPassword) throw new DomainError('PASSWORD_REUSED', 'La nueva contraseña debe ser distinta a la actual', 400);
+    assertStrongPassword(dto.newPassword, { email: user.email, name: user.name });
     user.passwordHash = await this.hasher.hash(dto.newPassword);
     user.mustChangePassword = false;
     await this.users.update(user);
@@ -35,5 +37,5 @@ export class AuthService {
     return this.issue(user);
   }
   async forgot(email: string) { const user = await this.users.findByEmail(email.trim().toLowerCase()); if (user) { const token = randomBytes(32).toString('base64url'); await this.resets.save({ id: randomUUID(), userId: user.id, tokenHash: sha(token), expiresAt: new Date(this.clock.now().getTime() + 3600000) }); await this.mailer.sendPasswordReset(user.email, token); } return { message: 'Si el correo existe, recibirás instrucciones para recuperar tu contraseña' }; }
-  async reset(dto: ResetPasswordDto) { const token = await this.resets.consume(sha(dto.token), this.clock.now()); if (!token) throw new UnauthorizedError(); const user = await this.users.findById(token.userId); if (!user) throw new UnauthorizedError(); user.passwordHash = await this.hasher.hash(dto.password); await this.users.update(user); await this.sessions.revokeAllForUser(user.id); return { message: 'Contraseña actualizada' }; }
+  async reset(dto: ResetPasswordDto) { const token = await this.resets.consume(sha(dto.token), this.clock.now()); if (!token) throw new UnauthorizedError(); const user = await this.users.findById(token.userId); if (!user) throw new UnauthorizedError(); assertStrongPassword(dto.password, { email: user.email, name: user.name }); user.passwordHash = await this.hasher.hash(dto.password); await this.users.update(user); await this.sessions.revokeAllForUser(user.id); return { message: 'Contraseña actualizada' }; }
 }
