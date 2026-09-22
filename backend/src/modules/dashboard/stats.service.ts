@@ -12,19 +12,26 @@ export class StatsService {
 
   async getStats(role: Role) {
     const [allUsers] = await this.users.findAll();
+    const totalDoctors = allUsers.filter(u => u.role === Role.DOCTOR).length;
 
     if (role === Role.ADMIN) {
       const [, totalPatients] = await this.patients.findAll({ take: 1 });
       return {
-        totalDoctors: allUsers.filter(u => u.role === Role.DOCTOR).length,
+        totalDoctors,
         totalPatients,
         totalUsers: allUsers.length,
         activeUsers: allUsers.filter(u => u.active).length,
       };
     }
 
-    return {
-      totalUsers: allUsers.length,
-    };
+    // The front desk works with people, not with the user census.
+    if (role === Role.SECRETARY) {
+      const [, totalPatients] = await this.patients.findAll({ take: 1 });
+      return { totalDoctors, totalPatients };
+    }
+
+    // A doctor's numbers are their own agenda, which the appointments endpoint already
+    // serves; the hospital census is none of their business.
+    return {};
   }
 }

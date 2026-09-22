@@ -13,22 +13,22 @@ import { ForbiddenError } from '../../../../shared/domain/errors';
 export class PatientController {
   constructor(private readonly service: PatientService) {}
 
-  @Post() @Roles(Role.ADMIN, Role.DOCTOR)
+  @Post() @Roles(Role.ADMIN, Role.DOCTOR, Role.SECRETARY)
   create(@Body() dto: CreatePatientDto) {
     return this.service.create(dto);
   }
 
-  @Get() @Roles(Role.ADMIN, Role.DOCTOR)
+  @Get() @Roles(Role.ADMIN, Role.DOCTOR, Role.SECRETARY)
   findAll(@Query() query: PatientQueryDto) {
     return this.service.findAll(query);
   }
 
-  @Get(':id') @Roles(Role.ADMIN, Role.DOCTOR)
+  @Get(':id') @Roles(Role.ADMIN, Role.DOCTOR, Role.SECRETARY)
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.findOne(id);
   }
 
-  @Patch(':id') @Roles(Role.ADMIN, Role.DOCTOR)
+  @Patch(':id') @Roles(Role.ADMIN, Role.DOCTOR, Role.SECRETARY)
   async update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdatePatientDto, @Req() req: Request) {
     if ((req as any).user.role !== Role.ADMIN && dto.active !== undefined) throw new ForbiddenError();
     return this.service.update(id, dto);

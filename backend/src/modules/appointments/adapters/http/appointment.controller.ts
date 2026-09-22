@@ -35,7 +35,7 @@ export class AppointmentController {
     return this.service.findOne(id, actorOf(req));
   }
 
-  @Patch(':id/confirm') @UseGuards(RolesGuard) @Roles(Role.DOCTOR, Role.ADMIN)
+  @Patch(':id/confirm') @UseGuards(RolesGuard) @Roles(Role.DOCTOR, Role.ADMIN, Role.SECRETARY)
   confirm(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     return this.service.confirm(id, actorOf(req));
   }
@@ -45,7 +45,7 @@ export class AppointmentController {
     return this.service.cancel(id, dto, actorOf(req));
   }
 
-  @Patch(':id/reschedule') @UseGuards(RolesGuard) @Roles(Role.DOCTOR, Role.ADMIN)
+  @Patch(':id/reschedule') @UseGuards(RolesGuard) @Roles(Role.DOCTOR, Role.ADMIN, Role.SECRETARY)
   reschedule(@Param('id', ParseUUIDPipe) id: string, @Body() dto: RescheduleAppointmentDto, @Req() req: Request) {
     return this.service.reschedule(id, dto, actorOf(req));
   }

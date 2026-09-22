@@ -10,6 +10,7 @@ import { DoctorNotFoundError } from '../../doctors/domain/doctor-not-found.excep
  * Who may read a patient's medical records (reports, prescriptions):
  * - ADMIN: any patient.
  * - DOCTOR: only patients they have a treating relationship with (>= 1 appointment).
+ * - SECRETARY: never. The front desk schedules care, it does not read it.
  */
 @Injectable()
 export class MedicalRecordAccessPolicy {
@@ -20,6 +21,7 @@ export class MedicalRecordAccessPolicy {
 
   async assertCanRead(actor: Actor, patientId: string): Promise<void> {
     if (actor.role === Role.ADMIN) return;
+    if (actor.role === Role.SECRETARY) throw new ForbiddenError();
 
     const doctor = await this.doctors.findByUserId(actor.sub);
     if (!doctor) throw new DoctorNotFoundError(actor.sub);

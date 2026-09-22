@@ -18,6 +18,12 @@ describe('MedicalRecordAccessPolicy', () => {
     expect(appointments.findAll).not.toHaveBeenCalled();
   });
 
+  it('SECRETARY nunca accede a una historia clínica, ni siquiera de un paciente que ella agendó', async () => {
+    await expect(policy.assertCanRead({ sub: 'u-sec', role: Role.SECRETARY }, 'p1')).rejects.toMatchObject({ status: 403, code: 'FORBIDDEN' });
+    expect(doctors.findByUserId).not.toHaveBeenCalled();
+    expect(appointments.findAll).not.toHaveBeenCalled();
+  });
+
   it('DOCTOR accede si tiene al menos un turno con el paciente', async () => {
     appointments.findAll.mockResolvedValue([[{}], 1]);
     await expect(policy.assertCanRead({ sub: 'u-doc', role: Role.DOCTOR }, 'p1')).resolves.toBeUndefined();
