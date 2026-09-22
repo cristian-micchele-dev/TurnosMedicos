@@ -8,7 +8,7 @@ const steps: Step[] = [
   {
     target: '[data-tour="sidebar-nav"]',
     title: 'Navegación',
-    content: 'Desde acá accedés a todas las secciones de TurnoMed.',
+    content: 'Desde acá accedés a todas las secciones de Pulso.',
   },
   {
     target: '[data-tour="stats"]',

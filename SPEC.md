@@ -1,4 +1,4 @@
-# TurnoMed — Especificación del Sistema
+# Pulso — Especificación del Sistema
 
 > Sistema de gestión de turnos médicos con roles de Administrador, Doctor y Paciente.
 > Arquitectura hexagonal (Ports & Adapters) en backend NestJS + frontend React 19.

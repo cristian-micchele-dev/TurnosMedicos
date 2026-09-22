@@ -51,7 +51,7 @@ export function Sidebar({ isOpen, onClose, onRestartTour }: SidebarProps) {
       <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}>
         <div className={styles.logo}>
           <span className={styles.logoIcon}>+</span>
-          <span className={styles.logoText}>TurnoMed</span>
+          <span className={styles.logoText}>Pulso</span>
         </div>
 
         <nav className={styles.nav} data-tour="sidebar-nav">

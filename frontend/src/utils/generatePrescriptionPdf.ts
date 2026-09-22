@@ -53,7 +53,7 @@ export function generatePrescriptionPdf(ctx: PrescriptionPdfContext): void {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(24);
   doc.setTextColor(...accent);
-  doc.text('TurnoMed', marginL + 16, y + 1);
+  doc.text('Pulso', marginL + 16, y + 1);
 
   y += 8;
   doc.setFont('helvetica', 'normal');
@@ -185,7 +185,7 @@ export function generatePrescriptionPdf(ctx: PrescriptionPdfContext): void {
   doc.setFontSize(8);
   doc.setTextColor(...secondary);
   doc.text(
-    `Generado el ${formatNow()} — TurnoMed`,
+    `Generado el ${formatNow()} — Pulso`,
     pageW / 2,
     pageH - 10,
     { align: 'center' },

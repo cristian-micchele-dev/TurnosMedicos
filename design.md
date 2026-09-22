@@ -1,4 +1,4 @@
-# TurnoMed — Design System
+# Pulso — Design System
 
 > Guía de identidad visual y sistema de diseño para las dos superficies del producto:
 > **Sitio Público** (pacientes) y **Panel Admin** (médicos/administradores).
@@ -729,4 +729,4 @@ El overlay sobre la foto tiene dos funciones: mantener contraste del texto blanc
 
 ---
 
-*Última actualización: Septiembre 2026 — TurnoMed Design System v1.0*
+*Última actualización: Septiembre 2026 — Pulso Design System v1.0*

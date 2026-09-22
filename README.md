@@ -1,4 +1,4 @@
-# TurnoMed — Gestión de turnos hospitalarios
+# Pulso — Gestión de turnos médicos
 
 [![CI](https://github.com/cristian-micchele-dev/TurnosMedicos/actions/workflows/ci.yml/badge.svg)](https://github.com/cristian-micchele-dev/TurnosMedicos/actions/workflows/ci.yml)
 

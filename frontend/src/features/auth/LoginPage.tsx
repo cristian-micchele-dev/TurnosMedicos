@@ -49,8 +49,8 @@ export function LoginPage() {
               />
             </svg>
           </div>
-          <h1 className={styles.appName}>TurnoMed</h1>
-          <p className={styles.subtitle}>Sistema de Gestión de Turnos Médicos</p>
+          <h1 className={styles.appName}>Pulso</h1>
+          <p className={styles.subtitle}>Gestión de turnos médicos</p>
         </div>
 
         <form className={styles.form} onSubmit={handleSubmit} noValidate>

@@ -1,4 +1,4 @@
-# TurnoMed — Frontend
+# Pulso — Frontend
 
 SPA en React 19 + Vite + TypeScript. La documentación completa del proyecto (decisiones de dominio, arquitectura, puesta en marcha) está en el [README raíz](../README.md).
 
