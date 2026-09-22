@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, Optional } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { Clock, CLOCK } from '../../../shared/application/ports';
 import { formatDateTime } from '../../../shared/infra/time/format';
@@ -19,11 +19,12 @@ import { Role } from '../../users/domain/user';
 import { Actor } from '../../users/domain/actor';
 import { ForbiddenError } from '../../../shared/domain/errors';
 import { PaginatedResult } from '../../../shared/application/pagination';
-import { NotificationsGateway } from '../../notifications/notifications.gateway';
 import { Doctor } from '../../doctors/domain/doctor';
 import { clinicDayRange } from '../../../shared/infra/time/format';
 import { AuditService } from '../../audit/application/audit.service';
 import { AuditAction } from '../../audit/domain/audit-entry';
+import { NotificationService } from '../../notifications/application/notification.service';
+import { NotificationType } from '../../notifications/domain/notification';
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -52,7 +53,7 @@ export class AppointmentService {
     @Inject(PATIENT_REPOSITORY) private readonly patients: PatientRepository,
     @Inject(CLOCK) private readonly clock: Clock,
     private readonly audit: AuditService,
-    @Optional() private readonly notifications?: NotificationsGateway,
+    private readonly notifications: NotificationService,
   ) {}
 
   // Resolves the actor to the doctor profile it owns. ADMIN passes every check.
@@ -98,11 +99,14 @@ export class AppointmentService {
       null, new Date(), code,
     );
     const saved = await this.appointments.save(appointment);
-    this.notifications?.notifyUser(doctor.userId, 'notification', {
-      type: 'appointment_created',
-      message: 'Nuevo turno asignado',
-      appointmentId: saved.id,
-    });
+    // Whoever books is rarely the doctor, so the message carries the two facts
+    // they need before opening anything: the patient and the moment.
+    await this.notifications.notify(
+      doctor.userId,
+      NotificationType.APPOINTMENT_CREATED,
+      `Nuevo turno: ${patient.name} — ${formatDateTime(dateTime)}`,
+      saved.id,
+    );
     return saved.toPublic();
   }
 
@@ -155,22 +159,24 @@ export class AppointmentService {
     return a.toPublic();
   }
 
+  /** Notifications address an account, and an appointment only knows the doctor profile. */
+  private async notifyDoctor(doctorId: string, type: NotificationType, message: string, appointmentId: string) {
+    const doctor = await this.doctors.findById(doctorId);
+    if (doctor) await this.notifications.notify(doctor.userId, type, message, appointmentId);
+  }
+
   async cancel(id: string, dto: CancelAppointmentDto, actor: Actor) {
     const a = await this.findOwned(id, actor);
     this.cancellationWindow.validate(a.dateTime, this.clock.now());
     a.cancel(dto.reason);
     await this.appointments.update(a);
     await this.audit.record(actor, AuditAction.APPOINTMENT_CANCELLED, 'appointment', a.id, { code: a.code, patientId: a.patientId });
-    if (this.notifications) {
-      const doctor = await this.doctors.findById(a.doctorId);
-      if (doctor) {
-        this.notifications.notifyUser(doctor.userId, 'notification', {
-          type: 'appointment_cancelled',
-          message: 'Un turno fue cancelado',
-          appointmentId: a.id,
-        });
-      }
-    }
+    await this.notifyDoctor(
+      a.doctorId,
+      NotificationType.APPOINTMENT_CANCELLED,
+      `Turno cancelado: ${a.code} — ${formatDateTime(a.dateTime)}`,
+      a.id,
+    );
     return a.toPublic();
   }
 
@@ -184,16 +190,12 @@ export class AppointmentService {
     await this.noDoubleBooking.validate(a.doctorId, newDateTime, this.appointments);
     a.dateTime = newDateTime;
     await this.appointments.update(a);
-    if (this.notifications) {
-      const doctor = await this.doctors.findById(a.doctorId);
-      if (doctor) {
-        this.notifications.notifyUser(doctor.userId, 'notification', {
-          type: 'appointment_rescheduled',
-          message: `El turno ${a.code} fue reprogramado al ${formatDateTime(newDateTime)}`,
-          appointmentId: a.id,
-        });
-      }
-    }
+    await this.notifyDoctor(
+      a.doctorId,
+      NotificationType.APPOINTMENT_RESCHEDULED,
+      `Turno ${a.code} reprogramado: ${formatDateTime(newDateTime)}`,
+      a.id,
+    );
     return a.toPublic();
   }
 
