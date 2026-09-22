@@ -6,9 +6,10 @@ import { ChartsService } from './charts.service';
 import { AppointmentOrmEntity } from '../appointments/adapters/persistence/appointment.entity';
 import { SpecialtyOrmEntity } from '../specialties/adapters/persistence/specialty.entity';
 import { PatientsModule } from '../patients/patients.module';
+import { DoctorsModule } from '../doctors/doctors.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AppointmentOrmEntity, SpecialtyOrmEntity]), PatientsModule],
+  imports: [TypeOrmModule.forFeature([AppointmentOrmEntity, SpecialtyOrmEntity]), PatientsModule, DoctorsModule],
   controllers: [StatsController],
   providers: [StatsService, ChartsService],
 })
