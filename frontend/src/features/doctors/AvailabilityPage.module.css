@@ -339,3 +339,32 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Five fixed columns need 500px before the gaps: on a phone the schedule
+   becomes a card per block — the day as its title, the three values on one
+   line, and the actions at the foot.
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 720px) {
+  .scheduleHeader { display: none; }
+
+  .scheduleRow {
+    grid-template-columns: repeat(3, auto);
+    justify-content: start;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-5);
+    padding: var(--space-4) var(--space-4);
+  }
+
+  /* The day names the card; the actions close it, right-aligned. */
+  .scheduleRow > *:first-child {
+    grid-column: 1 / -1;
+    font-size: 1rem;
+  }
+
+  .rowActions {
+    grid-column: 1 / -1;
+    justify-self: end;
+    margin-top: var(--space-2);
+  }
+}

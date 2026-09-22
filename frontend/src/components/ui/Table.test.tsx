@@ -84,6 +84,14 @@ describe('Table', () => {
     expect(cell).toHaveClass('tdHover');
   });
 
+  it('cada celda lleva el nombre de su columna: en mobile la fila se apila y la etiqueta es lo único que la explica', () => {
+    render(<Table columns={columns} data={rows} keyExtractor={keyExtractor} />);
+    const firstRow = within(screen.getAllByRole('rowgroup')[1]).getAllByRole('row')[0];
+    const cells = within(firstRow).getAllByRole('cell');
+    expect(cells[0]).toHaveAttribute('data-label', 'Nombre');
+    expect(cells[1]).toHaveAttribute('data-label', 'Edad');
+  });
+
   it('muestra el resumen "Mostrando X–Y de Z" cuando se pasa total', () => {
     render(<Table columns={columns} data={rows} keyExtractor={keyExtractor} total={57} page={2} pageSize={20} />);
     expect(screen.getByText('Mostrando 21–23 de 57')).toBeInTheDocument();

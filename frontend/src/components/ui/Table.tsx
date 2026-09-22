@@ -157,6 +157,7 @@ export function Table<T>({
                 {columns.map((col) => (
                   <td
                     key={col.key}
+                    data-label={col.header}
                     className={[styles.td, col.hideUntilHover ? styles.tdHover : '', col.align ? styles[`align-${col.align}`] : ''].filter(Boolean).join(' ')}
                   >
                     {col.render ? col.render(item) : String((item as Record<string, unknown>)[col.key] ?? '')}
