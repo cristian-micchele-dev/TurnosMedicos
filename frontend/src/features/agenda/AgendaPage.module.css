@@ -157,9 +157,9 @@
 .timelineGrid {
   position: relative;
   flex: 1;
-  min-height: calc(var(--total-hours, 13) * 60px);
-  /* fallback — JS controls top/height via percentages, so we just need a known height */
-  height: 780px; /* 13 hours × 60px */
+  /* Blocks are positioned in %, so the column needs a known height: the page
+     passes it as --timeline-height (hours × 60px). Mobile drops it for auto flow. */
+  height: var(--timeline-height, 780px);
 }
 
 /* Hour grid lines */
@@ -297,55 +297,6 @@
   color: var(--danger);
 }
 
-
-
-/* ── Responsive ─────────────────────────────────────────────────────────────── */
-
-@media (max-width: 640px) {
-  .page {
-    padding: 1.25rem 1rem;
-  }
-
-  .timelineWrapper {
-    flex-direction: column;
-  }
-
-  .timeAxis {
-    display: none;
-  }
-
-  .timelineGrid {
-    height: auto;
-    min-height: 400px;
-  }
-
-  .apptBlock {
-    position: static;
-    margin-bottom: 0.5rem;
-    border-left-width: 4px;
-    height: auto !important;
-  }
-
-  .gridLine {
-    display: none;
-  }
-
-  .currentTime {
-    display: none;
-  }
-
-  .navBar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .dateLabel {
-    min-width: unset;
-    font-size: 0.9rem;
-  }
-}
-
 /* Availability shading — the doctor's working hours for the visible day */
 .availabilityBlock {
   position: absolute;
@@ -467,7 +418,62 @@
 .chipCompleted { background: var(--state-completed-bg); color: var(--state-completed-text); }
 .chipCancelled { background: var(--state-cancelled-bg); color: var(--state-cancelled-text); }
 
-@media (max-width: 720px) {
+/* ── Responsive ─────────────────────────────────────────────────────────────
+   Project breakpoints: 1024px (wide grids) · 768px (phone: sidebar out, tables
+   become cards, timeline becomes a list) · 480px (small-phone tweaks).
+   768px is where the Layout drops the sidebar, so content must collapse there
+   too — this page used to split at 640 and 720 and left dead ranges in between. */
+
+@media (max-width: 768px) {
+  .page {
+    padding: 1.25rem 1rem;
+  }
+
+  .timelineWrapper {
+    flex-direction: column;
+  }
+
+  .timeAxis {
+    display: none;
+  }
+
+  /* The timeline becomes a plain list of cards: no fixed height, no absolute
+     positioning, and the padding replaces the blocks' own left/right offsets. */
+  .timelineGrid {
+    height: auto;
+    padding: 0.5rem;
+  }
+
+  .apptBlock {
+    position: static;
+    margin-bottom: 0.5rem;
+    border-left-width: 4px;
+    height: auto !important;
+  }
+
+  .apptBlock:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Hour rulers and the availability shading only mean something against a
+     time axis; with the cards in normal flow they would float over them. */
+  .gridLine,
+  .currentTime,
+  .availabilityBlock {
+    display: none;
+  }
+
+  .navBar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .dateLabel {
+    min-width: unset;
+    font-size: 0.9rem;
+  }
+
   .briefing { grid-template-columns: 1fr; }
   .briefingBlock { padding-left: 0; border-left: none; padding-top: 0.75rem; border-top: 1px solid var(--border); }
   .briefingBlock:first-child { padding-top: 0; border-top: none; }

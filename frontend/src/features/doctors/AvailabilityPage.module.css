@@ -345,7 +345,7 @@
    becomes a card per block — the day as its title, the three values on one
    line, and the actions at the foot.
    ═══════════════════════════════════════════════════════════════════════ */
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .scheduleHeader { display: none; }
 
   .scheduleRow {

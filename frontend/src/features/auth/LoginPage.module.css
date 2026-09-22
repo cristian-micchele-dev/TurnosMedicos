@@ -15,12 +15,14 @@
   background-color: var(--bg);
 
   /*
-   * Large soft radial bleeding from top-left (primary @ 5 % opacity)
-   * + a barely-visible second glow from bottom-right for depth
+   * The card used to float in an empty field. Now the page is composed: light
+   * pools where the card sits, the brand blue washes in from the top-left and a
+   * breath of teal closes the bottom-right. Still paper, never white.
    */
   background-image:
-    radial-gradient(ellipse 70% 55% at -5% 0%, rgba(56, 189, 248, 0.07) 0%, transparent 65%),
-    radial-gradient(ellipse 50% 40% at 105% 100%, rgba(56, 189, 248, 0.04) 0%, transparent 60%);
+    radial-gradient(ellipse 52% 46% at 50% 44%, rgba(255, 255, 255, 0.55) 0%, transparent 72%),
+    radial-gradient(ellipse 85% 60% at 6% -12%, rgba(74, 111, 165, 0.20) 0%, transparent 64%),
+    radial-gradient(ellipse 72% 58% at 104% 108%, rgba(45, 212, 191, 0.12) 0%, transparent 62%);
 }
 
 /* Dark theme: the deep-blue field of a micrograph, brighter where the light comes in. */
@@ -38,7 +40,7 @@
   z-index: 1;
   width: 100%;
   max-width: 440px;
-  background: var(--surface);
+  background: var(--slate);
   border-radius: var(--radius-xl);
   padding: 2.75rem 2.5rem;
 
@@ -46,11 +48,9 @@
    * Layered shadow: tight 1 px border ring (replaces border) +
    * three progressive shadow layers for premium depth
    */
+  /* The shadow came from the dark theme in raw black; on paper it read as dirt. */
   border: 1px solid var(--border);
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.3),
-    0 8px 24px rgba(0, 0, 0, 0.25),
-    0 24px 48px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-xl);
 
   animation: cardFadeUp var(--transition-slow) both;
 }

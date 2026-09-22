@@ -22,6 +22,7 @@
   --ice:           rgba(255, 255, 255, 0.05);
   --snow:          rgba(255, 255, 255, 0.03);
   --surface:       rgba(21, 30, 50, 0.80);
+  --field-bg:      var(--dark);
   --surface-solid: #0f1729;
   --bg:            #0b1120;
 
@@ -155,6 +156,7 @@
   --ice:           rgba(43, 66, 105, 0.05);
   --snow:          rgba(43, 66, 105, 0.03);
   --surface:       rgba(245, 247, 250, 0.92);
+  --field-bg:      var(--dark);
   --surface-solid: #f5f7fa;
   --bg:            #e4eaf2;   /* fondo de página — bone azulado; las cards flotan por contraste */
   --page-wash:     radial-gradient(900px 480px at 18% -8%, rgba(74, 111, 165, 0.16), transparent 62%),

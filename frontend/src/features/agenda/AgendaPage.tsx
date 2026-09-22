@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, type CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AgendaViewSwitch } from './AgendaViewSwitch';
 import { appointmentsApi, type Appointment, type AppointmentStatus } from '../../api/appointments';
@@ -336,7 +336,11 @@ export function AgendaPage() {
           </div>
 
           {/* Grid + appointment blocks */}
-          <div className={styles.timelineGrid} style={{ height: `${totalHours * 60}px` }}>
+          {/* Height travels as a custom property so the mobile layout can drop it for auto flow. */}
+          <div
+            className={styles.timelineGrid}
+            style={{ '--timeline-height': `${totalHours * 60}px` } as CSSProperties}
+          >
             {/* Availability shading */}
             {dayBlocks.map((b) => (
               <div

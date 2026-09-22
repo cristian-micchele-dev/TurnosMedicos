@@ -205,7 +205,7 @@
    row becomes a stacked card: the first cell is its title, the rest are
    label/value pairs, and the actions sit at the foot, always visible.
    ═══════════════════════════════════════════════════════════════════════ */
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .wrapper {
     overflow-x: visible;
     border: none;

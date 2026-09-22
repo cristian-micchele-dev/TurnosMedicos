@@ -383,3 +383,22 @@
   font-size: 0.8125rem;
   color: var(--text-tertiary);
 }
+
+/* A day cell is ~37px wide on a phone: dots and a count cannot share that row.
+   The count wins — it reads at a glance, and the per-status breakdown is one
+   tap away in the day detail panel below. */
+@media (max-width: 768px) {
+  .dayMeta {
+    justify-content: center;
+    margin-top: 4px;
+  }
+
+  .dayMeta .dayDots {
+    display: none;
+  }
+
+  .dayCount {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+}

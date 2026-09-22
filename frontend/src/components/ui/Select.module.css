@@ -30,7 +30,7 @@
   font-family: var(--font);
   font-weight: 400;
   color: var(--text-primary);
-  background: var(--surface);
+  background: var(--field-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   outline: none;

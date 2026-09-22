@@ -45,8 +45,9 @@
   font-family: var(--font);
   font-weight: 400;
   color: var(--text-primary);
-  background: var(--surface);
-  border: 1px solid var(--border);
+  /* Sunken into the card, never the same surface as it: that is what reads as "a field". */
+  background: var(--field-bg);
+  border: 1px solid var(--border-input);
   border-radius: var(--radius-md);
   outline: none;
   transition: border-color var(--transition), box-shadow var(--transition);
