@@ -22,6 +22,8 @@ import { PaginatedResult } from '../../../shared/application/pagination';
 import { NotificationsGateway } from '../../notifications/notifications.gateway';
 import { Doctor } from '../../doctors/domain/doctor';
 import { clinicDayRange } from '../../../shared/infra/time/format';
+import { AuditService } from '../../audit/application/audit.service';
+import { AuditAction } from '../../audit/domain/audit-entry';
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -49,6 +51,7 @@ export class AppointmentService {
     @Inject(SCHEDULE_BLOCK_REPOSITORY) private readonly scheduleBlockRepo: ScheduleBlockRepository,
     @Inject(PATIENT_REPOSITORY) private readonly patients: PatientRepository,
     @Inject(CLOCK) private readonly clock: Clock,
+    private readonly audit: AuditService,
     @Optional() private readonly notifications?: NotificationsGateway,
   ) {}
 
@@ -157,6 +160,7 @@ export class AppointmentService {
     this.cancellationWindow.validate(a.dateTime, this.clock.now());
     a.cancel(dto.reason);
     await this.appointments.update(a);
+    await this.audit.record(actor, AuditAction.APPOINTMENT_CANCELLED, 'appointment', a.id, { code: a.code, patientId: a.patientId });
     if (this.notifications) {
       const doctor = await this.doctors.findById(a.doctorId);
       if (doctor) {

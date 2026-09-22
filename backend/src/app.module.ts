@@ -20,6 +20,8 @@ import { UsersModule } from './modules/users/users.module';
 import { SpecialtiesModule } from './modules/specialties/specialties.module';
 import { DoctorsModule } from './modules/doctors/doctors.module';
 import { PatientsModule } from './modules/patients/patients.module';
+import { AuditModule } from './modules/audit/audit.module';
+import { AuditLogOrmEntity } from './modules/audit/adapters/persistence/audit.entity';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { MedicalReportsModule } from './modules/medical-reports/medical-reports.module';
@@ -36,7 +38,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.getOrThrow('databaseUrl'),
-        entities: [UserOrmEntity, AuthSessionOrmEntity, ResetTokenOrmEntity, SpecialtyOrmEntity, DoctorOrmEntity, AvailabilityOrmEntity, ScheduleBlockOrmEntity, PatientOrmEntity, AppointmentOrmEntity, MedicalReportOrmEntity, PrescriptionOrmEntity],
+        entities: [UserOrmEntity, AuthSessionOrmEntity, ResetTokenOrmEntity, SpecialtyOrmEntity, DoctorOrmEntity, AvailabilityOrmEntity, ScheduleBlockOrmEntity, PatientOrmEntity, AuditLogOrmEntity, AppointmentOrmEntity, MedicalReportOrmEntity, PrescriptionOrmEntity],
         synchronize: false,
       }),
     }),
@@ -46,6 +48,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     SpecialtiesModule,
     DoctorsModule,
     PatientsModule,
+    AuditModule,
     AppointmentsModule,
     DashboardModule,
     MedicalReportsModule,

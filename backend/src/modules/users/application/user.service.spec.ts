@@ -5,7 +5,9 @@ describe('UserService', () => {
   const users: any = { findById: jest.fn(), findByEmail: jest.fn(), findAll: jest.fn(), save: jest.fn(), update: jest.fn() };
   const hasher: any = { hash: jest.fn(async (v: string) => `hash:${v}`), verify: jest.fn() };
   const sessions: any = { revokeAllForUser: jest.fn() };
-  const service = () => new UserService(users, hasher, sessions);
+  const audit: any = { record: jest.fn() };
+  const admin = { sub: 'u-admin', role: Role.ADMIN };
+  const service = () => new UserService(audit, users, hasher, sessions);
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -18,7 +20,7 @@ describe('UserService', () => {
       const user = new User('u1', 'doc@h.com', 'Doc', 'hash:old', Role.DOCTOR);
       users.findById.mockResolvedValue(user);
 
-      const result = await service().resetPassword('u1');
+      const result = await service().resetPassword('u1', admin);
 
       expect(result.temporaryPassword).toMatch(/^[A-Za-z0-9]{14}$/);
       expect(hasher.hash).toHaveBeenCalledWith(result.temporaryPassword);
@@ -30,13 +32,13 @@ describe('UserService', () => {
 
     it('cada reset genera una clave distinta', async () => {
       users.findById.mockResolvedValue(new User('u1', 'doc@h.com', 'Doc', 'hash', Role.DOCTOR));
-      const a = await service().resetPassword('u1');
-      const b = await service().resetPassword('u1');
+      const a = await service().resetPassword('u1', admin);
+      const b = await service().resetPassword('u1', admin);
       expect(a.temporaryPassword).not.toBe(b.temporaryPassword);
     });
 
     it('lanza 404 si el usuario no existe', async () => {
-      await expect(service().resetPassword('missing')).rejects.toMatchObject({ status: 404 });
+      await expect(service().resetPassword('missing', admin)).rejects.toMatchObject({ status: 404 });
     });
   });
 

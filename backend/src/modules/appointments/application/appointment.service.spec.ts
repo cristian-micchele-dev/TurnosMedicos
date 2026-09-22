@@ -65,7 +65,7 @@ describe('AppointmentService', () => {
   const clock = { now: () => now };
 
   const admin = { sub: 'admin-1', role: Role.ADMIN };
-  const service = () => new AppointmentService(appointments, doctors, availabilities, scheduleBlocks, patients, clock);
+  const service = () => new AppointmentService(appointments, doctors, availabilities, scheduleBlocks, patients, clock, { record: jest.fn() } as any);
 
   beforeEach(() => {
     jest.clearAllMocks();

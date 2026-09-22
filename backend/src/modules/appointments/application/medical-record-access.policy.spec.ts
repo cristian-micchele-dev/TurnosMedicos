@@ -5,7 +5,8 @@ import { Role } from '../../users/domain/user';
 describe('MedicalRecordAccessPolicy', () => {
   const appointments: any = { findAll: jest.fn() };
   const doctors: any = { findByUserId: jest.fn() };
-  const policy = new MedicalRecordAccessPolicy(appointments, doctors);
+  const audit: any = { record: jest.fn() };
+  const policy = new MedicalRecordAccessPolicy(appointments, doctors, audit);
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -37,5 +38,27 @@ describe('MedicalRecordAccessPolicy', () => {
   it('DOCTOR sin perfil recibe 404', async () => {
     doctors.findByUserId.mockResolvedValue(undefined);
     await expect(policy.assertCanRead({ sub: 'u-x', role: Role.DOCTOR }, 'p1')).rejects.toMatchObject({ status: 404 });
+  });
+
+  describe('deja rastro de cada acceso a una historia clínica', () => {
+    it('registra el acceso concedido con el paciente y quién lo miró', async () => {
+      appointments.findAll.mockResolvedValue([[{}], 1]);
+      const actor = { sub: 'u-doc', role: Role.DOCTOR };
+      await policy.assertCanRead(actor, 'p1');
+      expect(audit.record).toHaveBeenCalledWith(actor, 'RECORD_ACCESS_GRANTED', 'patient', 'p1');
+    });
+
+    it('registra también el intento rechazado, que es el que más interesa', async () => {
+      appointments.findAll.mockResolvedValue([[], 0]);
+      const actor = { sub: 'u-doc', role: Role.DOCTOR };
+      await expect(policy.assertCanRead(actor, 'p9')).rejects.toMatchObject({ status: 403 });
+      expect(audit.record).toHaveBeenCalledWith(actor, 'RECORD_ACCESS_DENIED', 'patient', 'p9');
+    });
+
+    it('el paso libre del ADMIN no es una excepción al registro', async () => {
+      const actor = { sub: 'u-admin', role: Role.ADMIN };
+      await policy.assertCanRead(actor, 'p1');
+      expect(audit.record).toHaveBeenCalledWith(actor, 'RECORD_ACCESS_GRANTED', 'patient', 'p1');
+    });
   });
 });

@@ -8,17 +8,21 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { PaginationDto, PaginatedResult } from '../../../shared/application/pagination';
 import { assertStrongPassword, generateTemporaryPassword } from '../domain/password-policy';
+import { AuditService } from '../../audit/application/audit.service';
+import { AuditAction } from '../../audit/domain/audit-entry';
+import { Actor } from '../domain/actor';
 
 // Unambiguous alphabet: no 0/O, 1/l/I — the admin reads this aloud or copies it once.
 @Injectable()
 export class UserService {
   constructor(
+    private readonly audit: AuditService,
     @Inject('USER_REPOSITORY') private readonly users: UserRepository,
     @Inject(HASHER) private readonly hasher: Hasher,
     @Inject(SESSION_REPOSITORY) private readonly sessions: SessionRepository,
   ) {}
 
-  async create(dto: CreateUserDto) {
+  async create(dto: CreateUserDto, actor: Actor) {
     const email = dto.email.trim().toLowerCase();
     if (await this.users.findByEmail(email)) {
       throw new ConflictException('Ya existe un usuario con ese email');
@@ -27,6 +31,7 @@ export class UserService {
     const user = await this.users.save(
       new User(randomUUID(), email, dto.name ?? '', await this.hasher.hash(dto.password), dto.role),
     );
+    await this.audit.record(actor, AuditAction.USER_CREATED, 'user', user.id, { role: user.role });
     return user.toPublic();
   }
 
@@ -38,16 +43,18 @@ export class UserService {
     return { data: list.map(u => u.toPublic()), total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async updateRole(id: string, dto: UpdateRoleDto) {
+  async updateRole(id: string, dto: UpdateRoleDto, actor: Actor) {
     const user = await this.users.findById(id);
     if (!user) throw new NotFoundException(`Usuario ${id} no encontrado`);
+    const previous = user.role;
     user.role = dto.role;
     await this.users.update(user);
+    await this.audit.record(actor, AuditAction.USER_ROLE_CHANGED, 'user', user.id, { from: previous, to: user.role });
     return user.toPublic();
   }
 
   // The temporary password is returned exactly once and never stored in clear.
-  async resetPassword(id: string): Promise<{ temporaryPassword: string }> {
+  async resetPassword(id: string, actor: Actor): Promise<{ temporaryPassword: string }> {
     const user = await this.users.findById(id);
     if (!user) throw new NotFoundException(`Usuario ${id} no encontrado`);
     const temporaryPassword = generateTemporaryPassword();
@@ -55,14 +62,17 @@ export class UserService {
     user.mustChangePassword = true;
     await this.users.update(user);
     await this.sessions.revokeAllForUser(user.id);
+    // The temporary password itself never reaches the trail — only that it happened.
+    await this.audit.record(actor, AuditAction.USER_PASSWORD_RESET, 'user', user.id);
     return { temporaryPassword };
   }
 
-  async toggleActive(id: string) {
+  async toggleActive(id: string, actor: Actor) {
     const user = await this.users.findById(id);
     if (!user) throw new NotFoundException(`Usuario ${id} no encontrado`);
     user.active = !user.active;
     await this.users.update(user);
+    await this.audit.record(actor, AuditAction.USER_ACTIVE_CHANGED, 'user', user.id, { active: user.active });
     return user.toPublic();
   }
 }
