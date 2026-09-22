@@ -47,8 +47,8 @@ const DARK: Palette = {
   flash: [255, 244, 214],
   alpha: 1,
 };
-const NODES_PER_MEGAPIXEL = 40;
-const MAX_PULSES = 36;
+const NODES_PER_MEGAPIXEL = 20;
+const MAX_PULSES = 14;
 
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 const rgba = ([r, g, b]: RGB, a: number) => `rgba(${r}, ${g}, ${b}, ${a})`;
@@ -81,7 +81,7 @@ function buildNetwork(width: number, height: number, palette: Palette): { nodes:
     for (let tries = 0; tries < 12 && !ok; tries++) {
       x = rand(-margin, width + margin);
       y = rand(-margin, height + margin);
-      ok = nodes.every((n) => Math.hypot(n.x - x, n.y - y) > 72);
+      ok = nodes.every((n) => Math.hypot(n.x - x, n.y - y) > 120);
     }
     nodes.push({ x, y, r: rand(2.6, 5.5), glow: 0, phase: rand(0, Math.PI * 2) });
   }
@@ -93,7 +93,7 @@ function buildNetwork(width: number, height: number, palette: Palette): { nodes:
       .filter((m) => m !== n)
       .map((m) => ({ m, d: Math.hypot(m.x - n.x, m.y - n.y) }))
       .sort((a, b) => a.d - b.d)
-      .slice(0, 3 + (Math.random() < 0.4 ? 1 : 0));
+      .slice(0, 2 + (Math.random() < 0.25 ? 1 : 0));
     for (const { m, d } of near) {
       const key = [nodes.indexOf(n), nodes.indexOf(m)].sort((a, b) => a - b).join('-');
       if (linked.has(key)) continue;
@@ -142,7 +142,7 @@ function renderFibreLayer(width: number, height: number, dpr: number, fibres: Fi
 
 function drawNodes(ctx: CanvasRenderingContext2D, nodes: Node[], t: number, palette: Palette) {
   for (const n of nodes) {
-    const breathe = 0.85 + Math.sin(t * 0.0012 + n.phase) * 0.15;
+    const breathe = 0.9 + Math.sin(t * 0.0006 + n.phase) * 0.1;
     const r = n.r * breathe;
     const halo = r * (4 + n.glow * 8);
     const color = n.glow > 0.05 ? palette.flash : palette.fibres[0];
@@ -158,7 +158,7 @@ function drawNodes(ctx: CanvasRenderingContext2D, nodes: Node[], t: number, pale
     ctx.beginPath();
     ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
     ctx.fill();
-    n.glow *= 0.955;
+    n.glow *= 0.975;
   }
 }
 
@@ -233,7 +233,7 @@ export function NeuralBackground({ className }: NeuralBackgroundProps) {
         fibre: forward ? fibre : { ...fibre, from: fibre.to, to: fibre.from, c1: fibre.c2, c2: fibre.c1 },
         t: 0,
         // Longer fibres take longer to cross: roughly constant px per second.
-        speed: (130 / fibre.length) * rand(0.8, 1.3) / 60,
+        speed: (55 / fibre.length) * rand(0.8, 1.3) / 60,
         color: fibre.color,
       });
     };
@@ -253,7 +253,7 @@ export function NeuralBackground({ className }: NeuralBackgroundProps) {
     const step = (t: number) => {
       const dt = last ? Math.min((t - last) / 16.67, 3) : 1;
       last = t;
-      if (Math.random() < 0.14 * dt) spawnPulse();
+      if (Math.random() < 0.05 * dt) spawnPulse();
       for (const p of pulses) p.t += p.speed * dt;
       // A pulse that reaches its soma lights it up and is spent.
       for (const p of pulses) if (p.t >= 1) p.fibre.to.glow = 1;
