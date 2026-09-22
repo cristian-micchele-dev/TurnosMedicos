@@ -17,11 +17,15 @@ import { todayLocal } from '../../utils/date';
 import { ConstellationBackground } from '../../components/ui/ConstellationBackground';
 import styles from './DashboardPage.module.css';
 
+// Colour is reserved for clinical state: 'pending' and 'done' are the amber and green
+// of a turno; everything that counts people or entities stays in the brand's ink.
+type Accent = 'neutral' | 'pending' | 'done';
+
 interface StatCard {
   label: string;
   value: string | number;
   icon: LucideIcon;
-  accent: 'blue' | 'green' | 'amber' | 'slate';
+  accent: Accent;
   /** Where the number drills down to (the list, pre-filtered). */
   to?: string;
 }
@@ -29,50 +33,49 @@ interface StatCard {
 interface QuickAction {
   label: string;
   to: string;
-  accent: 'blue' | 'green' | 'amber' | 'slate';
 }
 
 function buildAdminCards(stats: DashboardStats): StatCard[] {
   return [
-    { label: 'Doctores', value: stats.totalDoctors ?? '—', icon: Stethoscope, accent: 'blue', to: '/doctores' },
-    { label: 'Pacientes', value: stats.totalPatients ?? '—', icon: HeartPulse, accent: 'green', to: '/pacientes' },
-    { label: 'Usuarios', value: stats.totalUsers ?? '—', icon: Users, accent: 'amber', to: '/usuarios' },
-    { label: 'Activos', value: stats.activeUsers ?? '—', icon: Zap, accent: 'slate', to: '/usuarios' },
+    { label: 'Doctores', value: stats.totalDoctors ?? '—', icon: Stethoscope, accent: 'neutral', to: '/doctores' },
+    { label: 'Pacientes', value: stats.totalPatients ?? '—', icon: HeartPulse, accent: 'neutral', to: '/pacientes' },
+    { label: 'Usuarios', value: stats.totalUsers ?? '—', icon: Users, accent: 'neutral', to: '/usuarios' },
+    { label: 'Activos', value: stats.activeUsers ?? '—', icon: Zap, accent: 'neutral', to: '/usuarios' },
   ];
 }
 
 function buildDoctorCards(todayCount: number, pendingCount: number, completedCount: number): StatCard[] {
   return [
-    { label: 'Turnos Hoy', value: todayCount, icon: Calendar, accent: 'blue', to: '/agenda' },
-    { label: 'Pendientes', value: pendingCount, icon: Clock, accent: 'amber', to: '/mis-turnos?status=PENDING' },
-    { label: 'Completados', value: completedCount, icon: CheckCircle, accent: 'green', to: '/mis-turnos?status=COMPLETED' },
+    { label: 'Turnos Hoy', value: todayCount, icon: Calendar, accent: 'neutral', to: '/agenda' },
+    { label: 'Pendientes', value: pendingCount, icon: Clock, accent: 'pending', to: '/mis-turnos?status=PENDING' },
+    { label: 'Completados', value: completedCount, icon: CheckCircle, accent: 'done', to: '/mis-turnos?status=COMPLETED' },
   ];
 }
 
 function buildSecretaryCards(todayCount: number, pendingCount: number, totalPatients: number | undefined): StatCard[] {
   return [
-    { label: 'Turnos Hoy', value: todayCount, icon: Calendar, accent: 'blue', to: '/turnos' },
-    { label: 'Por Confirmar', value: pendingCount, icon: Clock, accent: 'amber', to: '/turnos?status=PENDING' },
-    { label: 'Pacientes', value: totalPatients ?? '—', icon: HeartPulse, accent: 'green', to: '/pacientes' },
+    { label: 'Turnos Hoy', value: todayCount, icon: Calendar, accent: 'neutral', to: '/turnos' },
+    { label: 'Por Confirmar', value: pendingCount, icon: Clock, accent: 'pending', to: '/turnos?status=PENDING' },
+    { label: 'Pacientes', value: totalPatients ?? '—', icon: HeartPulse, accent: 'neutral', to: '/pacientes' },
   ];
 }
 
 const QUICK_ACTIONS: Record<string, QuickAction[]> = {
   ADMIN: [
-    { label: 'Crear Doctor', to: '/doctores', accent: 'blue' },
-    { label: 'Crear Paciente', to: '/pacientes', accent: 'green' },
-    { label: 'Ver Turnos', to: '/turnos', accent: 'amber' },
-    { label: 'Gestionar Usuarios', to: '/usuarios', accent: 'slate' },
+    { label: 'Crear Doctor', to: '/doctores' },
+    { label: 'Crear Paciente', to: '/pacientes' },
+    { label: 'Ver Turnos', to: '/turnos' },
+    { label: 'Gestionar Usuarios', to: '/usuarios' },
   ],
   SECRETARY: [
-    { label: 'Nuevo Turno', to: '/nuevo-turno', accent: 'blue' },
-    { label: 'Registrar Paciente', to: '/pacientes', accent: 'green' },
-    { label: 'Ver Turnos', to: '/turnos', accent: 'amber' },
+    { label: 'Nuevo Turno', to: '/nuevo-turno' },
+    { label: 'Registrar Paciente', to: '/pacientes' },
+    { label: 'Ver Turnos', to: '/turnos' },
   ],
   DOCTOR: [
-    { label: 'Nuevo Turno', to: '/nuevo-turno', accent: 'blue' },
-    { label: 'Registrar Paciente', to: '/pacientes', accent: 'amber' },
-    { label: 'Mi Disponibilidad', to: '/disponibilidad', accent: 'green' },
+    { label: 'Nuevo Turno', to: '/nuevo-turno' },
+    { label: 'Registrar Paciente', to: '/pacientes' },
+    { label: 'Mi Disponibilidad', to: '/disponibilidad' },
   ],
 };
 
@@ -241,7 +244,7 @@ export function DashboardPage() {
               <h1 className={styles.greeting}>
                 Bienvenido, <span className={styles.greetingAccent}>{displayName}</span>
               </h1>
-              <p className={styles.subtext}>Resumen de tu actividad médica</p>
+              <p className={styles.subtext}>{user.role === 'DOCTOR' ? 'Resumen de tu jornada' : 'Resumen de la actividad del hospital'}</p>
             </div>
             <span className={`${styles.badge} ${ROLE_ACCENT[user.role] ?? ''}`}>
               {ROLE_LABELS[user.role] ?? user.role}
@@ -283,7 +286,7 @@ export function DashboardPage() {
             {actions.map((action) => (
               <button
                 key={action.to}
-                className={`${styles.actionCard} ${styles[action.accent]}`}
+                className={styles.actionCard}
                 onClick={() => navigate(action.to)}
               >
                 <span className={styles.actionLabel}>{action.label}</span>

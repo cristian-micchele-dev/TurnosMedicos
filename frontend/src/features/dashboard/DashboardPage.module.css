@@ -67,6 +67,12 @@
   pointer-events: none;
 }
 
+/* On paper the three-hue diagonal read as dirt. One anchored brand wash instead:
+   a single hue, no banding, and the page keeps its own bone colour underneath. */
+:global([data-theme='light']) .meshBg {
+  background: radial-gradient(ellipse 95% 60% at 10% -5%, rgba(74, 111, 165, 0.10) 0%, transparent 62%);
+}
+
 /* The mesh spans the whole viewport, under the header and sidebar (z 50 / 100) and under
    the page content (.inner, z 2). The extra specificity beats the component's own inset. */
 .page .backdrop {
@@ -289,7 +295,6 @@
   background: var(--slate);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
-  border-top: 2px solid transparent;
   padding: 1.375rem 1.25rem;
   display: flex;
   align-items: center;
@@ -315,26 +320,6 @@
   box-shadow: var(--shadow-lg);
 }
 
-/* ── Accent top border per variant ── */
-.blue  { border-top-color: var(--primary); }
-.green { border-top-color: var(--success); }
-.amber { border-top-color: var(--warning); }
-.slate { border-top-color: var(--muted); }
-
-/* ── Subtle glow bottom edge (hover only) ── */
-.card::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 15%;
-  right: 15%;
-  height: 1px;
-  border-radius: 1px;
-  opacity: 0;
-  transition: opacity 250ms ease;
-}
-
-.card:hover::after { opacity: 1; }
 
 /* ---------- Card icon ---------- */
 .cardIcon {
@@ -370,40 +355,26 @@
 }
 
 /* ============================================================
-   Accent variants — cyan / emerald / amber / slate
+   Accents — every value comes from a token, so each theme keeps
+   its own contrast instead of borrowing the dark palette.
    ============================================================ */
 
-/* --- Cyan (primary) --- */
-.blue .cardIcon {
-  background: rgba(56, 189, 248, 0.12);
+/* Counting people or entities: the brand's ink, never a clinical signal. */
+.neutral .cardIcon {
+  background: var(--primary-light);
   color: var(--primary);
 }
-.blue::after  { background: linear-gradient(90deg, transparent, var(--primary), transparent); }
-.blue:hover   { box-shadow: 0 12px 32px -8px rgba(56, 189, 248, 0.25); }
 
-/* --- Emerald (success) --- */
-.green .cardIcon {
-  background: rgba(16, 185, 129, 0.12);
-  color: var(--success);
+/* The two that genuinely carry a state wear that state's colour. */
+.pending .cardIcon {
+  background: var(--state-pending-bg);
+  color: var(--state-pending-text);
 }
-.green::after { background: linear-gradient(90deg, transparent, var(--success), transparent); }
-.green:hover  { box-shadow: 0 12px 32px -8px rgba(16, 185, 129, 0.25); }
 
-/* --- Amber (warning) --- */
-.amber .cardIcon {
-  background: rgba(245, 158, 11, 0.12);
-  color: var(--warning);
+.done .cardIcon {
+  background: var(--state-confirmed-bg);
+  color: var(--state-confirmed-text);
 }
-.amber::after { background: linear-gradient(90deg, transparent, var(--warning), transparent); }
-.amber:hover  { box-shadow: 0 12px 32px -8px rgba(245, 158, 11, 0.25); }
-
-/* --- Slate (neutral) --- */
-.slate .cardIcon {
-  background: rgba(107, 126, 159, 0.12);
-  color: var(--light);
-}
-.slate::after { background: linear-gradient(90deg, transparent, var(--muted), transparent); }
-.slate:hover  { box-shadow: 0 12px 32px -8px rgba(107, 126, 159, 0.20); }
 
 /* ---------- Sections ---------- */
 .section {
@@ -464,7 +435,6 @@
   padding: 1rem 1.125rem;
   background: var(--slate);
   border: 1px solid var(--border);
-  border-left: 3px solid transparent;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   transition: background 150ms ease, border-color 150ms ease,
@@ -473,20 +443,12 @@
   overflow: hidden;
 }
 
-.actionCard.blue  { border-left-color: var(--primary); }
-.actionCard.green { border-left-color: var(--success); }
-.actionCard.amber { border-left-color: var(--warning); }
-.actionCard.slate { border-left-color: var(--muted); }
-
 .actionCard:hover {
+  border-color: var(--primary-ring);
   background: var(--cool);
   border-color: var(--border-hover);
   transform: translateX(3px);
 }
-
-.actionCard.blue:hover  { box-shadow: var(--shadow-md), 0 0 0 1px rgba(56,189,248,0.15); }
-.actionCard.green:hover { box-shadow: var(--shadow-md), 0 0 0 1px rgba(16,185,129,0.15); }
-.actionCard.amber:hover { box-shadow: var(--shadow-md), 0 0 0 1px rgba(245,158,11,0.15); }
 
 .actionCard:focus-visible {
   outline: 2px solid var(--primary);
