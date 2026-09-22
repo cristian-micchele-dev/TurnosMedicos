@@ -14,7 +14,7 @@ export interface UserProfile {
   id: string;
   email: string;
   name: string;
-  role: 'ADMIN' | 'DOCTOR';
+  role: 'ADMIN' | 'DOCTOR' | 'SECRETARY';
   mustChangePassword: boolean;
 }
 

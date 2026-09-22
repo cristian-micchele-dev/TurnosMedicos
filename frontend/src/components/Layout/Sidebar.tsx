@@ -27,6 +27,12 @@ const adminItems: NavItem[] = [
   { to: '/turnos', label: 'Turnos' },
 ];
 
+// The front desk lives in the day's schedule and the patient registry.
+const secretaryItems: NavItem[] = [
+  { to: '/turnos', label: 'Turnos' },
+  { to: '/pacientes', label: 'Pacientes' },
+];
+
 const doctorItems: NavItem[] = [
   { to: '/agenda', label: 'Mi Agenda' },
   { to: '/pacientes', label: 'Pacientes' },
@@ -36,6 +42,7 @@ const doctorItems: NavItem[] = [
 function getNavItems(role: string | undefined): NavItem[] {
   if (role === 'ADMIN') return [...sharedItems, ...adminItems];
   if (role === 'DOCTOR') return [...sharedItems, ...doctorItems];
+  if (role === 'SECRETARY') return [...sharedItems, ...secretaryItems];
   return sharedItems;
 }
 

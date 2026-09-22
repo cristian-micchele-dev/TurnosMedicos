@@ -4,6 +4,7 @@ import { specialtiesApi, type Specialty } from '../../api/specialties';
 import { doctorsApi, type Doctor, type Availability } from '../../api/doctors';
 import { appointmentsApi } from '../../api/appointments';
 import type { ApiError } from '../../api/client';
+import type { UserProfile } from '../../api/auth';
 import { patientsApi, type Patient, type PatientInput } from '../../api/patients';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useToast } from '../../hooks/useToast';
@@ -20,9 +21,11 @@ import { apiErrorMessage } from '../../api/client';
 // ── Step kinds ──────────────────────────────────────────────────────────────
 type StepKind = 'patient' | 'specialty' | 'doctor' | 'datetime' | 'confirm';
 
-const ROLE_FLOWS: Record<'ADMIN' | 'DOCTOR', StepKind[]> = {
-  DOCTOR: ['patient', 'datetime', 'confirm'],
-  ADMIN:  ['patient', 'specialty', 'doctor', 'datetime', 'confirm'],
+// A doctor books for themselves; whoever books for the hospital must pick the doctor first.
+const ROLE_FLOWS: Record<UserProfile['role'], StepKind[]> = {
+  DOCTOR:    ['patient', 'datetime', 'confirm'],
+  ADMIN:     ['patient', 'specialty', 'doctor', 'datetime', 'confirm'],
+  SECRETARY: ['patient', 'specialty', 'doctor', 'datetime', 'confirm'],
 };
 
 const STEP_LABEL: Record<StepKind, string> = {

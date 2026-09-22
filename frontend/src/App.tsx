@@ -60,8 +60,8 @@ export function App() {
             <Route path="/doctores/:id/availability" element={<AvailabilityPage />} />
           </Route>
 
-          {/* Admin + Doctor: the patient registry is hospital-wide */}
-          <Route element={<ProtectedRoute roles={['ADMIN', 'DOCTOR']} />}>
+          {/* The patient registry is hospital-wide; the front desk keeps it */}
+          <Route element={<ProtectedRoute roles={['ADMIN', 'DOCTOR', 'SECRETARY']} />}>
             <Route path="/pacientes" element={<PatientsPage />} />
           </Route>
 

@@ -16,10 +16,10 @@ Estas decisiones definen el producto y explican por qué el código es como es.
 | Decisión | Consecuencia |
 |---|---|
 | **Sistema cerrado.** Nadie se auto-registra. Un ADMIN da de alta cada cuenta. | No existe `POST /auth/register` ni pantalla de registro. Superficie de ataque mínima. |
-| **El paciente es un registro, no un usuario.** Solo ADMIN y DOCTOR tienen sesión. | `Patient` tiene identidad propia (`name`, `email`) sin FK a `users`. `Role` = `ADMIN \| DOCTOR`. Sin portal de pacientes ni notificaciones a pacientes. |
+| **El paciente es un registro, no un usuario.** Solo el personal tiene sesión. | `Patient` tiene identidad propia (`name`, `email`) sin FK a `users`. `Role` = `ADMIN \| SECRETARY \| DOCTOR`. Sin portal de pacientes ni notificaciones a pacientes. |
 | **La disponibilidad se expresa en hora del hospital** (`America/Argentina/Buenos_Aires`). | El backend proyecta cada instante UTC al reloj del hospital antes de validar. El frontend envía instantes UTC inequívocos. Los filtros por fecha (`from`/`to`) significan "ese día completo en el hospital". |
 | **Un médico puede tener varios bloques por día** (ej. 08:00-12:00 y 16:30-20:00). | `availabilities` es única por `(doctor, día, hora de inicio)`. |
-| **Los turnos se crean desde el panel.** | ADMIN: elige paciente → especialidad → médico → horario. DOCTOR: elige paciente → horario en su propia agenda. |
+| **Los turnos se crean desde el panel.** | ADMIN y SECRETARY: eligen paciente → especialidad → médico → horario. DOCTOR: elige paciente → horario en su propia agenda. |
 
 ---
 
@@ -44,7 +44,7 @@ Dos módulos son planos a propósito: `dashboard/` (solo agrega lecturas de otro
 Puntos que vale la pena mirar:
 
 - **Reglas de negocio como clases puras** — `appointments/domain/rules/*.rule.ts`. Se testean sin base de datos ni framework.
-- **Ownership por rol** — `AppointmentService.assertCanAccess`: un DOCTOR solo opera sobre su propia agenda; ADMIN pasa todo. `MedicalRecordAccessPolicy`: un médico solo lee historias de pacientes que atendió.
+- **Ownership por rol** — `AppointmentService.assertCanAccess`: un DOCTOR solo opera sobre su propia agenda; ADMIN y SECRETARY pasan. `MedicalRecordAccessPolicy`: un médico solo lee historias de pacientes que atendió, y la recepción no lee ninguna.
 - **Listados enriquecidos sin N+1** — `AppointmentService.enrich` carga médicos y pacientes en 2 queries por página con `findByIds`.
 - **Tiempo del hospital centralizado** — `shared/infra/time/format.ts` (`toClinicClock`, `clinicDayRange`). Un solo lugar sabe de zonas horarias.
 - **Migraciones explícitas** (`synchronize: false`), reversibles, incluyendo cambios de enum en Postgres.
@@ -158,17 +158,26 @@ Convención: cada cambio de comportamiento arranca con un test en rojo.
 
 ## Roles y permisos
 
-| Acción | ADMIN | DOCTOR |
-|---|---|---|
-| Gestionar usuarios, especialidades, médicos, pacientes | ✅ | — |
-| Ver todos los turnos | ✅ | solo los propios |
-| Crear turno | para cualquier médico | solo en su agenda |
-| Confirmar / completar turno | ✅ | solo los propios |
-| Cancelar turno | ✅ | — |
-| Configurar disponibilidad | de cualquier médico | la propia |
-| Resetear la contraseña de otro usuario | ✅ (genera clave temporal) | — |
-| Cambiar la propia contraseña | ✅ | ✅ |
-| Subir informes / recetas | — | de pacientes que atendió |
+| Acción | ADMIN | SECRETARY | DOCTOR |
+|---|---|---|---|
+| Gestionar usuarios, especialidades y médicos | ✅ | — | — |
+| Registrar y editar pacientes | ✅ | ✅ | ✅ |
+| Ver todos los turnos | ✅ | ✅ | solo los propios |
+| Crear turno | para cualquier médico | para cualquier médico | solo en su agenda |
+| Confirmar / reprogramar turno | ✅ | ✅ | los propios |
+| Cancelar turno | ✅ | ✅ | — |
+| **Completar turno** (cierra la consulta con diagnóstico) | ✅ | — | los propios |
+| **Leer la historia clínica** (diagnóstico, informes, recetas) | ✅ | **—** | de pacientes que atendió |
+| Configurar disponibilidad | de cualquier médico | — | la propia |
+| Resetear la contraseña de otro usuario | ✅ (genera clave temporal) | — | — |
+| Cambiar la propia contraseña | ✅ | ✅ | ✅ |
+| Subir informes / recetas | — | — | de pacientes que atendió |
+
+**Por qué existe SECRETARY y no es "un admin sin usuarios":** el mostrador necesita
+saber *cuándo* y *con quién*, nunca *qué tiene* el paciente. Si la recepción fuera
+ADMIN vería todos los informes y recetas del hospital. El rol se define por lo que
+recorta, no por lo que agrega: `MedicalRecordAccessPolicy` lo rechaza con 403 antes
+de tocar un repositorio, y el front ni siquiera pide esos datos.
 
 ---
 

@@ -13,6 +13,7 @@ import styles from './Header.module.css';
 const roleLabels: Record<string, string> = {
   ADMIN: 'Admin',
   DOCTOR: 'Doctor',
+  SECRETARY: 'Secretaría',
 };
 
 const pageTitles: Record<string, string> = {

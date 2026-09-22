@@ -49,12 +49,25 @@ function buildDoctorCards(todayCount: number, pendingCount: number, completedCou
   ];
 }
 
+function buildSecretaryCards(todayCount: number, pendingCount: number, totalPatients: number | undefined): StatCard[] {
+  return [
+    { label: 'Turnos Hoy', value: todayCount, icon: Calendar, accent: 'blue', to: '/turnos' },
+    { label: 'Por Confirmar', value: pendingCount, icon: Clock, accent: 'amber', to: '/turnos?status=PENDING' },
+    { label: 'Pacientes', value: totalPatients ?? '—', icon: HeartPulse, accent: 'green', to: '/pacientes' },
+  ];
+}
+
 const QUICK_ACTIONS: Record<string, QuickAction[]> = {
   ADMIN: [
     { label: 'Crear Doctor', to: '/doctores', accent: 'blue' },
     { label: 'Crear Paciente', to: '/pacientes', accent: 'green' },
     { label: 'Ver Turnos', to: '/turnos', accent: 'amber' },
     { label: 'Gestionar Usuarios', to: '/usuarios', accent: 'slate' },
+  ],
+  SECRETARY: [
+    { label: 'Nuevo Turno', to: '/nuevo-turno', accent: 'blue' },
+    { label: 'Registrar Paciente', to: '/pacientes', accent: 'green' },
+    { label: 'Ver Turnos', to: '/turnos', accent: 'amber' },
   ],
   DOCTOR: [
     { label: 'Nuevo Turno', to: '/nuevo-turno', accent: 'blue' },
@@ -80,11 +93,13 @@ const STATUS_LABEL: Record<string, string> = {
 const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrador',
   DOCTOR: 'Doctor',
+  SECRETARY: 'Secretaría',
 };
 
 const ROLE_ACCENT: Record<string, string> = {
   ADMIN: styles.badgeAdmin,
   DOCTOR: styles.badgeDoctor,
+  SECRETARY: styles.badgeSecretary,
 };
 
 // Maps Spanish status labels to semantic chart colors
@@ -124,6 +139,11 @@ export function DashboardPage() {
         appointmentsApi.findAll({ status: 'PENDING' }, 1, 1).catch(() => ({ total: 0 })),
         appointmentsApi.findAll({ status: 'COMPLETED' }, 1, 1).catch(() => ({ total: 0 })),
       );
+    } else if (user?.role === 'SECRETARY') {
+      baseRequests.push(
+        appointmentsApi.findAll({ from: today, to: today }, 1, 1).catch(() => ({ total: 0 })),
+        appointmentsApi.findAll({ status: 'PENDING' }, 1, 1).catch(() => ({ total: 0 })),
+      );
     }
 
     Promise.all(baseRequests)
@@ -140,6 +160,10 @@ export function DashboardPage() {
           const pendingRes = results[3] as { total: number };
           const completedRes = results[4] as { total: number };
           setRoleCards(buildDoctorCards(todayRes.total, pendingRes.total, completedRes.total));
+        } else if (user?.role === 'SECRETARY') {
+          const todayRes = results[2] as { total: number };
+          const pendingRes = results[3] as { total: number };
+          setRoleCards(buildSecretaryCards(todayRes.total, pendingRes.total, statsData.totalPatients));
         }
       })
       .catch(() => setError('No se pudo cargar el dashboard. Verificá tu conexión.'))

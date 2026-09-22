@@ -66,6 +66,8 @@ export function AppointmentDetailModal({
   // Ownership is a doctor-PROFILE id, not the account id in the JWT: the two are different rows.
   const { doctor: myDoctor } = useMyDoctor();
   const isTreatingDoctor = role === 'DOCTOR' && myDoctor?.id === appointment.doctorId;
+  // The front desk schedules care; the chart — diagnosis, reports, prescriptions — is not theirs.
+  const canSeeRecords = role !== 'SECRETARY';
   const { toast } = useToast();
 
   const [cancelling, setCancelling] = useState(false);
@@ -95,20 +97,22 @@ export function AppointmentDetailModal({
   const [rxSubmitting, setRxSubmitting] = useState(false);
 
   useEffect(() => {
+    if (!canSeeRecords) return;
     setReportsLoading(true);
     reportsApi.findByAppointment(appointment.id)
       .then(setReports)
       .catch(() => toast.error('No se pudieron cargar los informes'))
       .finally(() => setReportsLoading(false));
-  }, [appointment.id, toast]);
+  }, [appointment.id, toast, canSeeRecords]);
 
   useEffect(() => {
+    if (!canSeeRecords) return;
     setPrescriptionsLoading(true);
     prescriptionsApi.findByAppointment(appointment.id)
       .then(setPrescriptions)
       .catch(() => toast.error('No se pudieron cargar las recetas'))
       .finally(() => setPrescriptionsLoading(false));
-  }, [appointment.id, toast]);
+  }, [appointment.id, toast, canSeeRecords]);
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -235,16 +239,16 @@ export function AppointmentDetailModal({
   };
 
   const canConfirm =
-    appointment.status === 'PENDING' && (role === 'ADMIN' || role === 'DOCTOR');
+    appointment.status === 'PENDING' && (role === 'ADMIN' || role === 'DOCTOR' || role === 'SECRETARY');
   const canComplete =
     appointment.status === 'CONFIRMED' && (role === 'ADMIN' || role === 'DOCTOR');
   const canCancel =
     appointment.status !== 'CANCELLED' &&
     appointment.status !== 'COMPLETED' &&
-    role === 'ADMIN';
+    (role === 'ADMIN' || role === 'SECRETARY');
   const canReschedule =
     (appointment.status === 'PENDING' || appointment.status === 'CONFIRMED') &&
-    (role === 'ADMIN' || role === 'DOCTOR');
+    (role === 'ADMIN' || role === 'DOCTOR' || role === 'SECRETARY');
 
   return (
     <Modal isOpen onClose={onClose} title="Detalle del Turno" size="md">
@@ -297,6 +301,8 @@ export function AppointmentDetailModal({
           </div>
         )}
 
+        {canSeeRecords && (
+          <>
         {/* Clinical notes / diagnosis (read-only display) */}
         {(appointment.diagnosis || appointment.notes) && (
           <div className={styles.clinicalBox}>
@@ -593,6 +599,8 @@ export function AppointmentDetailModal({
             </form>
           )}
         </div>
+          </>
+        )}
 
         {/* Reschedule flow */}
         {rescheduling && (

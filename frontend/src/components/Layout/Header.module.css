@@ -101,6 +101,12 @@
   color: #6ee7b7;
 }
 
+/* SECRETARY — violet */
+.roleSECRETARY {
+  background: rgba(99, 102, 241, 0.14);
+  color: #a5b4fc;
+}
+
 /* PATIENT — amber */
 .rolePATIENT {
   background: var(--warning-light);

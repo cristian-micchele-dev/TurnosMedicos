@@ -59,7 +59,7 @@ export function PatientsPage() {
     await refetchPatients();
   };
 
-  const canManage = user?.role === 'ADMIN' || user?.role === 'DOCTOR';
+  const canManage = user?.role === 'ADMIN' || user?.role === 'DOCTOR' || user?.role === 'SECRETARY';
 
   const columns = [
     {

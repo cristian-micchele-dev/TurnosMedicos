@@ -6,7 +6,7 @@ import type { Appointment } from '../../api/appointments';
 const { auth, doctorsApi, reportsApi, prescriptionsApi } = vi.hoisted(() => ({
   // The account id and the doctor-profile id are different rows on purpose:
   // the modal must compare against the profile, never the account.
-  auth: { user: { id: 'user-1', email: 'laura@turno.med', name: 'Laura Gómez', role: 'DOCTOR' as 'DOCTOR' | 'ADMIN', mustChangePassword: false } },
+  auth: { user: { id: 'user-1', email: 'laura@turno.med', name: 'Laura Gómez', role: 'DOCTOR' as 'DOCTOR' | 'ADMIN' | 'SECRETARY', mustChangePassword: false } },
   doctorsApi: { me: vi.fn() },
   reportsApi: { findByAppointment: vi.fn(), upload: vi.fn(), download: vi.fn(), print: vi.fn(), delete: vi.fn() },
   prescriptionsApi: { findByAppointment: vi.fn(), create: vi.fn() },
@@ -26,7 +26,7 @@ const completed: Appointment = {
   patient: { id: 'p1', name: 'Emanuel Pérez', email: null },
 };
 
-const renderModal = (appointment: Appointment, role: 'DOCTOR' | 'ADMIN' = 'DOCTOR') => {
+const renderModal = (appointment: Appointment, role: 'DOCTOR' | 'ADMIN' | 'SECRETARY' = 'DOCTOR') => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   return render(
     <QueryClientProvider client={client}>
@@ -72,5 +72,27 @@ describe('AppointmentDetailModal — informes y recetas del médico tratante', (
     renderModal(completed);
     await screen.findByText('Mío');
     expect(screen.getAllByRole('button', { name: /eliminar/i })).toHaveLength(1);
+  });
+});
+
+describe('AppointmentDetailModal — la secretaria no ve la historia clínica', () => {
+  it('no muestra diagnóstico, informes ni recetas, y ni siquiera los pide', async () => {
+    auth.user.role = 'SECRETARY';
+    renderModal({ ...completed, diagnosis: 'Hipertensión arterial' }, 'SECRETARY');
+    await screen.findByText('TM-00001');
+    expect(screen.queryByText(/informes medicos/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/recetas/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/hipertensión/i)).not.toBeInTheDocument();
+    expect(reportsApi.findByAppointment).not.toHaveBeenCalled();
+    expect(prescriptionsApi.findByAppointment).not.toHaveBeenCalled();
+  });
+
+  it('sí puede reprogramar y cancelar, pero no marcar el turno como atendido', async () => {
+    auth.user.role = 'SECRETARY';
+    renderModal({ ...completed, status: 'CONFIRMED' }, 'SECRETARY');
+    await screen.findByText('TM-00001');
+    expect(screen.getByRole('button', { name: /reprogramar/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /cancelar turno/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /completar/i })).not.toBeInTheDocument();
   });
 });

@@ -16,7 +16,7 @@ import styles from './ProfilePage.module.css';
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
-const roleLabels: Record<string, string> = { ADMIN: 'Administrador', DOCTOR: 'Médico' };
+const roleLabels: Record<string, string> = { ADMIN: 'Administrador', DOCTOR: 'Médico', SECRETARY: 'Secretaría' };
 
 function memberSince(iso?: string): string {
   if (!iso) return '—';

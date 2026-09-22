@@ -198,9 +198,9 @@
   color: var(--success-dark);
 }
 
-.badgePatient {
-  background: var(--warning-light);
-  color: var(--warning-dark);
+.badgeSecretary {
+  background: var(--state-completed-bg);
+  color: var(--state-completed-text);
 }
 
 /* ---------- Skeleton loading layout ---------- */

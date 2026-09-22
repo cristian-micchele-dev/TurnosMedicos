@@ -18,11 +18,13 @@ import { apiErrorMessage } from '../../api/client';
 const ROLE_LABELS: Record<UserListItem['role'], string> = {
   ADMIN: 'Admin',
   DOCTOR: 'Doctor',
+  SECRETARY: 'Secretaría',
 };
 
 const ROLE_OPTIONS: { value: UserListItem['role']; label: string }[] = [
   { value: 'ADMIN', label: 'Admin' },
   { value: 'DOCTOR', label: 'Doctor' },
+  { value: 'SECRETARY', label: 'Secretaría' },
 ];
 
 export function UsersPage() {
@@ -362,7 +364,7 @@ function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'ADMIN' | 'DOCTOR'>('DOCTOR');
+  const [role, setRole] = useState<UserListItem['role']>('DOCTOR');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -436,9 +438,10 @@ function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
         required
         id="new-user-role"
         value={role}
-        onChange={(value) => setRole(value as 'ADMIN' | 'DOCTOR')}
+        onChange={(value) => setRole(value as UserListItem['role'])}
         options={[
           { value: 'DOCTOR', label: 'Doctor' },
+          { value: 'SECRETARY', label: 'Secretaría' },
           { value: 'ADMIN', label: 'Admin' },
         ]}
       />

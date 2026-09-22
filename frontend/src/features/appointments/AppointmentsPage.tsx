@@ -154,14 +154,15 @@ export function AppointmentsPage() {
   };
 
   const role = user?.role;
-  const canCreate = role === 'ADMIN' || role === 'DOCTOR';
+  const canCreate = role === 'ADMIN' || role === 'DOCTOR' || role === 'SECRETARY';
 
   const renderActions = (appt: Appointment) => {
     const { status } = appt;
     const busy = pendingId === appt.id;
     const buttons: React.ReactNode[] = [];
 
-    if (role === 'ADMIN') {
+    // The front desk works the schedule like an admin, minus marking a visit as attended.
+    if (role === 'ADMIN' || role === 'SECRETARY') {
       if (status === 'PENDING') {
         buttons.push(
           <Button
@@ -195,7 +196,7 @@ export function AppointmentsPage() {
           </Button>,
         );
       }
-      if (status === 'CONFIRMED') {
+      if (status === 'CONFIRMED' && role === 'ADMIN') {
         buttons.push(
           <Button
             key="complete"
@@ -370,7 +371,7 @@ export function AppointmentsPage() {
               placeholder="Todos los estados"
             />
           </div>
-          {role === 'ADMIN' && (
+          {(role === 'ADMIN' || role === 'SECRETARY') && (
             <div className={styles.filterField}>
               <Select
                 label="Especialidad"
