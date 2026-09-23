@@ -99,7 +99,7 @@ describe('AgendaPage', () => {
     renderPage();
     const dia = await screen.findByRole('link', { name: /^día$/i });
     expect(dia).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: /^lista$/i })).toHaveAttribute('href', '/mis-turnos');
+    expect(screen.getByRole('link', { name: /^lista$/i })).toHaveAttribute('href', '/turnos');
     expect(screen.getByRole('link', { name: /editar horario/i })).toHaveAttribute('href', '/disponibilidad');
   });
 

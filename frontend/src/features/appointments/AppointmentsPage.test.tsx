@@ -27,7 +27,6 @@ const renderAt = (url: string) => {
       <MemoryRouter initialEntries={[url]}>
         <Routes>
           <Route path="/turnos" element={<><AppointmentsPage /><LocationProbe /></>} />
-          <Route path="/mis-turnos" element={<><AppointmentsPage /><LocationProbe /></>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -62,9 +61,9 @@ describe('AppointmentsPage — filtros en la URL', () => {
     await waitFor(() => expect(screen.getByTestId('search')).toHaveTextContent(''));
   });
 
-  it('DOCTOR en /mis-turnos ve el switch Día | Lista con Lista activo', async () => {
+  it('DOCTOR ve el switch Día | Lista con Lista activo, sin una segunda URL para lo mismo', async () => {
     auth.user.role = 'DOCTOR';
-    renderAt('/mis-turnos');
+    renderAt('/turnos');
     const lista = await screen.findByRole('link', { name: /^lista$/i });
     expect(lista).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: /^día$/i })).toHaveAttribute('href', '/agenda');
@@ -80,7 +79,7 @@ describe('AppointmentsPage — filtros en la URL', () => {
 
   it('el filtro de especialidad solo existe para ADMIN (un médico tiene una sola)', async () => {
     auth.user.role = 'DOCTOR';
-    renderAt('/mis-turnos');
+    renderAt('/turnos');
     await waitFor(() => expect(appointmentsApi.findAll).toHaveBeenCalled());
     expect(screen.queryByLabelText(/especialidad/i)).not.toBeInTheDocument();
     expect(screen.getByLabelText(/estado/i)).toBeInTheDocument();

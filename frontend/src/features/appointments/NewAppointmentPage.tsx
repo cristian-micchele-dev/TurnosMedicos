@@ -230,7 +230,7 @@ export function NewAppointmentPage() {
         dateTime: localDateTimeToIso(selectedDate, selectedTime),
       });
       toast.success('Turno creado correctamente');
-      navigate(user?.role === 'DOCTOR' ? '/mis-turnos' : '/turnos');
+      navigate('/turnos');
     } catch (err) {
       // The API explains business-rule rejections (double booking, same-day specialty…) in Spanish: show that.
       toast.error((err as Partial<ApiError>).detail ?? 'No se pudo crear el turno');

@@ -17,11 +17,11 @@ vi.mock('../../hooks/useToast', () => ({ useToast: () => ({ toast: { info: vi.fn
 vi.mock('../../api/doctors', () => ({ doctorsApi }));
 vi.mock('../../api/notifications', () => ({ notificationsApi }));
 
-const renderHeader = () => {
+const renderHeader = (url = '/dashboard') => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter><Header onMenuToggle={() => {}} /></MemoryRouter>
+      <MemoryRouter initialEntries={[url]}><Header onMenuToggle={() => {}} /></MemoryRouter>
     </QueryClientProvider>,
   );
 };
@@ -89,5 +89,19 @@ describe('Header — la campanita', () => {
     await userEvent.click(await screen.findByRole('button', { name: /notificaciones/i }));
     await userEvent.click(screen.getByText(/nuevo turno: emanuel/i));
     await waitFor(() => expect(notificationsApi.markRead).toHaveBeenCalledWith('n1'));
+  });
+});
+
+describe('Header — el título dice quién sos, no sólo dónde estás', () => {
+  it('para el médico la lista de turnos es "Mi Agenda"', () => {
+    auth.user.role = 'DOCTOR';
+    renderHeader('/turnos');
+    expect(screen.getByRole('heading', { name: 'Mi Agenda' })).toBeInTheDocument();
+  });
+
+  it('para el admin la misma ruta es "Turnos"', () => {
+    auth.user.role = 'ADMIN';
+    renderHeader('/turnos');
+    expect(screen.getByRole('heading', { name: 'Turnos' })).toBeInTheDocument();
   });
 });

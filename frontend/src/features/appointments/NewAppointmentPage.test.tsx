@@ -110,7 +110,7 @@ describe('NewAppointmentPage', () => {
       dateTime: localDateTimeToIso(monday, '09:30'),
     });
     expect(appointmentsApi.create.mock.calls[0][0].dateTime).toMatch(/Z$/);
-    expect(navigate).toHaveBeenCalledWith('/mis-turnos');
+    expect(navigate).toHaveBeenCalledWith('/turnos');
   });
 
   it('marca como ocupado un horario ya reservado', async () => {

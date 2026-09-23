@@ -10,7 +10,7 @@ export function AgendaViewSwitch() {
       <NavLink to="/agenda" end className={cls}>
         <CalendarDays size={15} aria-hidden /> Día
       </NavLink>
-      <NavLink to="/mis-turnos" className={cls}>
+      <NavLink to="/turnos" className={cls}>
         <List size={15} aria-hidden /> Lista
       </NavLink>
     </nav>

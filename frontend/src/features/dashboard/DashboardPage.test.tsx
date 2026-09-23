@@ -25,8 +25,8 @@ describe('DashboardPage — stat cards deep-link', () => {
     auth.user.role = 'DOCTOR';
     renderPage();
     expect(await screen.findByRole('link', { name: /turnos hoy/i })).toHaveAttribute('href', '/agenda');
-    expect(screen.getByRole('link', { name: /pendientes/i })).toHaveAttribute('href', '/mis-turnos?status=PENDING');
-    expect(screen.getByRole('link', { name: /completados/i })).toHaveAttribute('href', '/mis-turnos?status=COMPLETED');
+    expect(screen.getByRole('link', { name: /pendientes/i })).toHaveAttribute('href', '/turnos?status=PENDING');
+    expect(screen.getByRole('link', { name: /completados/i })).toHaveAttribute('href', '/turnos?status=COMPLETED');
   });
 
   it('ADMIN: las cards de entidades llevan a su listado', async () => {

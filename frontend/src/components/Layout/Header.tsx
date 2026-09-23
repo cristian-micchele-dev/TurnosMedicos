@@ -24,7 +24,6 @@ const pageTitles: Record<string, string> = {
   '/pacientes':      'Pacientes',
   '/especialidades': 'Especialidades',
   '/turnos':         'Turnos',
-  '/mis-turnos':     'Mi Agenda',
   '/usuarios':       'Usuarios',
   '/auditoria':      'Auditoría',
   '/mensajes':       'Mensajes',
@@ -49,7 +48,9 @@ export function Header({ onMenuToggle }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const { pathname } = useLocation();
   const { toast } = useToast();
-  const pageTitle = pageTitles[pathname] ?? 'Dashboard';
+  const pageTitle = pathname === '/turnos' && user?.role === 'DOCTOR'
+    ? 'Mi Agenda'
+    : pageTitles[pathname] ?? 'Dashboard';
 
   // The bell reads the stored inbox; the socket only makes it arrive earlier.
   // Tres caminos hacia la campanita, de más rápido a más confiable: el socket la

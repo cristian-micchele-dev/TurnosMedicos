@@ -47,8 +47,8 @@ function buildAdminCards(stats: DashboardStats): StatCard[] {
 function buildDoctorCards(todayCount: number, pendingCount: number, completedCount: number): StatCard[] {
   return [
     { label: 'Turnos Hoy', value: todayCount, icon: Calendar, accent: 'neutral', to: '/agenda' },
-    { label: 'Pendientes', value: pendingCount, icon: Clock, accent: 'pending', to: '/mis-turnos?status=PENDING' },
-    { label: 'Completados', value: completedCount, icon: CheckCircle, accent: 'done', to: '/mis-turnos?status=COMPLETED' },
+    { label: 'Pendientes', value: pendingCount, icon: Clock, accent: 'pending', to: '/turnos?status=PENDING' },
+    { label: 'Completados', value: completedCount, icon: CheckCircle, accent: 'done', to: '/turnos?status=COMPLETED' },
   ];
 }
 

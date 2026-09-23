@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 import { Layout } from './components/Layout/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute/ProtectedRoute';
+import { RedirectKeepingQuery } from './components/RedirectKeepingQuery';
 import { Spinner } from './components/ui/Spinner';
 
 function AnimatedPage({ children }: { children: ReactNode }) {
@@ -78,7 +79,8 @@ export function App() {
           {/* Shared: appointments (ADMIN sees all, DOCTOR only own — filtered by backend) */}
           <Route path="/nuevo-turno" element={<NewAppointmentPage />} />
           <Route path="/turnos" element={<AppointmentsPage />} />
-          <Route path="/mis-turnos" element={<AppointmentsPage />} />
+          {/* /mis-turnos era la misma pantalla con otra URL: el backend ya recorta por rol. */}
+          <Route path="/mis-turnos" element={<RedirectKeepingQuery to="/turnos" />} />
           <Route path="/calendario" element={<CalendarPage />} />
         </Route>
       </Route>
