@@ -1,6 +1,8 @@
 import { Appointment } from './domain/appointment';
 import { AppointmentStatus } from './domain/appointment-status.enum';
 
+export type AppointmentOrder = 'asc' | 'desc';
+
 export interface AppointmentFilters {
   doctorId?: string;
   patientId?: string;
@@ -8,6 +10,10 @@ export interface AppointmentFilters {
   status?: AppointmentStatus;
   from?: Date;
   to?: Date;
+  /** 'asc' para lo que viene (lo más próximo primero), 'desc' para mirar hacia atrás. */
+  order?: AppointmentOrder;
+  /** Texto libre: código del turno, nombre del paciente o del médico. */
+  q?: string;
   skip?: number;
   take?: number;
 }

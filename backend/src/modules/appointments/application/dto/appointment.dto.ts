@@ -1,4 +1,4 @@
-import { IsDateString, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsIn, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AppointmentStatus } from '../../domain/appointment-status.enum';
 
@@ -29,6 +29,8 @@ export class SummaryAppointmentsDto {
 }
 
 export class QueryAppointmentsDto {
+  @IsOptional() @IsIn(['asc', 'desc']) order?: 'asc' | 'desc';
+  @IsOptional() @IsString() @MaxLength(80) q?: string;
   @IsOptional() @IsUUID() doctorId?: string;
   @IsOptional() @IsUUID() patientId?: string;
   @IsOptional() @IsUUID() specialtyId?: string;

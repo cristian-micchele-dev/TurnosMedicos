@@ -136,7 +136,9 @@ export class AppointmentService {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
     const skip = (page - 1) * limit;
-    const filters = { ...query, from: query.from ? parseRangeBound(query.from, 'start') : undefined, to: query.to ? parseRangeBound(query.to, 'end') : undefined, skip, take: limit };
+    // Por defecto la agenda se lee hacia adelante: lo más próximo primero. Mirar
+    // el historial es pedirlo al revés, explícitamente.
+    const filters = { ...query, order: query.order ?? 'asc' as const, q: query.q?.trim() || undefined, from: query.from ? parseRangeBound(query.from, 'start') : undefined, to: query.to ? parseRangeBound(query.to, 'end') : undefined, skip, take: limit };
     if (role === Role.DOCTOR) {
       const doctor = await this.doctors.findByUserId(userId);
       if (!doctor) throw new DoctorNotFoundError(userId);

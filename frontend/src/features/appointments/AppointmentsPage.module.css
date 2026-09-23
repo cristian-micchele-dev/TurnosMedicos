@@ -199,3 +199,42 @@
   .filterField,
   .filterFieldDate { flex-basis: 100%; max-width: none; }
 }
+
+/* Qué tramo de la agenda se mira: próximos, historial o todo */
+.viewSwitch {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 0.125rem;
+  padding: 0.1875rem;
+  background: var(--field-bg, var(--background));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.viewOption {
+  padding: 0.3125rem 0.875rem;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-radius: calc(var(--radius-md) - 3px);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.viewOption:hover {
+  color: var(--text-primary);
+}
+
+.viewOption[aria-pressed='true'] {
+  color: var(--text-primary);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.viewOption:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}

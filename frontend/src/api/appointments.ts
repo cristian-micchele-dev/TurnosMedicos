@@ -26,6 +26,11 @@ export interface AppointmentFilters {
   from?: string;
   to?: string;
   code?: string;
+  specialtyId?: string;
+  /** Texto libre: código, paciente o médico. Lo resuelve el servidor. */
+  q?: string;
+  /** 'asc': lo más próximo primero (agenda). 'desc': lo más reciente primero (historial). */
+  order?: 'asc' | 'desc';
 }
 
 export interface DaySummary {

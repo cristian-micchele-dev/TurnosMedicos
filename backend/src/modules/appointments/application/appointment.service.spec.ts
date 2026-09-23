@@ -160,6 +160,26 @@ describe('AppointmentService', () => {
   });
 
   describe('findAll', () => {
+    it('por defecto lo más próximo primero: la agenda se lee hacia adelante', async () => {
+      await service().findAll({}, 'admin-id', Role.ADMIN);
+      expect(appointments.findAll).toHaveBeenCalledWith(expect.objectContaining({ order: 'asc' }));
+    });
+
+    it('para mirar el historial se pide al revés, y el repositorio lo recibe', async () => {
+      await service().findAll({ order: 'desc' }, 'admin-id', Role.ADMIN);
+      expect(appointments.findAll).toHaveBeenCalledWith(expect.objectContaining({ order: 'desc' }));
+    });
+
+    it('el texto de búsqueda llega al repositorio: filtrar es trabajo de la base, no de la página', async () => {
+      await service().findAll({ q: '  perez  ' }, 'admin-id', Role.ADMIN);
+      expect(appointments.findAll).toHaveBeenCalledWith(expect.objectContaining({ q: 'perez' }));
+    });
+
+    it('una búsqueda en blanco no es una búsqueda', async () => {
+      await service().findAll({ q: '   ' }, 'admin-id', Role.ADMIN);
+      expect(appointments.findAll).toHaveBeenCalledWith(expect.objectContaining({ q: undefined }));
+    });
+
     it('filtra por doctor cuando rol es DOCTOR', async () => {
       doctors.findByUserId.mockResolvedValue(new Doctor('d1', 'u1', 's1', 'MP-1'));
       await service().findAll({}, 'u1', Role.DOCTOR);

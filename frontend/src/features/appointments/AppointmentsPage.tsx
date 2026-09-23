@@ -10,6 +10,7 @@ import { specialtiesApi } from '../../api/specialties';
 import type { PaginatedResponse } from '../../api/users';
 import { useToast } from '../../hooks/useToast';
 import { useFetch } from '../../hooks/useFetch';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useAuth } from '../../context/AuthContext';
 import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
@@ -22,6 +23,7 @@ import { AgendaViewSwitch } from '../agenda/AgendaViewSwitch';
 import styles from './AppointmentsPage.module.css';
 import { apiErrorMessage } from '../../api/client';
 import { isAppointmentCode } from '../../utils/appointmentCode';
+import { todayLocal, addDaysLocal } from '../../utils/date';
 
 function formatDateTime(iso: string): string {
   const date = new Date(iso);
@@ -51,6 +53,20 @@ const STATUS_OPTIONS = [
   { value: 'COMPLETED', label: 'Completado' },
 ];
 
+type AppointmentView = 'upcoming' | 'history' | 'all';
+
+const VIEWS: { value: AppointmentView; label: string }[] = [
+  { value: 'upcoming', label: 'Próximos' },
+  { value: 'history', label: 'Historial' },
+  { value: 'all', label: 'Todos' },
+];
+
+const VIEW_EMPTY: Record<AppointmentView, { title: string; description: string }> = {
+  upcoming: { title: 'No hay turnos próximos', description: 'Lo que ya pasó está en Historial.' },
+  history: { title: 'No hay turnos pasados', description: 'Todavía no se atendió a nadie.' },
+  all: { title: 'Todavía no hay turnos', description: 'Cuando crees el primero va a aparecer acá con su estado.' },
+};
+
 export function AppointmentsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -68,6 +84,16 @@ export function AppointmentsPage() {
   const fromDate = searchParams.get('from') ?? '';
   const toDate = searchParams.get('to') ?? '';
   const page = Math.max(1, Number(searchParams.get('page')) || 1);
+  const rawView = searchParams.get('view');
+  const view: AppointmentView = VIEWS.some((v) => v.value === rawView)
+    ? (rawView as AppointmentView)
+    : 'upcoming';
+
+  // La vista recorta; una fecha elegida a mano manda sobre ella. El recorte es un
+  // atajo para no empezar por el turno más viejo de la clínica, no una reja.
+  const effFrom = fromDate || (view === 'upcoming' ? todayLocal() : '');
+  const effTo = toDate || (view === 'history' ? addDaysLocal(todayLocal(), -1) : '');
+  const order: 'asc' | 'desc' = view === 'history' ? 'desc' : 'asc';
 
   // react-router's functional setSearchParams reads the params of the current render, not the previous
   // call's result — so never issue two updates in one handler; a filter change also resets the page here.
@@ -84,6 +110,7 @@ export function AppointmentsPage() {
   const setFromDate = (v: string) => setParam('from', v);
   const setToDate = (v: string) => setParam('to', v);
   const setPage = (p: number) => setParam('page', p > 1 ? String(p) : '');
+  const setView = (v: AppointmentView) => setParam('view', v === 'upcoming' ? '' : v);
 
   const { data: specialtiesResult } = useFetch(
     ['specialties', 'all'],
@@ -91,42 +118,29 @@ export function AppointmentsPage() {
   );
   const specialtyOptions = useMemo(() => {
     const base = [{ value: '', label: 'Todas las especialidades' }];
-    const fetched = (specialtiesResult?.data ?? []).map((s) => ({ value: s.name, label: s.name }));
+    const fetched = (specialtiesResult?.data ?? []).map((s) => ({ value: s.id, label: s.name }));
     return [...base, ...fetched];
   }, [specialtiesResult]);
 
+  // Filtrar acá lo que ya llegó es filtrar una muestra: el paciente buscado puede
+  // estar en la página 7. La base sabe de los 40.000 turnos; el navegador, de 20.
+  const query = useDebouncedValue(searchText.trim(), 300);
+
   const { data: result, loading, refetch: refetchAppointments } = useFetch<PaginatedResponse<Appointment>>(
-    ['appointments', 'list', statusFilter, fromDate, toDate, page],
+    ['appointments', 'list', statusFilter, specialtyFilter, query, effFrom, effTo, order, page],
     () => {
-      const filters: AppointmentFilters = {};
+      const filters: AppointmentFilters = { order };
       if (statusFilter) filters.status = statusFilter as AppointmentStatus;
-      if (fromDate) filters.from = fromDate;
-      if (toDate) filters.to = toDate;
+      if (specialtyFilter) filters.specialtyId = specialtyFilter;
+      if (query) filters.q = query;
+      if (effFrom) filters.from = effFrom;
+      if (effTo) filters.to = effTo;
       return appointmentsApi.findAll(filters, page);
     },
   );
 
-  const allAppointments = result?.data ?? [];
+  const appointments = result?.data ?? [];
   const totalPages = result?.totalPages ?? 1;
-
-  const appointments = useMemo(() => {
-    let list = allAppointments;
-    if (searchText.trim()) {
-      const q = searchText.trim().toLowerCase();
-      list = list.filter(
-        (a) =>
-          (a.code ?? '').toLowerCase().includes(q) ||
-          (a.doctor?.user?.name ?? '').toLowerCase().includes(q) ||
-          (a.patient?.name ?? '').toLowerCase().includes(q),
-      );
-    }
-    if (specialtyFilter) {
-      list = list.filter(
-        (a) => (a.doctor?.specialty?.name ?? '') === specialtyFilter,
-      );
-    }
-    return list;
-  }, [allAppointments, searchText, specialtyFilter]);
 
   // Llegar con un código exacto en la URL —por ejemplo desde un mensaje del chat—
   // significa querer ESE turno, no una lista de uno. Se abre solo, una vez: si lo
@@ -350,6 +364,20 @@ export function AppointmentsPage() {
       </header>
 
       <div className={styles.filtersBar}>
+        <div className={styles.viewSwitch} role="group" aria-label="Qué turnos ver">
+          {VIEWS.map((v) => (
+            <button
+              key={v.value}
+              type="button"
+              className={styles.viewOption}
+              aria-pressed={view === v.value}
+              onClick={() => setView(v.value)}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+
         <div className={styles.searchRow}>
           <div className={styles.searchInputWrapper}>
             <svg
@@ -412,7 +440,7 @@ export function AppointmentsPage() {
               onChange={(e) => setToDate(e.target.value)}
             />
           </div>
-          {(searchText || statusFilter || specialtyFilter || fromDate || toDate) && (
+          {(searchText || statusFilter || specialtyFilter || fromDate || toDate || view !== 'upcoming') && (
             <div className={styles.clearFilter}>
               <Button
                 variant="ghost"
@@ -436,8 +464,7 @@ export function AppointmentsPage() {
           total={result?.total}
           page={page}
           empty={{
-            title: 'Todavía no hay turnos',
-            description: 'Cuando crees el primero va a aparecer acá con su estado.',
+            ...VIEW_EMPTY[view],
             ...(canCreate ? { action: { label: '+ Nuevo turno', onClick: () => navigate('/nuevo-turno') } } : {}),
           }}
           onRowClick={(a) => setSelectedAppointment(a)}

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppointmentsPage } from './AppointmentsPage';
+import { todayLocal, addDaysLocal } from '../../utils/date';
 
 const { toast, auth, appointmentsApi, specialtiesApi } = vi.hoisted(() => ({
   toast: { success: vi.fn(), error: vi.fn() },
@@ -106,5 +107,66 @@ describe('AppointmentsPage — llegar desde un código', () => {
     renderAt('/turnos?q=emanuel');
     await screen.findByText('TM-00012');
     expect(screen.queryByText(/detalle del turno/i)).not.toBeInTheDocument();
+  });
+});
+
+describe('AppointmentsPage — qué se muestra primero', () => {
+  it('por defecto pide lo que viene: desde hoy y con lo más próximo primero', async () => {
+    renderAt('/turnos');
+    await waitFor(() => expect(appointmentsApi.findAll).toHaveBeenCalledWith(
+      expect.objectContaining({ from: todayLocal(), order: 'asc' }), 1,
+    ));
+  });
+
+  it('el historial va al revés: hasta ayer y lo más reciente primero', async () => {
+    renderAt('/turnos?view=history');
+    await waitFor(() => expect(appointmentsApi.findAll).toHaveBeenCalledWith(
+      expect.objectContaining({ to: addDaysLocal(todayLocal(), -1), order: 'desc' }), 1,
+    ));
+  });
+
+  it('en "todos" no hay recorte de fechas', async () => {
+    renderAt('/turnos?view=all');
+    await waitFor(() => {
+      const filters = appointmentsApi.findAll.mock.calls.at(-1)![0];
+      expect(filters.from).toBeUndefined();
+      expect(filters.to).toBeUndefined();
+    });
+  });
+
+  it('una fecha elegida a mano gana sobre la vista', async () => {
+    renderAt('/turnos?view=upcoming&from=2026-01-01');
+    await waitFor(() => expect(appointmentsApi.findAll).toHaveBeenCalledWith(
+      expect.objectContaining({ from: '2026-01-01' }), 1,
+    ));
+  });
+});
+
+describe('AppointmentsPage — quién filtra', () => {
+  it('la búsqueda la resuelve el servidor: filtrar la página traída es filtrar una muestra', async () => {
+    renderAt('/turnos?q=perez');
+    await waitFor(() => expect(appointmentsApi.findAll.mock.calls.at(-1)![0]).toMatchObject({ q: 'perez' }));
+  });
+
+  it('la especialidad viaja como id, no como texto', async () => {
+    specialtiesApi.findAll.mockResolvedValue({
+      data: [{ id: 'esp-1', name: 'Cardiología' }], total: 1, page: 1, totalPages: 1,
+    });
+    renderAt('/turnos?specialty=esp-1');
+    await waitFor(() => expect(appointmentsApi.findAll.mock.calls.at(-1)![0]).toMatchObject({ specialtyId: 'esp-1' }));
+  });
+
+  it('muestra lo que devuelve el servidor, sin recortarlo de nuevo en el navegador', async () => {
+    appointmentsApi.findAll.mockResolvedValue({
+      data: [{
+        id: 'a1', code: 'TM-00042', doctorId: 'd1', patientId: 'p1', specialtyId: 's1',
+        dateTime: '2026-09-25T13:00:00.000Z', durationMinutes: 30, status: 'PENDING',
+        notes: null, diagnosis: null, cancellationReason: null,
+        patient: { id: 'p1', name: 'Sofía Pérez', email: null },
+      }],
+      total: 1, page: 1, totalPages: 1,
+    });
+    renderAt('/turnos?q=cualquier+cosa+que+el+navegador+no+sabria+matchear');
+    expect(await screen.findByText('TM-00042')).toBeInTheDocument();
   });
 });

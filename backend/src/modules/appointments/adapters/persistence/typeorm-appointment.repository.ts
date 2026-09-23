@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, In, MoreThanOrEqual, LessThan, And, Repository } from 'typeorm';
+import { Between, Brackets, In, MoreThanOrEqual, LessThan, And, Repository } from 'typeorm';
+import { fold, likePattern, searchWords } from '../../../../shared/infra/persistence/text-search';
 import { AppointmentStatus } from '../../domain/appointment-status.enum';
 import { AppointmentRepository, AppointmentFilters, DaySummaryRow } from '../../appointment.repository.port';
 import { APP_TIME_ZONE } from '../../../../shared/infra/time/format';
@@ -28,7 +29,29 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
     if (filters.status) qb.andWhere('a.status = :status', { status: filters.status });
     if (filters.from) qb.andWhere('a.date_time >= :from', { from: filters.from });
     if (filters.to) qb.andWhere('a.date_time <= :to', { to: filters.to });
-    qb.orderBy('a.date_time', 'ASC');
+
+    // Buscar por paciente o por médico obliga a salir de la tabla de turnos. Se
+    // hace acá, en SQL, y no resolviendo ids en el servicio: una clínica con
+    // 50.000 pacientes convertiría "a" en un IN de 50.000 elementos, y sobre todo
+    // el total y la paginación tienen que salir de la misma consulta que las filas.
+    const words = searchWords(filters.q ?? '');
+    if (words.length) {
+      qb.leftJoin('patients', 'p', 'p.id = a.patient_id')
+        .leftJoin('doctors', 'd', 'd.id = a.doctor_id')
+        .leftJoin('users', 'du', 'du.id = d.user_id');
+      words.forEach((word, i) => {
+        const key = `q${i}`;
+        qb.andWhere(new Brackets((w) => {
+          w.where(`${fold('a.code')} LIKE :${key} ESCAPE '\\'`, { [key]: likePattern(word) })
+            .orWhere(`${fold("coalesce(p.name, '')")} LIKE :${key} ESCAPE '\\'`)
+            .orWhere(`${fold("coalesce(du.name, '')")} LIKE :${key} ESCAPE '\\'`);
+        }));
+      });
+    }
+
+    // La propiedad, no la columna: con joins y paginación TypeORM arma una
+    // subconsulta DISTINCT y necesita resolver el ORDER BY contra el metadata.
+    qb.orderBy('a.dateTime', filters.order === 'desc' ? 'DESC' : 'ASC');
     if (filters.skip !== undefined) qb.skip(filters.skip);
     if (filters.take !== undefined) qb.take(filters.take);
     const [entities, total] = await qb.getManyAndCount();
