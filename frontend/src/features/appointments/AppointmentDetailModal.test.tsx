@@ -1,21 +1,24 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppointmentDetailModal } from './AppointmentDetailModal';
 import type { Appointment } from '../../api/appointments';
 
-const { auth, doctorsApi, reportsApi, prescriptionsApi } = vi.hoisted(() => ({
+const { auth, doctorsApi, reportsApi, prescriptionsApi, commentsApi } = vi.hoisted(() => ({
   // The account id and the doctor-profile id are different rows on purpose:
   // the modal must compare against the profile, never the account.
   auth: { user: { id: 'user-1', email: 'laura@turno.med', name: 'Laura Gómez', role: 'DOCTOR' as 'DOCTOR' | 'ADMIN' | 'SECRETARY', mustChangePassword: false } },
   doctorsApi: { me: vi.fn() },
   reportsApi: { findByAppointment: vi.fn(), upload: vi.fn(), download: vi.fn(), print: vi.fn(), delete: vi.fn() },
   prescriptionsApi: { findByAppointment: vi.fn(), create: vi.fn() },
+  commentsApi: { list: vi.fn(), add: vi.fn() },
 }));
 
 vi.mock('../../context/AuthContext', () => ({ useAuth: () => auth }));
 vi.mock('../../api/doctors', () => ({ doctorsApi }));
 vi.mock('../../api/reports', () => ({ reportsApi }));
 vi.mock('../../api/prescriptions', () => ({ prescriptionsApi }));
+vi.mock('../../api/comments', () => ({ commentsApi, MAX_COMMENT_LENGTH: 500 }));
 vi.mock('../../api/appointments', () => ({ appointmentsApi: {} }));
 vi.mock('../../hooks/useToast', () => ({ useToast: () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }) }));
 
@@ -41,6 +44,8 @@ beforeEach(() => {
   doctorsApi.me.mockResolvedValue({ id: 'doctor-1', userId: 'user-1', avatarFile: null });
   reportsApi.findByAppointment.mockResolvedValue([]);
   prescriptionsApi.findByAppointment.mockResolvedValue([]);
+  commentsApi.list.mockResolvedValue([]);
+  commentsApi.add.mockResolvedValue({ id: 'c9', appointmentId: 'a1', body: 'nuevo', createdAt: '2026-09-23T10:00:00.000Z', author: { id: 'u1', name: 'Yo', role: 'DOCTOR' } });
 });
 
 describe('AppointmentDetailModal — informes y recetas del médico tratante', () => {
@@ -94,5 +99,48 @@ describe('AppointmentDetailModal — la secretaria no ve la historia clínica', 
     expect(screen.getByRole('button', { name: /reprogramar/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /cancelar turno/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /completar/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('AppointmentDetailModal — hilo de coordinación', () => {
+  const thread = [
+    { id: 'c1', appointmentId: 'a1', body: '¿Lo puedo mover media hora?', createdAt: '2026-09-23T12:00:00.000Z', author: { id: 'u-sec', name: 'Marta Recepción', role: 'SECRETARY' } },
+    { id: 'c2', appointmentId: 'a1', body: 'Dale, movelo', createdAt: '2026-09-23T12:05:00.000Z', author: { id: 'u-doc', name: 'Laura Gómez', role: 'DOCTOR' } },
+  ];
+
+  it('la secretaria SÍ ve el hilo aunque no vea la historia clínica: para eso existe', async () => {
+    auth.user.role = 'SECRETARY';
+    commentsApi.list.mockResolvedValue(thread);
+    renderModal(completed, 'SECRETARY');
+    expect(await screen.findByText('¿Lo puedo mover media hora?')).toBeInTheDocument();
+    expect(screen.getByText('Marta Recepción')).toBeInTheDocument();
+    expect(screen.queryByText(/informes medicos/i)).not.toBeInTheDocument();
+  });
+
+  it('avisa que no es el lugar para información clínica', async () => {
+    commentsApi.list.mockResolvedValue(thread);
+    renderModal(completed);
+    expect(await screen.findByText(/no escribas información clínica/i)).toBeInTheDocument();
+  });
+
+  it('escribir envía el comentario y limpia el campo', async () => {
+    renderModal(completed);
+    const box = await screen.findByLabelText(/escribir un comentario/i);
+    await userEvent.type(box, 'Llega 10 minutos tarde');
+    await userEvent.click(screen.getByRole('button', { name: /enviar/i }));
+    await waitFor(() => expect(commentsApi.add).toHaveBeenCalledWith('a1', 'Llega 10 minutos tarde'));
+    await waitFor(() => expect(box).toHaveValue(''));
+  });
+
+  it('no envía un comentario vacío', async () => {
+    renderModal(completed);
+    await screen.findByLabelText(/escribir un comentario/i);
+    await userEvent.click(screen.getByRole('button', { name: /enviar/i }));
+    expect(commentsApi.add).not.toHaveBeenCalled();
+  });
+
+  it('sin comentarios explica para qué sirve, en vez de mostrar un vacío', async () => {
+    renderModal(completed);
+    expect(await screen.findByText(/sin comentarios/i)).toBeInTheDocument();
   });
 });

@@ -8,6 +8,8 @@ import { Modal } from '../../components/ui/Modal';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { useMyDoctor } from '../../hooks/useMyDoctor';
+import { useFetch } from '../../hooks/useFetch';
+import { commentsApi, MAX_COMMENT_LENGTH, type AppointmentComment } from '../../api/comments';
 import { useToast } from '../../hooks/useToast';
 import { generateAppointmentPdf } from '../../utils/generateAppointmentPdf';
 import { generatePrescriptionPdf } from '../../utils/generatePrescriptionPdf';
@@ -68,6 +70,30 @@ export function AppointmentDetailModal({
   const isTreatingDoctor = role === 'DOCTOR' && myDoctor?.id === appointment.doctorId;
   // The front desk schedules care; the chart — diagnosis, reports, prescriptions — is not theirs.
   const canSeeRecords = role !== 'SECRETARY';
+
+  // Coordination about THIS appointment. Visible to everyone who can see the
+  // appointment — the front desk included, which is the whole point.
+  const { data: comments, refetch: refetchComments } = useFetch<AppointmentComment[]>(
+    ['appointment-comments', appointment.id],
+    () => commentsApi.list(appointment.id),
+  );
+  const [commentDraft, setCommentDraft] = useState('');
+  const [sendingComment, setSendingComment] = useState(false);
+
+  const sendComment = async () => {
+    const body = commentDraft.trim();
+    if (!body || sendingComment) return;
+    setSendingComment(true);
+    try {
+      await commentsApi.add(appointment.id, body);
+      setCommentDraft('');
+      await refetchComments();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'No se pudo enviar el comentario'));
+    } finally {
+      setSendingComment(false);
+    }
+  };
   const { toast } = useToast();
 
   const [cancelling, setCancelling] = useState(false);
@@ -300,6 +326,52 @@ export function AppointmentDetailModal({
             <p className={styles.cancellationText}>{appointment.cancellationReason}</p>
           </div>
         )}
+
+        {/* Coordinación interna */}
+        <div className={styles.reportsSection}>
+          <span className={styles.reportsSectionTitle}>Coordinación</span>
+          <p className={styles.threadWarning}>
+            Interno del equipo — no escribas información clínica acá.
+          </p>
+
+          {(comments ?? []).length === 0 ? (
+            <p className={styles.reportsEmpty}>
+              Sin comentarios. Usalo para coordinar este turno: “¿lo muevo?”, “llega tarde”, “confirmado por teléfono”.
+            </p>
+          ) : (
+            <ul className={styles.thread}>
+              {(comments ?? []).map((c) => (
+                <li key={c.id} className={styles.threadItem}>
+                  <div className={styles.threadHead}>
+                    <span className={styles.threadAuthor}>{c.author.name}</span>
+                    <span className={styles.threadTime}>
+                      {new Date(c.createdAt).toLocaleString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <p className={styles.threadBody}>{c.body}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className={styles.threadForm}>
+            <textarea
+              className={styles.threadInput}
+              aria-label="Escribir un comentario"
+              placeholder="Escribí un comentario para el equipo…"
+              maxLength={MAX_COMMENT_LENGTH}
+              rows={2}
+              value={commentDraft}
+              onChange={(e) => setCommentDraft(e.target.value)}
+            />
+            <div className={styles.threadActions}>
+              <span className={styles.threadCount}>{commentDraft.length}/{MAX_COMMENT_LENGTH}</span>
+              <Button size="sm" isLoading={sendingComment} onClick={() => { void sendComment(); }}>
+                Enviar
+              </Button>
+            </div>
+          </div>
+        </div>
 
         {canSeeRecords && (
           <>
