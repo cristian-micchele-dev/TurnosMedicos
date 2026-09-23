@@ -1,0 +1,266 @@
+/* Dos columnas: la lista de gente y la conversación abierta. En un teléfono
+   se apilan y la conversación gana la pantalla. */
+.page {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: var(--space-5);
+  height: calc(100vh - var(--header-height) - 60px);
+}
+
+/* ── Lista ── */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.title {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.empty {
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+  line-height: 1.55;
+  padding: var(--space-4);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+}
+
+.conversations,
+.contacts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contacts {
+  padding: var(--space-2);
+  background: var(--slate);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.conversation,
+.contact {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  text-align: left;
+  transition: background var(--transition);
+}
+
+.conversation:hover,
+.contact:hover,
+.conversation:focus-visible,
+.contact:focus-visible {
+  background: var(--ice);
+  outline: none;
+}
+
+.conversationOpen {
+  background: var(--primary-light);
+}
+
+.conversationText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.conversationName,
+.contactName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.contactName { flex: 1; }
+
+.conversationLast {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conversationMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.conversationTime,
+.contactRole {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.unread {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ── Conversación ── */
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--slate);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.placeholder {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  color: var(--text-tertiary);
+  font-size: 0.9rem;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.panelName {
+  display: block;
+  font-weight: 600;
+}
+
+.panelRole {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.warning {
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  background: var(--snow);
+  border-bottom: 1px solid var(--border);
+}
+
+.messages {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-4);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.bubbleRow {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.bubbleRowMine {
+  justify-content: flex-end;
+}
+
+.bubble {
+  max-width: min(70%, 520px);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--field-bg);
+  border: 1px solid var(--border);
+}
+
+/* Lo mío en el color de marca: se distingue de un vistazo, sin leer el nombre. */
+.bubbleMine {
+  background: var(--primary-light);
+  border-color: var(--primary-ring);
+}
+
+.bubbleBody {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.bubbleTime {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  text-align: right;
+}
+
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.input {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  background: var(--field-bg);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-md);
+  resize: none;
+}
+
+.input:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-ring);
+}
+
+@media (max-width: 860px) {
+  .page {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .panel {
+    min-height: 60vh;
+  }
+}

@@ -2,6 +2,10 @@ import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import styles from './Sidebar.module.css';
 import layoutStyles from './Layout.module.css';
+import { useEffect } from 'react';
+import { messagesApi } from '../../api/messages';
+import { useFetch } from '../../hooks/useFetch';
+import { useSocket } from '../../hooks/useSocket';
 
 interface NavItem {
   to: string;
@@ -17,6 +21,7 @@ interface SidebarProps {
 const sharedItems: NavItem[] = [
   { to: '/dashboard',  label: 'Dashboard' },
   { to: '/calendario', label: 'Calendario' },
+  { to: '/mensajes',   label: 'Mensajes' },
 ];
 
 const adminItems: NavItem[] = [
@@ -51,6 +56,22 @@ export function Sidebar({ isOpen, onClose, onRestartTour }: SidebarProps) {
   const { user, logout } = useAuth();
   const navItems = getNavItems(user?.role);
 
+  // El badge sale del servidor, y el socket lo actualiza sin esperar al intervalo.
+  const { data: unread, refetch: refetchUnread } = useFetch<{ unread: number }>(
+    ['messages', 'unread'],
+    () => messagesApi.unread(),
+    { refetchInterval: 60_000, refetchOnWindowFocus: true, staleTime: 10_000 },
+  );
+  const unreadMessages = unread?.unread ?? 0;
+  const socket = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+    const onMessage = () => { void refetchUnread(); };
+    socket.on('message', onMessage);
+    return () => { socket.off('message', onMessage); };
+  }, [socket, refetchUnread]);
+
   return (
     <>
       {isOpen && (
@@ -74,6 +95,11 @@ export function Sidebar({ isOpen, onClose, onRestartTour }: SidebarProps) {
                   onClick={onClose}
                 >
                   <span className={styles.navLabel}>{item.label}</span>
+                  {item.to === '/mensajes' && unreadMessages > 0 && (
+                    <span className={styles.navBadge} aria-label={`${unreadMessages} mensajes sin leer`}>
+                      {unreadMessages > 9 ? '9+' : unreadMessages}
+                    </span>
+                  )}
                 </NavLink>
               </li>
             ))}
