@@ -639,3 +639,13 @@
   color: var(--text-tertiary);
   font-variant-numeric: tabular-nums;
 }
+
+.threadLink {
+  color: var(--primary);
+  font-weight: 600;
+  border-bottom: 1px dashed var(--primary-ring);
+}
+
+.threadLink:hover {
+  border-bottom-color: var(--primary);
+}

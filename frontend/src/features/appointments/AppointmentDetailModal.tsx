@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Download, FileText, Image, Trash2, Printer, Plus, X } from 'lucide-react';
 import type { Appointment, AppointmentStatus } from '../../api/appointments';
 import { appointmentsApi } from '../../api/appointments';
@@ -328,16 +329,17 @@ export function AppointmentDetailModal({
           </div>
         )}
 
-        {/* Coordinación interna */}
+        {/* Notas del turno: lo que queda asentado sobre ESTA reserva */}
         <div className={styles.reportsSection}>
-          <span className={styles.reportsSectionTitle}>Coordinación</span>
+          <span className={styles.reportsSectionTitle}>Notas del turno</span>
           <p className={styles.threadWarning}>
-            Interno del equipo — no escribas información clínica acá.
+            Quedan asentadas en el turno y no se editan. No escribas información clínica acá;
+            para conversar usá <Link to="/mensajes" className={styles.threadLink}>Mensajes</Link>.
           </p>
 
           {(comments ?? []).length === 0 ? (
             <p className={styles.reportsEmpty}>
-              Sin comentarios. Usalo para coordinar este turno: “¿lo muevo?”, “llega tarde”, “confirmado por teléfono”.
+              Sin notas. Dejá asentado lo que haga falta recordar de este turno: “confirmado por teléfono”, “el paciente pidió el cambio”.
             </p>
           ) : (
             <ul className={styles.thread}>
@@ -358,8 +360,8 @@ export function AppointmentDetailModal({
           <div className={styles.threadForm}>
             <textarea
               className={styles.threadInput}
-              aria-label="Escribir un comentario"
-              placeholder="Escribí un comentario para el equipo…"
+              aria-label="Escribir una nota"
+              placeholder="Anotá algo sobre este turno…"
               maxLength={MAX_COMMENT_LENGTH}
               rows={2}
               value={commentDraft}
@@ -368,7 +370,7 @@ export function AppointmentDetailModal({
             <div className={styles.threadActions}>
               <span className={styles.threadCount}>{commentDraft.length}/{MAX_COMMENT_LENGTH}</span>
               <Button size="sm" isLoading={sendingComment} onClick={() => { void sendComment(); }}>
-                Enviar
+                Agregar nota
               </Button>
             </div>
           </div>

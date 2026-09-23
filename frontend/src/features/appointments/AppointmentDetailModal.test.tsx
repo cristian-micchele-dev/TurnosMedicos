@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppointmentDetailModal } from './AppointmentDetailModal';
 import type { Appointment } from '../../api/appointments';
@@ -33,7 +34,9 @@ const renderModal = (appointment: Appointment, role: 'DOCTOR' | 'ADMIN' | 'SECRE
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   return render(
     <QueryClientProvider client={client}>
-      <AppointmentDetailModal appointment={appointment} role={role} onClose={() => {}} onAction={async () => {}} />
+      <MemoryRouter>
+        <AppointmentDetailModal appointment={appointment} role={role} onClose={() => {}} onAction={async () => {}} />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
 };
@@ -102,13 +105,13 @@ describe('AppointmentDetailModal — la secretaria no ve la historia clínica', 
   });
 });
 
-describe('AppointmentDetailModal — hilo de coordinación', () => {
+describe('AppointmentDetailModal — notas del turno', () => {
   const thread = [
     { id: 'c1', appointmentId: 'a1', body: '¿Lo puedo mover media hora?', createdAt: '2026-09-23T12:00:00.000Z', author: { id: 'u-sec', name: 'Marta Recepción', role: 'SECRETARY' } },
     { id: 'c2', appointmentId: 'a1', body: 'Dale, movelo', createdAt: '2026-09-23T12:05:00.000Z', author: { id: 'u-doc', name: 'Laura Gómez', role: 'DOCTOR' } },
   ];
 
-  it('la secretaria SÍ ve el hilo aunque no vea la historia clínica: para eso existe', async () => {
+  it('la secretaria SÍ ve las notas aunque no vea la historia clínica: para eso existen', async () => {
     auth.user.role = 'SECRETARY';
     commentsApi.list.mockResolvedValue(thread);
     renderModal(completed, 'SECRETARY');
@@ -123,24 +126,24 @@ describe('AppointmentDetailModal — hilo de coordinación', () => {
     expect(await screen.findByText(/no escribas información clínica/i)).toBeInTheDocument();
   });
 
-  it('escribir envía el comentario y limpia el campo', async () => {
+  it('agregar una nota la envía y limpia el campo', async () => {
     renderModal(completed);
-    const box = await screen.findByLabelText(/escribir un comentario/i);
+    const box = await screen.findByLabelText(/escribir una nota/i);
     await userEvent.type(box, 'Llega 10 minutos tarde');
-    await userEvent.click(screen.getByRole('button', { name: /enviar/i }));
+    await userEvent.click(screen.getByRole('button', { name: /agregar nota/i }));
     await waitFor(() => expect(commentsApi.add).toHaveBeenCalledWith('a1', 'Llega 10 minutos tarde'));
     await waitFor(() => expect(box).toHaveValue(''));
   });
 
-  it('no envía un comentario vacío', async () => {
+  it('no agrega una nota vacía', async () => {
     renderModal(completed);
-    await screen.findByLabelText(/escribir un comentario/i);
-    await userEvent.click(screen.getByRole('button', { name: /enviar/i }));
+    await screen.findByLabelText(/escribir una nota/i);
+    await userEvent.click(screen.getByRole('button', { name: /agregar nota/i }));
     expect(commentsApi.add).not.toHaveBeenCalled();
   });
 
-  it('sin comentarios explica para qué sirve, en vez de mostrar un vacío', async () => {
+  it('sin notas explica para qué sirven, en vez de mostrar un vacío', async () => {
     renderModal(completed);
-    expect(await screen.findByText(/sin comentarios/i)).toBeInTheDocument();
+    expect(await screen.findByText(/sin notas/i)).toBeInTheDocument();
   });
 });
