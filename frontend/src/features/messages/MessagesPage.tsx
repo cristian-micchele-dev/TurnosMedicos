@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MessageSquarePlus, Send } from 'lucide-react';
 import { messagesApi, MAX_MESSAGE_LENGTH, type Contact, type Conversation, type Thread } from '../../api/messages';
 import { apiErrorMessage } from '../../api/client';
@@ -26,9 +27,11 @@ export function MessagesPage() {
   const { toast } = useToast();
   const socket = useSocket();
 
-  const [openWith, setOpenWith] = useState<string | null>(null);
+  // Se puede llegar acá desde un turno: ?to= o ?role= dicen con quién, ?draft= qué pedir.
+  const [searchParams] = useSearchParams();
+  const [openWith, setOpenWith] = useState<string | null>(searchParams.get('to'));
   const [picking, setPicking] = useState(false);
-  const [draft, setDraft] = useState('');
+  const [draft, setDraft] = useState(searchParams.get('draft') ?? '');
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -40,9 +43,16 @@ export function MessagesPage() {
 
   const { data: contacts } = useFetch<Contact[]>(['messages', 'contacts'], () => messagesApi.contacts());
 
+  // Con ?role= no viene el id: si hay UNA sola persona con ese rol se abre esa
+  // conversación; si hay varias, elige el selector, nunca nosotros.
+  const wantedRole = searchParams.get('role');
+  const roleMatches = wantedRole && contacts ? contacts.filter((c) => c.role === wantedRole) : [];
+  const target = openWith ?? (roleMatches.length === 1 ? roleMatches[0].id : null);
+  const showPicker = picking || (!openWith && roleMatches.length > 1);
+
   const { data: thread, refetch: refetchThread } = useFetch<Thread | null>(
-    ['messages', 'thread', openWith ?? ''],
-    () => (openWith ? messagesApi.thread(openWith) : Promise.resolve(null)),
+    ['messages', 'thread', target ?? ''],
+    () => (target ? messagesApi.thread(target) : Promise.resolve(null)),
     { refetchOnWindowFocus: true, staleTime: 5_000 },
   );
 
@@ -64,10 +74,10 @@ export function MessagesPage() {
 
   const send = async () => {
     const body = draft.trim();
-    if (!body || !openWith || sending) return;
+    if (!body || !target || sending) return;
     setSending(true);
     try {
-      await messagesApi.send(openWith, body);
+      await messagesApi.send(target, body);
       setDraft('');
       await refetchThread();
       await refetchConversations();
@@ -93,7 +103,7 @@ export function MessagesPage() {
           </Button>
         </header>
 
-        {picking && (
+        {showPicker && (
           <ul className={styles.contacts} role="listbox" aria-label="Personal">
             {(contacts ?? []).map((c) => (
               <li key={c.id}>
@@ -107,7 +117,7 @@ export function MessagesPage() {
           </ul>
         )}
 
-        {(conversations ?? []).length === 0 && !picking ? (
+        {(conversations ?? []).length === 0 && !showPicker ? (
           <p className={styles.empty}>
             Todavía no hablaste con nadie. Tocá «Nueva conversación» para escribirle a alguien del equipo.
           </p>
@@ -117,7 +127,7 @@ export function MessagesPage() {
               <li key={c.counterpart.id}>
                 <button
                   type="button"
-                  className={[styles.conversation, openWith === c.counterpart.id ? styles.conversationOpen : ''].filter(Boolean).join(' ')}
+                  className={[styles.conversation, target === c.counterpart.id ? styles.conversationOpen : ''].filter(Boolean).join(' ')}
                   onClick={() => openConversation(c.counterpart.id)}
                 >
                   <Avatar name={c.counterpart.name} size="sm" />
@@ -137,7 +147,7 @@ export function MessagesPage() {
       </aside>
 
       <section className={styles.panel}>
-        {!openWith || !thread ? (
+        {!target || !thread ? (
           <div className={styles.placeholder}>
             <p>Elegí una conversación para leerla.</p>
           </div>

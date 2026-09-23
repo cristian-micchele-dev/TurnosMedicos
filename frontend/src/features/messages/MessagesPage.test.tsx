@@ -113,3 +113,42 @@ describe('MessagesPage', () => {
     expect(socket.on).toHaveBeenCalledWith('message', expect.any(Function));
   });
 });
+
+describe('MessagesPage — llegar con un pedido armado desde un turno', () => {
+  const renderAt = (url: string) => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+    return render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={[url]}><MessagesPage /></MemoryRouter>
+      </QueryClientProvider>,
+    );
+  };
+
+  it('con ?to= abre esa conversación y deja el texto listo para revisar', async () => {
+    renderAt('/mensajes?to=u-doc&draft=' + encodeURIComponent('¿Podés cancelar el TM-00012?'));
+    const box = await screen.findByLabelText(/escribir un mensaje/i);
+    expect(box).toHaveValue('¿Podés cancelar el TM-00012?');
+    expect(messagesApi.thread).toHaveBeenCalledWith('u-doc');
+    // Nada se manda solo: el mensaje se lee antes de salir.
+    expect(messagesApi.send).not.toHaveBeenCalled();
+  });
+
+  it('con ?role=SECRETARY abre la conversación con la única secretaria', async () => {
+    messagesApi.contacts.mockResolvedValue([
+      { id: 'u-doc', name: 'Laura Gómez', role: 'DOCTOR' },
+      { id: 'u-sec2', name: 'Marta', role: 'SECRETARY' },
+    ]);
+    renderAt('/mensajes?role=SECRETARY&draft=hola');
+    await waitFor(() => expect(messagesApi.thread).toHaveBeenCalledWith('u-sec2'));
+  });
+
+  it('si hay varias secretarias no elige por vos: abre el selector', async () => {
+    messagesApi.contacts.mockResolvedValue([
+      { id: 'u-sec1', name: 'Marta', role: 'SECRETARY' },
+      { id: 'u-sec2', name: 'Rosa', role: 'SECRETARY' },
+    ]);
+    renderAt('/mensajes?role=SECRETARY&draft=hola');
+    expect(await screen.findByRole('listbox', { name: /personal/i })).toBeInTheDocument();
+    expect(messagesApi.thread).not.toHaveBeenCalled();
+  });
+});

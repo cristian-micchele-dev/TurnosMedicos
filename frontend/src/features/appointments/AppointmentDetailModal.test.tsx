@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppointmentDetailModal } from './AppointmentDetailModal';
 import type { Appointment } from '../../api/appointments';
@@ -30,12 +30,24 @@ const completed: Appointment = {
   patient: { id: 'p1', name: 'Emanuel Pérez', email: null },
 };
 
+/** Sonda: muestra a qué URL terminó navegando el modal. */
+function Destino() {
+  const { search } = useLocation();
+  return <output data-testid="destino">{search}</output>;
+}
+
 const renderModal = (appointment: Appointment, role: 'DOCTOR' | 'ADMIN' | 'SECRETARY' = 'DOCTOR') => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter>
-        <AppointmentDetailModal appointment={appointment} role={role} onClose={() => {}} onAction={async () => {}} />
+      <MemoryRouter initialEntries={['/turnos']}>
+        <Routes>
+          <Route
+            path="/turnos"
+            element={<AppointmentDetailModal appointment={appointment} role={role} onClose={() => {}} onAction={async () => {}} />}
+          />
+          <Route path="/mensajes" element={<Destino />} />
+        </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -145,5 +157,39 @@ describe('AppointmentDetailModal — notas del turno', () => {
   it('sin notas explica para qué sirven, en vez de mostrar un vacío', async () => {
     renderModal(completed);
     expect(await screen.findByText(/sin notas/i)).toBeInTheDocument();
+  });
+});
+
+describe('AppointmentDetailModal — pedirle algo al otro', () => {
+  const conMedico = {
+    ...completed,
+    doctor: { id: 'doctor-1', licenseNumber: 'MP-1', user: { id: 'u-doc', email: 'l@h.com', name: 'Laura Gómez' } },
+  };
+
+  it('el médico le pide a secretaría, con el pedido ya escrito', async () => {
+    auth.user.role = 'DOCTOR';
+    renderModal(conMedico, 'DOCTOR');
+    await userEvent.click(await screen.findByRole('button', { name: /pedir a secretar/i }));
+    await userEvent.click(screen.getByRole('menuitem', { name: /cancelar/i }));
+    const destino = await screen.findByTestId('destino');
+    expect(destino.textContent).toContain('role=SECRETARY');
+    expect(decodeURIComponent(destino.textContent!)).toContain('TM-00001');
+    expect(decodeURIComponent(destino.textContent!)).toContain('cancelar');
+  });
+
+  it('la secretaria, al revés: le consulta al médico de ESE turno', async () => {
+    auth.user.role = 'SECRETARY';
+    renderModal(conMedico, 'SECRETARY');
+    await userEvent.click(await screen.findByRole('button', { name: /consultar al m/i }));
+    const destino = await screen.findByTestId('destino');
+    expect(destino.textContent).toContain('to=u-doc');
+    expect(decodeURIComponent(destino.textContent!)).toContain('TM-00001');
+  });
+
+  it('sin médico resuelto no ofrece consultarle: no hay a quién escribirle', async () => {
+    auth.user.role = 'SECRETARY';
+    renderModal(completed, 'SECRETARY');
+    await screen.findByText('TM-00001');
+    expect(screen.queryByRole('button', { name: /consultar al m/i })).not.toBeInTheDocument();
   });
 });

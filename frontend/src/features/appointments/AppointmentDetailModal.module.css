@@ -649,3 +649,45 @@
 .threadLink:hover {
   border-bottom-color: var(--primary);
 }
+
+/* ── Pedir algo a la otra punta ────────────────────────────────────────── */
+.askRow {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.askWrap {
+  position: relative;
+}
+
+.askMenu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 5;
+  min-width: 160px;
+  padding: 4px;
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.askItem {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  text-align: left;
+  transition: background var(--transition);
+}
+
+.askItem:hover,
+.askItem:focus-visible {
+  background: var(--primary-light);
+  outline: none;
+}

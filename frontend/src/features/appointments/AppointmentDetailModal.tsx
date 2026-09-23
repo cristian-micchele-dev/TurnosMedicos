@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Download, FileText, Image, Trash2, Printer, Plus, X } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Download, FileText, Image, Trash2, Printer, Plus, X, MessageSquare } from 'lucide-react';
 import type { Appointment, AppointmentStatus } from '../../api/appointments';
 import { appointmentsApi } from '../../api/appointments';
 import { reportsApi, type MedicalReport } from '../../api/reports';
@@ -73,12 +73,36 @@ export function AppointmentDetailModal({
   // The front desk schedules care; the chart — diagnosis, reports, prescriptions — is not theirs.
   const canSeeRecords = role !== 'SECRETARY';
 
+  // Un turno del que hay que hablar: quién atiende, y de qué turno se trata.
+  const doctorAccountId = appointment.doctor?.user?.id ?? null;
+  const asunto = `${appointment.code} (${appointment.patient?.name ?? 'paciente'}, ${formatDate(appointment.dateTime)} ${new Date(appointment.dateTime).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })})`;
+
+  /**
+   * Lleva al chat con el pedido escrito, pero NO lo manda: el mensaje se lee y
+   * se edita antes de salir. Un pedido que se envía solo es un pedido que nadie
+   * revisó.
+   */
+  const pedir = (texto: string, para: { role?: string; to?: string }) => {
+    const params = new URLSearchParams({ draft: texto });
+    if (para.to) params.set('to', para.to);
+    if (para.role) params.set('role', para.role);
+    navigate(`/mensajes?${params}`);
+  };
+
+  const PEDIDOS = [
+    { label: 'Reprogramar', texto: `Hola, ¿podés reprogramar el ${asunto}?` },
+    { label: 'Cancelar', texto: `Hola, ¿podés cancelar el ${asunto}?` },
+    { label: 'Otra cosa', texto: `Sobre el ${asunto}: ` },
+  ];
+
   // Coordination about THIS appointment. Visible to everyone who can see the
   // appointment — the front desk included, which is the whole point.
   const { data: comments, refetch: refetchComments } = useFetch<AppointmentComment[]>(
     ['appointment-comments', appointment.id],
     () => commentsApi.list(appointment.id),
   );
+  const navigate = useNavigate();
+  const [askOpen, setAskOpen] = useState(false);
   const [commentDraft, setCommentDraft] = useState('');
   const [sendingComment, setSendingComment] = useState(false);
 
@@ -328,6 +352,42 @@ export function AppointmentDetailModal({
             <p className={styles.cancellationText}>{appointment.cancellationReason}</p>
           </div>
         )}
+
+        {/* Pedirle algo a la otra punta, sin salir a buscar la conversación */}
+        <div className={styles.askRow}>
+          {role === 'DOCTOR' ? (
+            <div className={styles.askWrap}>
+              <Button variant="secondary" size="sm" onClick={() => setAskOpen((o) => !o)} aria-expanded={askOpen}>
+                <MessageSquare size={14} /> Pedir a secretaría
+              </Button>
+              {askOpen && (
+                <div className={styles.askMenu} role="menu">
+                  {PEDIDOS.map((p) => (
+                    <button
+                      key={p.label}
+                      type="button"
+                      role="menuitem"
+                      className={styles.askItem}
+                      onClick={() => { setAskOpen(false); pedir(p.texto, { role: 'SECRETARY' }); }}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            doctorAccountId && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => pedir(`Sobre el ${asunto}: `, { to: doctorAccountId })}
+              >
+                <MessageSquare size={14} /> Consultar al médico
+              </Button>
+            )
+          )}
+        </div>
 
         {/* Notas del turno: lo que queda asentado sobre ESTA reserva */}
         <div className={styles.reportsSection}>
