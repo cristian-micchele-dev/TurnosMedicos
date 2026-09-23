@@ -8,6 +8,7 @@ import { useSocket } from '../../hooks/useSocket';
 import { useToast } from '../../hooks/useToast';
 import { Avatar } from '../../components/ui/Avatar';
 import { Button } from '../../components/ui/Button';
+import { TextWithCodes } from '../../components/ui/TextWithCodes';
 import styles from './MessagesPage.module.css';
 
 const ROLE_LABEL: Record<string, string> = { ADMIN: 'Admin', DOCTOR: 'Doctor', SECRETARY: 'Secretaría' };
@@ -160,7 +161,7 @@ export function MessagesPage() {
                 return (
                   <li key={m.id} data-mine={String(mine)} className={[styles.bubbleRow, mine ? styles.bubbleRowMine : ''].filter(Boolean).join(' ')}>
                     <div className={[styles.bubble, mine ? styles.bubbleMine : ''].filter(Boolean).join(' ')}>
-                      <p className={styles.bubbleBody}>{m.body}</p>
+                      <p className={styles.bubbleBody}><TextWithCodes text={m.body} /></p>
                       <span className={styles.bubbleTime}>{formatWhen(m.createdAt)}</span>
                     </div>
                   </li>

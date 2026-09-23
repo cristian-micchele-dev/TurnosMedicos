@@ -86,3 +86,25 @@ describe('AppointmentsPage — filtros en la URL', () => {
     auth.user.role = 'ADMIN';
   });
 });
+
+describe('AppointmentsPage — llegar desde un código', () => {
+  const turno = {
+    id: 'a1', code: 'TM-00012', doctorId: 'd1', patientId: 'p1', specialtyId: 's1',
+    dateTime: '2026-09-28T12:00:00.000Z', durationMinutes: 30, status: 'PENDING' as const,
+    notes: null, diagnosis: null, cancellationReason: null,
+    patient: { id: 'p1', name: 'Emanuel Micchele', email: null },
+  };
+
+  it('si la URL trae un código exacto, abre ese turno sin que haya que buscarlo', async () => {
+    appointmentsApi.findAll.mockResolvedValue({ data: [turno], total: 1, page: 1, totalPages: 1 });
+    renderAt('/turnos?q=TM-00012');
+    expect(await screen.findByText(/detalle del turno/i)).toBeInTheDocument();
+  });
+
+  it('una búsqueda común no abre nada sola', async () => {
+    appointmentsApi.findAll.mockResolvedValue({ data: [turno], total: 1, page: 1, totalPages: 1 });
+    renderAt('/turnos?q=emanuel');
+    await screen.findByText('TM-00012');
+    expect(screen.queryByText(/detalle del turno/i)).not.toBeInTheDocument();
+  });
+});

@@ -1,0 +1,18 @@
+/* El código se lee como un dato, no como un link genérico: mono, sutil,
+   y recién al pasar por encima se ve que lleva a algún lado. */
+.code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  font-weight: 600;
+  color: var(--primary);
+  padding: 0 2px;
+  border-bottom: 1px dashed var(--primary-ring);
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.code:hover,
+.code:focus-visible {
+  background: var(--primary-light);
+  border-bottom-color: var(--primary);
+  outline: none;
+}

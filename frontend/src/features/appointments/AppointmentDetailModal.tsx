@@ -7,6 +7,7 @@ import { prescriptionsApi, type Prescription, type Medication } from '../../api/
 import { Modal } from '../../components/ui/Modal';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { TextWithCodes } from '../../components/ui/TextWithCodes';
 import { useMyDoctor } from '../../hooks/useMyDoctor';
 import { useFetch } from '../../hooks/useFetch';
 import { commentsApi, MAX_COMMENT_LENGTH, type AppointmentComment } from '../../api/comments';
@@ -348,7 +349,7 @@ export function AppointmentDetailModal({
                       {new Date(c.createdAt).toLocaleString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <p className={styles.threadBody}>{c.body}</p>
+                  <p className={styles.threadBody}><TextWithCodes text={c.body} /></p>
                 </li>
               ))}
             </ul>

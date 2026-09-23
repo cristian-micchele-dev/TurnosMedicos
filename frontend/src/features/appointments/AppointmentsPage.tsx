@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   appointmentsApi,
@@ -21,6 +21,7 @@ import { AppointmentDetailModal } from './AppointmentDetailModal';
 import { AgendaViewSwitch } from '../agenda/AgendaViewSwitch';
 import styles from './AppointmentsPage.module.css';
 import { apiErrorMessage } from '../../api/client';
+import { isAppointmentCode } from '../../utils/appointmentCode';
 
 function formatDateTime(iso: string): string {
   const date = new Date(iso);
@@ -56,6 +57,7 @@ export function AppointmentsPage() {
   const navigate = useNavigate();
 
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const autoOpened = useRef<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
 
   // Filters live in the URL: dashboard cards deep-link here, reloads keep them, links are shareable.
@@ -125,6 +127,18 @@ export function AppointmentsPage() {
     }
     return list;
   }, [allAppointments, searchText, specialtyFilter]);
+
+  // Llegar con un código exacto en la URL —por ejemplo desde un mensaje del chat—
+  // significa querer ESE turno, no una lista de uno. Se abre solo, una vez: si lo
+  // cerrás, no vuelve a abrirse hasta que llegue otro código.
+  useEffect(() => {
+    const code = searchText.trim().toUpperCase();
+    if (!isAppointmentCode(code) || autoOpened.current === code) return;
+    const match = appointments.find((a) => a.code?.toUpperCase() === code);
+    if (!match) return;
+    autoOpened.current = code;
+    setSelectedAppointment(match);
+  }, [searchText, appointments]);
 
   const handleAction = async (
     action: 'confirm' | 'cancel' | 'complete',
