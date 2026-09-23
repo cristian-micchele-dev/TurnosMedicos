@@ -11,7 +11,8 @@ describe('AppointmentController', () => {
     reschedule: jest.fn().mockResolvedValue({ id: 'a1' }),
     complete: jest.fn().mockResolvedValue({ id: 'a1', status: 'COMPLETED' }),
   };
-  const controller = new AppointmentController(service);
+  const comments: any = { list: jest.fn().mockResolvedValue([]), add: jest.fn() };
+  const controller = new AppointmentController(service, comments);
   const admin = { sub: 'u1', role: 'ADMIN' };
   const adminReq = { user: admin } as any;
   const patient = { sub: 'u2', role: 'DOCTOR' };
