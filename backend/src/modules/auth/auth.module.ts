@@ -6,10 +6,12 @@ import { TypeOrmSessionRepository, TypeOrmResetRepository } from './adapters/per
 import { NoopMailer } from './adapters/mail/noop.mailer';
 import { SESSION_REPOSITORY, RESET_REPOSITORY, MAILER } from './auth.repository.port';
 import { AuthSessionOrmEntity, ResetTokenOrmEntity } from '../users/adapters/persistence/entities';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([AuthSessionOrmEntity, ResetTokenOrmEntity]),
+    AuditModule,
   ],
   controllers: [AuthController],
   providers: [

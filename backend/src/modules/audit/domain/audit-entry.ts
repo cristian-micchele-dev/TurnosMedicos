@@ -17,6 +17,8 @@ export enum AuditAction {
   USER_ROLE_CHANGED = 'USER_ROLE_CHANGED',
   USER_PASSWORD_RESET = 'USER_PASSWORD_RESET',
   USER_ACTIVE_CHANGED = 'USER_ACTIVE_CHANGED',
+  /** Una cuenta quedó bloqueada por intentos fallidos. Los fallos sueltos no se anotan. */
+  ACCOUNT_LOCKED = 'ACCOUNT_LOCKED',
 }
 
 export type AuditMetadata = Record<string, string | number | boolean | null>;

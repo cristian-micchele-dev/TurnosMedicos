@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { NeuralBackground } from '../../components/ui/NeuralBackground';
+import { apiErrorMessage } from '../../api/client';
 import styles from './LoginPage.module.css';
 
 export function LoginPage() {
@@ -25,9 +26,9 @@ export function LoginPage() {
       await login(email, password, rememberMe);
       navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Credenciales incorrectas. Intentá de nuevo.';
-      setError(message);
+      // El cliente rechaza con un objeto plano (ApiError), no con un Error: un
+      // `instanceof Error` acá se comía el motivo y mostraba siempre el genérico.
+      setError(apiErrorMessage(err, 'Credenciales incorrectas. Intentá de nuevo.'));
     } finally {
       setIsLoading(false);
     }

@@ -38,3 +38,23 @@ describe('LoginPage — recordarme', () => {
     expect(navigate).toHaveBeenCalledWith('/dashboard', { replace: true });
   });
 });
+
+describe('LoginPage — qué le dice al que no puede entrar', () => {
+  it('muestra el motivo real del servidor: el cliente rechaza con un objeto, no con un Error', async () => {
+    auth.login.mockRejectedValue({
+      status: 429,
+      code: 'ACCOUNT_LOCKED',
+      detail: 'Demasiados intentos fallidos. Volvé a probar en 5 minutos.',
+    });
+    renderPage();
+    await submit();
+    expect(await screen.findByText(/volvé a probar en 5 minutos/i)).toBeInTheDocument();
+  });
+
+  it('sin motivo del servidor cae al mensaje de siempre', async () => {
+    auth.login.mockRejectedValue({ status: 401, code: 'UNAUTHORIZED' });
+    renderPage();
+    await submit();
+    expect(await screen.findByText(/credenciales incorrectas/i)).toBeInTheDocument();
+  });
+});

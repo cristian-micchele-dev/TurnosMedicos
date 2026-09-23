@@ -18,7 +18,11 @@ export class AuthController {
     response.cookie(process.env.REFRESH_COOKIE_NAME ?? 'refresh_token', token, { httpOnly: true, secure, sameSite: 'lax', path, ...maxAge });
     response.cookie(process.env.CSRF_COOKIE_NAME ?? 'csrf_token', randomBytes(24).toString('hex'), { secure, sameSite: 'lax', path, ...maxAge });
   }
-  @Throttle({ default: { ttl: 60000, limit: 5 } }) @Post('login') async login(@Body() dto: LoginDto, @Res({ passthrough: true }) response: Response) { const result = await this.service.login(dto); this.cookie(response, result.refreshToken, result.persistent ? result.expiresAt : undefined); return { accessToken: result.accessToken }; }
+  // Más alto que MAX_FAILED_ATTEMPTS a propósito. Este límite frena una ráfaga
+  // desde una IP; el bloqueo de cuenta es el que sabe de quién se trata y tiene
+  // algo útil que decirle. Si el throttler ataja primero, la persona recibe un
+  // "esperá un minuto" genérico y el mensaje del bloqueo no se ve nunca.
+  @Throttle({ default: { ttl: 60000, limit: 10 } }) @Post('login') async login(@Body() dto: LoginDto, @Res({ passthrough: true }) response: Response) { const result = await this.service.login(dto); this.cookie(response, result.refreshToken, result.persistent ? result.expiresAt : undefined); return { accessToken: result.accessToken }; }
   @Post('refresh') async refresh(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
     const csrf = request.headers['x-csrf-token'];
     if (!csrf || csrf !== request.cookies?.[process.env.CSRF_COOKIE_NAME ?? 'csrf_token']) throw new UnauthorizedException();

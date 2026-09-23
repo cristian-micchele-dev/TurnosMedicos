@@ -5,13 +5,14 @@ import { createHash } from 'crypto';
 describe('AuthService', () => {
   const now = new Date('2026-01-01T00:00:00Z');
   const user = new User('u1', 'x@y.com', '', 'hash:good', Role.DOCTOR);
-  const users: any = { findByEmail: jest.fn(), findById: jest.fn(), save: jest.fn(), update: jest.fn() };
+  const users: any = { findByEmail: jest.fn(), findById: jest.fn(), save: jest.fn(), update: jest.fn(), setLoginFailures: jest.fn() };
   const hasher: any = { hash: jest.fn(async (value: string) => `hash:${value}`), verify: jest.fn(async (hash: string, value: string) => hash === `hash:${value}`) };
   const tokens: any = { signAccess: jest.fn(() => 'access'), signRefresh: jest.fn(() => 'refresh'), verifyRefresh: jest.fn(() => ({ jti: 'j1', familyId: 'f1' })), refreshTtlMs: () => 1000 };
   const sessions: any = { save: jest.fn(), findByJti: jest.fn(), rotate: jest.fn(), revoke: jest.fn(), revokeFamily: jest.fn(), revokeAllForUser: jest.fn() };
   const resets: any = { save: jest.fn(), consume: jest.fn() };
   const mailer: any = { sendPasswordReset: jest.fn() };
-  const service = () => new AuthService(users, hasher, tokens, sessions, resets, mailer, { now: () => now });
+  const audit: any = { record: jest.fn() };
+  const service = () => new AuthService(users, hasher, tokens, sessions, resets, mailer, { now: () => now }, audit);
   beforeEach(() => { jest.clearAllMocks(); users.findByEmail.mockResolvedValue(undefined); users.findById.mockResolvedValue(undefined); });
 
   it('no expone auto-registro: el alta de usuarios es exclusiva del admin', () => {
@@ -70,7 +71,7 @@ describe('AuthService', () => {
     const user={id:'u1',email:'x@y.com',passwordHash:'hash',role:'DOCTOR',active:true,toPublic:()=>({id:'u1'})};
     const sessions:any={findByJti:async()=>({id:'s1',userId:'u1',familyId:'f1',tokenHash:'other',expiresAt:new Date(Date.now()+10000)}),revokeFamily:jest.fn()};
     const tokens:any={verifyRefresh:()=>({jti:'j1',familyId:'f1'})};
-    const instance=new AuthService(users,{} as any,tokens,sessions,{} as any,{} as any,{now:()=>new Date()});
+    const instance=new AuthService(users,{} as any,tokens,sessions,{} as any,{} as any,{now:()=>new Date()},{record:jest.fn()} as any);
     users.findById.mockResolvedValue(user);
     await expect(instance.refresh('stolen')).rejects.toMatchObject({status:401});
     expect(sessions.revokeFamily).toHaveBeenCalledWith('f1');
@@ -133,5 +134,73 @@ describe('AuthService', () => {
     expect(sessions.revokeAllForUser).toHaveBeenCalledWith('u1');
     resets.consume.mockResolvedValue(undefined);
     await expect(service().reset({ token: 'token', password: 'brida correcta 9' })).rejects.toMatchObject({ status: 401 });
+  });
+});
+
+describe('AuthService — bloqueo de cuenta por intentos fallidos', () => {
+  const now = new Date('2026-01-01T00:00:00Z');
+  const MINUTE = 60_000;
+  let victim: User;
+  const users: any = { findByEmail: jest.fn(), findById: jest.fn(), save: jest.fn(), update: jest.fn(), setLoginFailures: jest.fn() };
+  const hasher: any = { hash: jest.fn(), verify: jest.fn(async (hash: string, value: string) => hash === `hash:${value}`) };
+  const tokens: any = { signAccess: () => 'access', signRefresh: () => 'refresh', refreshTtlMs: () => 1000 };
+  const sessions: any = { save: jest.fn() };
+  const audit: any = { record: jest.fn() };
+  const service = () => new AuthService(users, hasher, tokens, sessions, {} as any, {} as any, { now: () => now } as any, audit);
+  const failedLogin = () => service().login({ email: 'x@y.com', password: 'wrong' });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    victim = new User('u1', 'x@y.com', 'Laura', 'hash:good', Role.DOCTOR);
+    users.findByEmail.mockResolvedValue(victim);
+  });
+
+  it('el primer error cuenta pero no bloquea: equivocarse tipeando es normal', async () => {
+    await expect(failedLogin()).rejects.toMatchObject({ status: 401 });
+    expect(users.setLoginFailures).toHaveBeenCalledWith('u1', 1, null);
+  });
+
+  it('al quinto error la cuenta queda bloqueada un minuto', async () => {
+    victim.failedLoginAttempts = 4;
+    await expect(failedLogin()).rejects.toMatchObject({ status: 401 });
+    expect(users.setLoginFailures).toHaveBeenCalledWith('u1', 5, new Date(now.getTime() + MINUTE));
+  });
+
+  it('bloqueada, ni se molesta en verificar la contraseña, y dice cuánto falta', async () => {
+    victim.lockedUntil = new Date(now.getTime() + 3 * MINUTE);
+    await expect(service().login({ email: 'x@y.com', password: 'good' }))
+      .rejects.toMatchObject({ status: 429, code: 'ACCOUNT_LOCKED', message: expect.stringContaining('3') });
+    expect(hasher.verify).not.toHaveBeenCalled();
+  });
+
+  it('vencido el bloqueo se vuelve a intentar sin pedirle permiso a nadie', async () => {
+    victim.lockedUntil = new Date(now.getTime() - MINUTE);
+    victim.failedLoginAttempts = 5;
+    await expect(service().login({ email: 'x@y.com', password: 'good' })).resolves.toMatchObject({ accessToken: 'access' });
+  });
+
+  it('entrar bien borra el contador: la racha se corta, no se arrastra', async () => {
+    victim.failedLoginAttempts = 3;
+    await service().login({ email: 'x@y.com', password: 'good' });
+    expect(users.setLoginFailures).toHaveBeenCalledWith('u1', 0, null);
+  });
+
+  it('entrar bien sin errores previos no escribe de gusto en la base', async () => {
+    await service().login({ email: 'x@y.com', password: 'good' });
+    expect(users.setLoginFailures).not.toHaveBeenCalled();
+  });
+
+  it('un email que no existe no crea contador: no hay cuenta que proteger', async () => {
+    users.findByEmail.mockResolvedValue(undefined);
+    await expect(failedLogin()).rejects.toMatchObject({ status: 401 });
+    expect(users.setLoginFailures).not.toHaveBeenCalled();
+  });
+
+  it('el bloqueo queda en la auditoría; los errores sueltos no, para no dejarle la tabla al atacante', async () => {
+    await expect(failedLogin()).rejects.toMatchObject({ status: 401 });
+    expect(audit.record).not.toHaveBeenCalled();
+    victim.failedLoginAttempts = 4;
+    await expect(failedLogin()).rejects.toMatchObject({ status: 401 });
+    expect(audit.record).toHaveBeenCalledWith(null, 'ACCOUNT_LOCKED', 'user', 'u1', expect.objectContaining({ minutes: 1 }));
   });
 });

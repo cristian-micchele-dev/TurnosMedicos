@@ -8,6 +8,7 @@ import { JwtAuthGuard } from '../src/modules/auth/adapters/http/auth.guards';
 import { Roles, RolesGuard } from '../src/modules/auth/adapters/http/auth.guards';
 import { Role } from '../src/modules/users/domain/user';
 import { AuthService } from '../src/modules/auth/application/auth.service';
+import { AuditService } from '../src/modules/audit/application/audit.service';
 import { User } from '../src/modules/users/domain/user';
 import { TOKEN_SERVICE, HASHER, CLOCK } from '../src/shared/application/ports';
 import { MAILER, RESET_REPOSITORY, SESSION_REPOSITORY } from '../src/modules/auth/auth.repository.port';
@@ -29,6 +30,10 @@ const userRepository = {
   findById: async (id: string) => users.get(id),
   save: async (user: User) => { users.set(user.id, user); return user; },
   update: async (user: User) => { users.set(user.id, user); },
+  setLoginFailures: async (userId: string, attempts: number, lockedUntil: Date | null) => {
+    const user = users.get(userId);
+    if (user) { user.failedLoginAttempts = attempts; user.lockedUntil = lockedUntil; }
+  },
 };
 const sessionRepository = {
   save: async (session: any) => { sessions.set(session.jti, session); },
@@ -64,6 +69,7 @@ class AdminOnlyController {
     { provide: TOKEN_SERVICE, useValue: tokens }, { provide: CLOCK, useValue: { now: () => new Date('2026-01-01T00:00:00Z') } },
     { provide: SESSION_REPOSITORY, useValue: sessionRepository }, { provide: RESET_REPOSITORY, useValue: resetRepository },
     { provide: MAILER, useValue: mailer },
+    { provide: AuditService, useValue: { record: jest.fn(async () => undefined) } },
     { provide: DataSource, useValue: { query: async () => { throw new Error('database unavailable'); } } },
   ],
 })
@@ -74,6 +80,7 @@ describe('foundation HTTP', () => {
   beforeAll(async () => {
     users.clear(); sessions.clear(); resets.clear(); mailer.sendPasswordReset.mockClear();
     users.set('seed-doctor', new User('seed-doctor', 'doctor@example.com', 'Doctor', 'hash:strong-password', Role.DOCTOR));
+    users.set('seed-target', new User('seed-target', 'blanco@example.com', 'Blanco', 'hash:strong-password', Role.DOCTOR));
     const module = await Test.createTestingModule({ imports: [E2eModule] }).compile();
     app = configureApp(module.createNestApplication());
     await app.init();
@@ -168,5 +175,17 @@ describe('foundation HTTP', () => {
     const login = await request(app.getHttpServer()).post('/api/v1/auth/login').send({ email: 'doctor@example.com', password: 'colina ventana 41' }).expect(201);
     await request(app.getHttpServer()).get('/api/v1/admin-only').set('Authorization', `Bearer ${login.body.accessToken}`).expect(403);
     await request(app.getHttpServer()).get('/api/v1/admin-only').expect(401);
+  });
+  it('cinco claves mal bloquean la cuenta, y la clave correcta tampoco entra mientras dure', async () => {
+    const attempt = (password: string) => request(app.getHttpServer())
+      .post('/api/v1/auth/login').send({ email: 'blanco@example.com', password });
+
+    for (let i = 0; i < 4; i++) await attempt('mal').expect(401);
+    await attempt('mal').expect(401);
+
+    const locked = await attempt('strong-password').expect(429);
+    expect(locked.body.code).toBe('ACCOUNT_LOCKED');
+    expect(locked.body.detail).toMatch(/1 minuto/);
+    expect(locked.headers['content-type']).toContain('application/problem+json');
   });
 });
