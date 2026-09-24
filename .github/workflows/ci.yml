@@ -50,7 +50,7 @@ jobs:
         run: npx tsc --noEmit
       - name: Lint
         run: npm run lint -- --max-warnings=0
-      - name: Unit tests (coverage gate 68%)
+      - name: Unit tests (coverage gate 77%)
         run: npm test -- --coverage
       - name: Integration tests (PostgreSQL)
         run: npm run test:integration
