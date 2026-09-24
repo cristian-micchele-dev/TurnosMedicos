@@ -107,4 +107,32 @@ describeDatabase('Appointment search (PostgreSQL)', () => {
     const [rows] = await repo.findAll({ q: `${tag}`, from, take: 50 });
     expect(rows.map((a) => a.code)).toEqual([`ZY-${tag.slice(-5)}`]);
   });
+  // Guardia de la desnormalización: si el texto de búsqueda se copia en el turno,
+  // renombrar deja de verse a menos que algo lo mantenga al día. Esto lo vigila.
+  it('renombrar al paciente cambia por quién se lo encuentra', async () => {
+    const nuevo = `Sofía Gutiérrez ${tag}`;
+    await dataSource.query('UPDATE patients SET name = $1 WHERE id = $2', [nuevo, patientIds[0]]);
+    try {
+      expect(await codes(`gutierrez ${tag}`)).toEqual([`ZT-${tag.slice(-5)}`]);
+      expect(await codes(`perez ${tag}`)).toEqual([]);
+    } finally {
+      await dataSource.query('UPDATE patients SET name = $1 WHERE id = $2', [`Sofía Pérez ${tag}`, patientIds[0]]);
+    }
+  });
+
+  it('renombrar al médico también: sus turnos siguen siendo suyos', async () => {
+    await dataSource.query('UPDATE users SET name = $1 WHERE id = $2', [`Martín Quiroga ${tag}`, userId]);
+    try {
+      expect((await codes(`quiroga ${tag}`)).sort()).toEqual([`ZT-${tag.slice(-5)}`, `ZY-${tag.slice(-5)}`]);
+    } finally {
+      await dataSource.query('UPDATE users SET name = $1 WHERE id = $2', [`Martín Iñíguez ${tag}`, userId]);
+    }
+  });
+
+  it('un turno nuevo nace encontrable por el nombre de su paciente', async () => {
+    const nuevoPaciente = await addPatient(`Zacarías Ledesma ${tag}`);
+    const code = `ZZ-${tag.slice(-5)}`;
+    await addAppointment(code, nuevoPaciente, 2);
+    expect(await codes(`ledesma ${tag}`)).toEqual([code]);
+  });
 });

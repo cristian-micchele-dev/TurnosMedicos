@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Brackets, In, MoreThanOrEqual, LessThan, And, Repository } from 'typeorm';
-import { fold, likePattern, searchWords } from '../../../../shared/infra/persistence/text-search';
+import { Between, In, MoreThanOrEqual, LessThan, And, Repository } from 'typeorm';
+import { likePattern, searchWords } from '../../../../shared/infra/persistence/text-search';
 import { AppointmentStatus } from '../../domain/appointment-status.enum';
 import { AppointmentRepository, AppointmentFilters, DaySummaryRow } from '../../appointment.repository.port';
 import { APP_TIME_ZONE } from '../../../../shared/infra/time/format';
@@ -30,28 +30,15 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
     if (filters.from) qb.andWhere('a.date_time >= :from', { from: filters.from });
     if (filters.to) qb.andWhere('a.date_time <= :to', { to: filters.to });
 
-    // Buscar por paciente o por médico obliga a salir de la tabla de turnos. Se
-    // hace acá, en SQL, y no resolviendo ids en el servicio: una clínica con
-    // 50.000 pacientes convertiría "a" en un IN de 50.000 elementos, y sobre todo
-    // el total y la paginación tienen que salir de la misma consulta que las filas.
-    const words = searchWords(filters.q ?? '');
-    if (words.length) {
-      qb.leftJoin('patients', 'p', 'p.id = a.patient_id')
-        .leftJoin('doctors', 'd', 'd.id = a.doctor_id')
-        .leftJoin('users', 'du', 'du.id = d.user_id');
-      words.forEach((word, i) => {
-        const key = `q${i}`;
-        qb.andWhere(new Brackets((w) => {
-          // Sin `coalesce`: las dos columnas son NOT NULL, y con el LEFT JOIN un
-          // NULL da NULL en el LIKE, que no matchea igual que '' no matchearía.
-          // Además el coalesce dejaba la expresión distinta a la del índice de
-          // trigramas, y un índice por expresión que no coincide no se usa.
-          w.where(`${fold('a.code')} LIKE :${key} ESCAPE '\\'`, { [key]: likePattern(word) })
-            .orWhere(`${fold('p.name')} LIKE :${key} ESCAPE '\\'`)
-            .orWhere(`${fold('du.name')} LIKE :${key} ESCAPE '\\'`);
-        }));
-      });
-    }
+    // `search_text` ya trae código, paciente y médico juntos y plegados, puesto
+    // por trigger. Buscar deja de ser un OR entre tres tablas —que Postgres tiene
+    // que unir antes de filtrar, y por eso ningún índice entraba— y pasa a ser un
+    // LIKE sobre una columna con índice de trigramas. Cada palabra tiene que
+    // aparecer en algún lado: se piden todas, en cualquier orden.
+    searchWords(filters.q ?? '').forEach((word, i) => {
+      const key = `q${i}`;
+      qb.andWhere(`a.search_text LIKE :${key} ESCAPE '\\'`, { [key]: likePattern(word) });
+    });
 
     // La propiedad, no la columna: con joins y paginación TypeORM arma una
     // subconsulta DISTINCT y necesita resolver el ORDER BY contra el metadata.
