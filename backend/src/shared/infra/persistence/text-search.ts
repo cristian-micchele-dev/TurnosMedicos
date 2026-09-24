@@ -27,3 +27,15 @@ export const searchWords = (term: string) => term.trim().split(/\s+/).filter(Boo
 
 /** Patrón LIKE listo para parametrizar: plegado, escapado y con comodines a los costados. */
 export const likePattern = (word: string) => `%${escapeLike(foldTerm(word))}%`;
+
+/**
+ * Índice de trigramas para un `LIKE '%algo%'` sobre una columna plegada.
+ *
+ * Un btree no sirve acá: el comodín va adelante. GIN + pg_trgm sí, pero un índice
+ * por expresión sólo entra si la expresión coincide CARÁCTER POR CARÁCTER con la
+ * del WHERE. Por eso se arma con el mismo `fold` que usan los repositorios: si
+ * alguien cambia el plegado, cambian los dos juntos o no cambia ninguno. Un
+ * índice que no coincide no falla — simplemente no se usa, y nadie se entera.
+ */
+export const trigramIndex = (name: string, table: string, column: string) =>
+  `CREATE INDEX "${name}" ON "${table}" USING gin (${fold(column)} gin_trgm_ops)`;

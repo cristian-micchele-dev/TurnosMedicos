@@ -13,18 +13,22 @@ export class StatsService {
   ) {}
 
   async getStats(role: Role) {
-    const [allUsers] = await this.users.findAll();
     // Una cuenta con rol DOCTOR no es un médico agendable: el perfil (matrícula y
     // especialidad) es lo que lo vuelve elegible en un turno. Contamos perfiles activos.
     const [, totalDoctors] = await this.doctors.findAll({ active: true, take: 1 });
 
     if (role === Role.ADMIN) {
-      const [, totalPatients] = await this.patients.findAll({ take: 1 });
+      // El censo se cuenta en la base. Traer el padrón para hacerle .length es
+      // gastar memoria proporcional a los usuarios para producir dos enteros.
+      const [[, totalPatients], census] = await Promise.all([
+        this.patients.findAll({ take: 1 }),
+        this.users.countAll(),
+      ]);
       return {
         totalDoctors,
         totalPatients,
-        totalUsers: allUsers.length,
-        activeUsers: allUsers.filter(u => u.active).length,
+        totalUsers: census.total,
+        activeUsers: census.active,
       };
     }
 

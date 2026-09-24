@@ -1,4 +1,4 @@
-import { escapeLike, fold, foldTerm, searchWords } from './text-search';
+import { escapeLike, fold, foldTerm, searchWords, trigramIndex } from './text-search';
 
 describe('text-search', () => {
   it('fold arma SQL que baja acentos y mayúsculas en la columna', () => {
@@ -19,5 +19,12 @@ describe('text-search', () => {
   it('searchWords parte en palabras, sin vacíos', () => {
     expect(searchWords('  sofia   perez ')).toEqual(['sofia', 'perez']);
     expect(searchWords('   ')).toEqual([]);
+  });
+});
+
+describe('text-search — el índice y la consulta tienen que decir lo mismo', () => {
+  it('el índice se escribe con la misma expresión que el WHERE, sin alias de tabla', () => {
+    expect(trigramIndex('idx_x', 'patients', 'name'))
+      .toBe(`CREATE INDEX "idx_x" ON "patients" USING gin (${fold('name')} gin_trgm_ops)`);
   });
 });

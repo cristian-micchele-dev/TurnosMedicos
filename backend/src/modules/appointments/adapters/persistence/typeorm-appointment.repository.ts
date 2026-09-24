@@ -42,9 +42,13 @@ export class TypeOrmAppointmentRepository implements AppointmentRepository {
       words.forEach((word, i) => {
         const key = `q${i}`;
         qb.andWhere(new Brackets((w) => {
+          // Sin `coalesce`: las dos columnas son NOT NULL, y con el LEFT JOIN un
+          // NULL da NULL en el LIKE, que no matchea igual que '' no matchearía.
+          // Además el coalesce dejaba la expresión distinta a la del índice de
+          // trigramas, y un índice por expresión que no coincide no se usa.
           w.where(`${fold('a.code')} LIKE :${key} ESCAPE '\\'`, { [key]: likePattern(word) })
-            .orWhere(`${fold("coalesce(p.name, '')")} LIKE :${key} ESCAPE '\\'`)
-            .orWhere(`${fold("coalesce(du.name, '')")} LIKE :${key} ESCAPE '\\'`);
+            .orWhere(`${fold('p.name')} LIKE :${key} ESCAPE '\\'`)
+            .orWhere(`${fold('du.name')} LIKE :${key} ESCAPE '\\'`);
         }));
       });
     }
