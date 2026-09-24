@@ -28,6 +28,15 @@ const ROLE_OPTIONS: { value: UserListItem['role']; label: string }[] = [
   { value: 'SECRETARY', label: 'Secretaría' },
 ];
 
+/**
+ * Nadie se administra a sí mismo, y el backend lo rechaza igual.
+ *
+ * No es sólo evitar un error: es lo que garantiza que siempre quede un
+ * administrador. Si nadie puede sacarse el rol ni desactivarse, el último admin
+ * es justamente el que no tiene quién se lo haga.
+ */
+const AUTOGESTION = 'Sobre tu propia cuenta no podés: pedíselo a otro administrador.';
+
 export function UsersPage() {
   const { toast } = useToast();
   const { confirm, dialogProps, ConfirmDialog } = useConfirm();
@@ -186,7 +195,8 @@ export function UsersPage() {
           <select
             className={styles.roleSelect}
             value={u.role}
-            disabled={updatingId === u.id}
+            disabled={updatingId === u.id || u.id === me?.id}
+            title={u.id === me?.id ? AUTOGESTION : undefined}
             onChange={(e) => {
               e.stopPropagation();
               handleRoleChange(u, e.target.value);
@@ -209,13 +219,13 @@ export function UsersPage() {
       render: (u: UserListItem) => (
         <button
           className={styles.activeToggle}
-          disabled={updatingId === u.id}
+          disabled={updatingId === u.id || u.id === me?.id}
           onClick={(e) => {
             e.stopPropagation();
             handleToggleActive(u);
           }}
           aria-label={u.active ? 'Desactivar usuario' : 'Activar usuario'}
-          title={u.active ? 'Clic para desactivar' : 'Clic para activar'}
+          title={u.id === me?.id ? AUTOGESTION : u.active ? 'Clic para desactivar' : 'Clic para activar'}
         >
           {u.active ? (
             <Badge variant="success">Activo</Badge>
@@ -251,7 +261,7 @@ export function UsersPage() {
           variant="ghost"
           size="sm"
           disabled={updatingId === u.id || u.id === me?.id}
-          title={u.id === me?.id ? 'Cambiá tu propia contraseña desde el menú lateral' : undefined}
+          title={u.id === me?.id ? AUTOGESTION : undefined}
           onClick={(ev) => { ev.stopPropagation(); handleResetPassword(u); }}
         >
           <KeyRound size={14} aria-hidden /> Resetear clave

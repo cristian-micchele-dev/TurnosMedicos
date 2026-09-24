@@ -43,7 +43,22 @@ export class UserService {
     return { data: list.map(u => u.toPublic()), total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
+  /**
+   * Nadie se administra a sí mismo.
+   *
+   * No es paternalismo: es lo que garantiza que el sistema nunca se quede sin
+   * administrador. Si nadie puede sacarse a sí mismo el rol ni desactivarse, el
+   * último admin que queda es justamente el que no tiene quién se lo haga. Sin
+   * esta regla, un solo clic distraído deja la clínica sin quien administre y
+   * sin forma de recuperarla que no sea entrar a la base a mano.
+   */
+  private assertNotSelf(id: string, actor: Actor, accion: string): void {
+    if (id !== actor.sub) return;
+    throw new ConflictException(`No podés ${accion} tu propia cuenta. Pedíselo a otro administrador.`);
+  }
+
   async updateRole(id: string, dto: UpdateRoleDto, actor: Actor) {
+    this.assertNotSelf(id, actor, 'cambiarle el rol a');
     const user = await this.users.findById(id);
     if (!user) throw new NotFoundException(`Usuario ${id} no encontrado`);
     const previous = user.role;
@@ -55,6 +70,8 @@ export class UserService {
 
   // The temporary password is returned exactly once and never stored in clear.
   async resetPassword(id: string, actor: Actor): Promise<{ temporaryPassword: string }> {
+    // Para la propia hay "cambiar contraseña", que pide la actual.
+    this.assertNotSelf(id, actor, 'resetearle la clave a');
     const user = await this.users.findById(id);
     if (!user) throw new NotFoundException(`Usuario ${id} no encontrado`);
     const temporaryPassword = generateTemporaryPassword();
@@ -68,6 +85,7 @@ export class UserService {
   }
 
   async toggleActive(id: string, actor: Actor) {
+    this.assertNotSelf(id, actor, 'activar o desactivar');
     const user = await this.users.findById(id);
     if (!user) throw new NotFoundException(`Usuario ${id} no encontrado`);
     user.active = !user.active;
