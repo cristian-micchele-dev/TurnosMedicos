@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AppointmentOrmEntity } from '../appointments/adapters/persistence/appointment.entity';
 import { SpecialtyOrmEntity } from '../specialties/adapters/persistence/specialty.entity';
+import { APP_TIME_ZONE } from '../../shared/infra/time/format';
 
 const MONTH_LABELS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
@@ -36,13 +37,18 @@ export class ChartsService {
     const now = new Date();
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
+    // Agrupado en el huso de la clínica: un turno de las 22:00 en Buenos Aires
+    // es la 01:00 del día siguiente en UTC, y el último de cada mes caía en el
+    // mes siguiente. El reloj del servidor no es el reloj de la clínica.
+    const mes = `TO_CHAR(a.date_time AT TIME ZONE :tz, 'YYYY-MM')`;
     const rows = await this.appointments
       .createQueryBuilder('a')
-      .select("TO_CHAR(a.date_time, 'YYYY-MM')", 'yearMonth')
+      .select(mes, 'yearMonth')
       .addSelect('COUNT(*)', 'count')
       .where('a.date_time >= :from', { from: sixMonthsAgo })
-      .groupBy("TO_CHAR(a.date_time, 'YYYY-MM')")
-      .orderBy("TO_CHAR(a.date_time, 'YYYY-MM')", 'ASC')
+      .setParameter('tz', APP_TIME_ZONE)
+      .groupBy(mes)
+      .orderBy(mes, 'ASC')
       .getRawMany<{ yearMonth: string; count: string }>();
 
     // Build a complete 6-month range (fill gaps with 0)
