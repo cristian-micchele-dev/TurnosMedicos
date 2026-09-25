@@ -401,8 +401,10 @@ function CreateUserForm({ onSuccess, onCancel }: CreateUserFormProps) {
       });
       onSuccess(created);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error al crear el usuario';
-      toast.error(message);
+      // El cliente rechaza con un objeto plano (ApiError), no con un Error: un
+      // `instanceof Error` acá se comía el motivo —email repetido, clave débil— y
+      // dejaba al admin adivinando.
+      toast.error(apiErrorMessage(err, 'Error al crear el usuario'));
     } finally {
       setSubmitting(false);
     }

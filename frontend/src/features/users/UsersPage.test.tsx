@@ -122,3 +122,15 @@ describe('UsersPage — la clave temporal', () => {
     expect(usersApi.resetPassword).not.toHaveBeenCalled();
   });
 });
+
+describe('UsersPage — crear usuario', () => {
+  it('muestra el motivo real del rechazo, no un genérico que no ayuda a nadie', async () => {
+    usersApi.create.mockRejectedValue({ status: 409, code: 'CONFLICT', detail: 'Ya existe un usuario con ese email.' });
+    renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: /nuevo usuario/i }));
+    await userEvent.type(screen.getByLabelText('Email'), 'repetido@h.com');
+    await userEvent.type(screen.getByLabelText('Contraseña'), 'colina ventana 41');
+    await userEvent.click(screen.getByRole('button', { name: /^crear/i }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Ya existe un usuario con ese email.'));
+  });
+});

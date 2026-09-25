@@ -93,3 +93,26 @@ describe('UserService — nadie se saca a sí mismo del sistema', () => {
     expect(sessions.revokeAllForUser).not.toHaveBeenCalled();
   });
 });
+
+describe('UserService — desactivar es echar, no sólo marcar', () => {
+  const users: any = { findById: jest.fn(), findByEmail: jest.fn(), findAll: jest.fn(), save: jest.fn(), update: jest.fn() };
+  const hasher: any = { hash: jest.fn() };
+  const sessions: any = { revokeAllForUser: jest.fn() };
+  const audit: any = { record: jest.fn() };
+  const service = () => new UserService(audit, users, hasher, sessions);
+  const jefe: Actor = { sub: 'admin-9', role: Role.ADMIN };
+
+  beforeEach(() => jest.clearAllMocks());
+
+  it('al desactivar, le cierra las sesiones abiertas: si no, sigue entrando hasta que venza el token', async () => {
+    users.findById.mockResolvedValue(new User('u1', 'ex@h.com', 'Ex', 'hash', Role.DOCTOR, true));
+    await service().toggleActive('u1', jefe);
+    expect(sessions.revokeAllForUser).toHaveBeenCalledWith('u1');
+  });
+
+  it('al reactivar no toca sesiones de nadie: no hay a quién echar', async () => {
+    users.findById.mockResolvedValue(new User('u1', 'vuelve@h.com', 'Vuelve', 'hash', Role.DOCTOR, false));
+    await service().toggleActive('u1', jefe);
+    expect(sessions.revokeAllForUser).not.toHaveBeenCalled();
+  });
+});

@@ -15,17 +15,11 @@ export interface FetchOptions {
 export function useFetch<T>(queryKey: QueryKey, fetcher: () => Promise<T>, options: FetchOptions = {}) {
   const queryClient = useQueryClient();
 
-  const query = useQuery<T, Error>({
-    queryKey,
-    queryFn: async () => {
-      try {
-        return await fetcher();
-      } catch (e) {
-        throw e instanceof Error ? e : new Error(String(e));
-      }
-    },
-    ...options,
-  });
+  // El rechazo pasa tal cual. El cliente HTTP rechaza con un ApiError —un objeto
+  // plano con status, code y detail—, así que envolverlo en `new Error(String(e))`
+  // lo convertía literalmente en "[object Object]" y el motivo se perdía antes de
+  // llegar a la pantalla.
+  const query = useQuery<T, unknown>({ queryKey, queryFn: fetcher, ...options });
 
   // Invalidates every query sharing the resource prefix (queryKey[0]),
   // so a mutation on one page refreshes the same resource on any other page.

@@ -90,6 +90,10 @@ export class UserService {
     if (!user) throw new NotFoundException(`Usuario ${id} no encontrado`);
     user.active = !user.active;
     await this.users.update(user);
+    // Desactivar es echar, no marcar una casilla. El access token vive 15 minutos
+    // y no los revisa nadie: sin esto, alguien recién dado de baja sigue leyendo
+    // historias clínicas un rato más. Reactivar no cierra nada: no hay a quién echar.
+    if (!user.active) await this.sessions.revokeAllForUser(user.id);
     await this.audit.record(actor, AuditAction.USER_ACTIVE_CHANGED, 'user', user.id, { active: user.active });
     return user.toPublic();
   }

@@ -38,18 +38,17 @@ describe('useFetch', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.error).toBeInstanceOf(Error);
-    expect(result.current.error?.message).toBe('network error');
+    expect((result.current.error as Error).message).toBe('network error');
     expect(result.current.data).toBeUndefined();
   });
 
-  it('wraps non-Error rejections in an Error', async () => {
+  it('un rechazo que no es Error llega tal cual, sin disfrazarse', async () => {
     const fetcher = vi.fn().mockRejectedValue('plain string error');
     const { result } = renderHook(() => useFetch(['fail-str'], fetcher), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.error).toBeInstanceOf(Error);
-    expect(result.current.error?.message).toBe('plain string error');
+    expect(result.current.error).toBe('plain string error');
   });
 
   it('refetch() re-runs the fetcher', async () => {
@@ -90,5 +89,19 @@ describe('useFetch', () => {
     const second = renderHook(() => useFetch(['shared'], fetcher), { wrapper });
     expect(second.result.current.data).toBe('cached');
     expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('useFetch — el error del servidor llega entero', () => {
+  it('no envuelve el rechazo: el detail del servidor tiene que sobrevivir al hook', async () => {
+    // El cliente HTTP rechaza con un objeto plano, no con un Error. Envolverlo en
+    // `new Error(String(e))` lo convierte en "[object Object]" y se pierde todo.
+    const apiError = { status: 409, code: 'CONFLICT', detail: 'Ese turno ya está tomado.' };
+    const { result } = renderHook(
+      () => useFetch(['boom'], () => Promise.reject(apiError)),
+      { wrapper: createWrapper() },
+    );
+    await waitFor(() => expect(result.current.error).toBeDefined());
+    expect(result.current.error).toMatchObject({ status: 409, detail: 'Ese turno ya está tomado.' });
   });
 });
