@@ -11,19 +11,9 @@ import { useToast } from '../../hooks/useToast';
 import { AppointmentNotes } from './AppointmentNotes';
 import { MedicalReportsSection } from './MedicalReportsSection';
 import { PrescriptionsSection } from './PrescriptionsSection';
-import { formatDate } from './format';
+import { formatDate, formatDateTime } from './format';
 import styles from './AppointmentDetailModal.module.css';
 import { apiErrorMessage } from '../../api/client';
-
-function formatDateTime(iso: string): string {
-  const date = new Date(iso);
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  return `${day}/${month}/${year} ${hours}:${minutes}`;
-}
 
 const STATUS_CONFIG: Record<
   AppointmentStatus,
